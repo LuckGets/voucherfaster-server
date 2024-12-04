@@ -28,9 +28,12 @@ export default registerAs('app', () => {
 
   return {
     nodeEnv: process.env.NODE_ENV || Environment.Development,
+    host: process.env.SERVER_HOST || 'localhost',
     name: process.env.APP_NAME || 'voucherfaster',
+    desc: process.env.APP_DESC || 'The server for voucherfaster project',
     workingDir: process.cwd(),
     port: process.env.APP_PORT ? parseInt(process.env.APP_PORT) : 8000,
     apiPrefix: process.env.API_PREFIX || 'api',
+    apiVersion: process.env.API_VERSION || 'v1',
   };
 });
