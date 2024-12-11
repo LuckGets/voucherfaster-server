@@ -3,12 +3,14 @@ import {
   VersioningType,
   ValidationPipe,
   Logger,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { ConfigService, PathImpl2 } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { OpenAPIObject, DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { useContainer } from 'class-validator';
+import * as cookieParser from 'cookie-parser';
 
 export class ServerApplication {
   public async run(): Promise<void> {
@@ -17,6 +19,8 @@ export class ServerApplication {
     this.enableVersioning(app);
     this.setGlobalPrefix(app);
     this.useGlobalPipes(app);
+    this.useGlobalSerializeInterceptor(app);
+    this.useCookieParser(app);
     this.buildAPIDocumentation(app);
 
     await this.listen(app);
@@ -26,7 +30,7 @@ export class ServerApplication {
     useContainer(app.select(AppModule));
   }
 
-  private getConfigOrThrow<AppConfig>(
+  public getConfigOrThrow<AppConfig>(
     app: INestApplication,
     prop: PathImpl2<AppConfig>,
   ) {
@@ -64,6 +68,13 @@ export class ServerApplication {
     SwaggerModule.setup('docs', app, document);
   }
 
+  private useGlobalSerializeInterceptor(app: INestApplication): void {
+    app.useGlobalInterceptors(
+      new ClassSerializerInterceptor(app.get(Reflector)),
+    );
+    return;
+  }
+
   private listen(app: INestApplication): Promise<void> {
     const port = this.getConfigOrThrow(app, 'app.port');
     const host = this.getConfigOrThrow(app, 'app.host');
@@ -72,6 +83,10 @@ export class ServerApplication {
       Logger.log(`Server is starting on: ${host}:: ${port}`, name);
     app.listen(port, host, log);
     return;
+  }
+
+  private useCookieParser(app: INestApplication): void {
+    app.use(cookieParser());
   }
 
   public static new(): ServerApplication {

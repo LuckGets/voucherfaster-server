@@ -1,4 +1,5 @@
-import { Controller } from '@nestjs/common';
+import { Controller, SerializeOptions } from '@nestjs/common';
+import { AccountPath } from '../../config/api-path';
 
-@Controller('account')
+@Controller({ path: AccountPath.Base, version: '1' })
 export class AccountController {}

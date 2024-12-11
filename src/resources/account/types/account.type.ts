@@ -1,7 +1,10 @@
-export type Role = {
-  User: 'USER';
-  Admin: 'ADMIN';
-};
+export enum RoleEnum {
+  User = 'USER',
+  Admin = 'ADMIN',
+  Me = 'ME',
+}
+
+export type Role = Exclude<RoleEnum, RoleEnum.Me>;
 
 export enum AccountProviderEnum {
   Local = 'LOCAL',

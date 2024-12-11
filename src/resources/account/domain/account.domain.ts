@@ -5,8 +5,10 @@ import { UUID } from 'crypto';
 import {
   AccountProvider,
   AccountProviderEnum,
-} from 'src/resources/type/account.type';
-import { Role } from 'src/resources/type/role.type';
+  Role,
+  RoleEnum,
+} from '../types/account.type';
+import { NullAble } from '../../../utils/types/NullAble.type';
 
 type IDType = number | UUID;
 
@@ -14,36 +16,44 @@ export class UserDomain {
   @ApiProperty()
   id: IDType;
 
-  @ApiProperty({ example: 'johndoe@mail.com' })
-  @Expose({ groups: ['me', 'admin'] })
+  @ApiProperty({ type: String, example: 'johndoe@mail.com' })
+  @Expose({ groups: [RoleEnum.Me, RoleEnum.Admin] })
   email: string;
 
-  @ApiProperty()
-  @Expose({ groups: ['me', 'admin'] })
+  @ApiProperty({ type: String, example: '0812345679' })
+  @Expose({ groups: [RoleEnum.Me, RoleEnum.Admin] })
   phone: string;
 
   @Exclude({ toPlainOnly: true })
   password?: string;
 
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ type: String, example: 'John Doe' })
   fullname: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: String,
+    example: 'https://picsum.photo/100',
+  })
   @Allow()
-  img?: string | null;
+  img?: NullAble<string>;
 
-  @ApiProperty()
-  @Expose({ groups: ['admin'] })
+  @ApiProperty({ type: () => RoleEnum })
+  @Expose({ groups: [RoleEnum.Admin] })
   role: Role;
 
-  @ApiProperty({ example: 'sfq131200a9123sds' })
+  @ApiProperty({ type: String, example: 'sfq131200a9123sds' })
   @Allow()
-  socialId?: string;
+  socialId?: NullAble<string>;
 
-  @ApiProperty({ example: AccountProviderEnum.Google })
+  @ApiProperty({
+    type: () => AccountProviderEnum,
+    example: AccountProviderEnum.Google,
+  })
   account_provider: AccountProvider;
-
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date;
+  @ApiProperty()
+  createdAt: NullAble<Date>;
+  @ApiProperty()
+  updatedAt: NullAble<Date>;
+  @ApiProperty()
+  deletedAt?: NullAble<Date>;
 }
