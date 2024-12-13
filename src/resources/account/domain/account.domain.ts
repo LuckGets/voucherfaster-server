@@ -12,7 +12,7 @@ import { NullAble } from '../../../utils/types/NullAble.type';
 
 type IDType = number | UUID;
 
-export class UserDomain {
+export class AccountDomain {
   @ApiProperty()
   id: IDType;
 

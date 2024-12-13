@@ -11,23 +11,28 @@ import { OpenAPIObject, DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { useContainer } from 'class-validator';
 import * as cookieParser from 'cookie-parser';
+import globalPipeValidationOption from './utils/globalPipeValidationOption';
 
 export class ServerApplication {
   public async run(): Promise<void> {
-    const app = await NestFactory.create(AppModule, { cors: true });
-    this.useContainer(app);
+    const app = await NestFactory.create(AppModule, {
+      logger: new Logger(),
+      cors: true,
+    });
+    useContainer(app.select(AppModule), { fallback: true });
     this.enableVersioning(app);
     this.setGlobalPrefix(app);
-    this.useGlobalPipes(app);
+    app.useGlobalPipes(new ValidationPipe(globalPipeValidationOption));
+    // this.useGlobalPipes(app);
     this.useGlobalSerializeInterceptor(app);
     this.useCookieParser(app);
     this.buildAPIDocumentation(app);
 
-    await this.listen(app);
+    this.listen(app);
   }
 
   private useContainer(app: INestApplication): void {
-    useContainer(app.select(AppModule));
+    useContainer(app.select(AppModule), { fallback: true });
   }
 
   public getConfigOrThrow<AppConfig>(
@@ -72,17 +77,15 @@ export class ServerApplication {
     app.useGlobalInterceptors(
       new ClassSerializerInterceptor(app.get(Reflector)),
     );
-    return;
   }
 
-  private listen(app: INestApplication): Promise<void> {
+  private listen(app: INestApplication) {
     const port = this.getConfigOrThrow(app, 'app.port');
     const host = this.getConfigOrThrow(app, 'app.host');
     const name = this.getConfigOrThrow(app, 'app.name');
     const log = () =>
       Logger.log(`Server is starting on: ${host}:: ${port}`, name);
     app.listen(port, host, log);
-    return;
   }
 
   private useCookieParser(app: INestApplication): void {

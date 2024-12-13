@@ -12,3 +12,297 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Otp {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  accountEmail String   @unique @map("account_email") @db.VarChar(191)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiredAt    DateTime @map("expired_at") @db.Timestamptz(3)
+}
+
+enum AccountProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Account {
+  id              String           @id @default(uuid(7)) @db.Uuid
+  fullname        String           @db.VarChar(90)
+  phone           String           @unique @db.VarChar(20)
+  email           String           @unique @db.VarChar(191)
+  password        String?          @db.VarChar(90)
+  photo           String?
+  role            Role             @default(USER)
+  socialId        String?          @unique @map("social_id")
+  accountProvider AccountProvider? @default(LOCAL) @map("account_provider")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  verifiedAt      DateTime?        @map("verified_at") @db.Timestamptz(3)
+  Session         Session?
+
+  @@map("account")
+}
+
+model Session {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  token     String
+  accountId String  @unique @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  @@map("session")
+}
+
+enum VoucherStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model VoucherCategory {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  name        String       @db.VarChar(90)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz(3)
+  VoucherTags VoucherTag[]
+}
+
+model VoucherTag {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  name            String          @db.VarChar(90)
+  categoryId      String          @map("category_id") @db.Uuid
+  voucherCategory VoucherCategory @relation(fields: [categoryId], references: [id])
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz(3)
+  Voucher         Voucher[]
+}
+
+model Voucher {
+  id                   String                 @id @default(uuid(7)) @db.Uuid
+  code                 String                 @db.VarChar(20)
+  title                String                 @db.VarChar(191)
+  status               VoucherStatus          @default(ACTIVE)
+  description          String
+  price                Decimal                @db.Decimal(8, 2)
+  tagId                String                 @map("tag_id") @db.Uuid
+  voucherTag           VoucherTag             @relation(fields: [tagId], references: [id])
+  usageExpiredTime     DateTime               @map("usage_expired_time") @db.Timestamptz(3)
+  saleExpiredTime      DateTime               @map("sale_expired_time") @db.Timestamptz(3)
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime               @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  VoucherTermAndCondTh VoucherTermAndCondTh[]
+  VoucherTermAndCondEN VoucherTermAndCondEN[]
+  VoucherImg           VoucherImg[]
+  VoucherPromotion     VoucherPromotion[]
+  PackageVoucher       PackageVoucher[]
+  PackageRewardVoucher PackageRewardVoucher[]
+  OrderItemVoucher     OrderItemVoucher[]
+  OrderItemPackage     OrderItemPackage[]
+
+  @@map("voucher")
+}
+
+model VoucherImg {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  imgPath   String    @map("img_path")
+  voucherId String    @map("voucher_id") @db.Uuid
+  voucher   Voucher   @relation(fields: [voucherId], references: [id])
+  mainImg   Boolean   @map("main_img")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  @@map("voucher_img")
+}
+
+model VoucherTermAndCondTh {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  description String
+  voucherId   String    @map("voucher_id") @db.Uuid
+  voucher     Voucher   @relation(fields: [voucherId], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  inactiveAt  DateTime? @map("inactive_at") @db.Timestamptz(3)
+
+  @@map("voucher_term_condition_th")
+}
+
+model VoucherTermAndCondEN {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  description String
+  voucherId   String    @map("voucher_id") @db.Uuid
+  voucher     Voucher   @relation(fields: [voucherId], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  inactiveAt  DateTime? @map("inactive_at") @db.Timestamptz(3)
+
+  @@map("voucher_term_condition_en")
+}
+
+model VoucherUsageDays {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  usageDays Int       @map("usage_days")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  Order     Order[]
+
+  @@map("voucher_usage_days")
+}
+
+model VoucherPromotion {
+  id                 String               @id @default(uuid(7)) @db.Uuid
+  promotionPrice     Decimal              @map("promotion_price") @db.Decimal(8, 2)
+  voucherId          String               @map("voucher_id") @db.Uuid
+  voucher            Voucher              @relation(fields: [voucherId], references: [id])
+  startedAt          DateTime             @map("started_at") @db.Timestamptz(3)
+  expiredAt          DateTime             @map("expired_at") @db.Timestamptz(3)
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime             @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  OrderItemPromotion OrderItemPromotion[]
+
+  @@map("voucher_promotion")
+}
+
+model PackageVoucher {
+  id                   String                 @id @default(uuid(7)) @db.Uuid
+  quotaVoucherId       String                 @map("quota_voucher_id") @db.Uuid
+  voucher              Voucher                @relation(fields: [quotaVoucherId], references: [id])
+  packagePrice         Decimal                @map("package_price") @db.Decimal(8, 2)
+  quotaAmount          Int                    @map("quota_amount") @db.SmallInt
+  startedAt            DateTime               @map("started_at") @db.Timestamptz(3)
+  expiredAt            DateTime               @map("expired_at") @db.Timestamptz(3)
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime               @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt            DateTime?              @map("deleted_at") @db.Timestamptz(3)
+  PackageRewardVoucher PackageRewardVoucher[]
+  OrderItemPackage     OrderItemPackage[]
+  PackageImg           PackageImg[]
+
+  @@map("package_voucher")
+}
+
+model PackageImg {
+  id        String         @id @default(uuid(7)) @db.Uuid
+  imgPath   String         @map("img_path")
+  packageId String         @map("package_id") @db.Uuid
+  package   PackageVoucher @relation(fields: [packageId], references: [id])
+  mainImg   Boolean        @map("main_img")
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime       @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  @@map("package_img")
+}
+
+model PackageRewardVoucher {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  rewardVoucherId  String         @map("reward_voucher_id") @db.Uuid
+  voucher          Voucher        @relation(fields: [rewardVoucherId], references: [id])
+  packageId        String         @map("package_id") @db.Uuid
+  package          PackageVoucher @relation(fields: [packageVoucherId], references: [id])
+  packageVoucherId String         @map("package_voucher_id") @db.Uuid
+
+  @@map("package_reward_voucher")
+}
+
+model Order {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  totalPrice        Decimal          @map("total_price") @db.Decimal(10, 2)
+  voucherUsageDayId String           @map("voucher_usage_day_id") @db.Uuid
+  voucherUsageDay   VoucherUsageDays @relation(references: [id], fields: [voucherUsageDayId])
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  Transaction       Transaction[]
+  OrderItem         OrderItem[]
+
+  @@map("order")
+}
+
+model OrderItem {
+  id                 String              @id @default(uuid(7)) @db.Uuid
+  orderId            String              @map("order_id") @db.Uuid
+  order              Order               @relation(fields: [orderId], references: [id])
+  qrcodeImgPath      String              @map("qrcode_img_path")
+  redeemedAt         DateTime?           @map("redeemed_at") @db.Timestamptz(3)
+  updatedAt          DateTime            @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  OrderItemVoucher   OrderItemVoucher?
+  OrderItemPromotion OrderItemPromotion?
+  OrderItemPackage   OrderItemPackage?
+
+  @@map("order_item")
+}
+
+model OrderItemVoucher {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orderItemId String    @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  voucherId   String    @map("voucher_id") @db.Uuid
+  voucher     Voucher   @relation(fields: [voucherId], references: [id])
+
+  @@map("order_item_voucher")
+}
+
+model OrderItemPromotion {
+  id                 String           @id @default(uuid(7)) @db.Uuid
+  orderItemId        String           @unique @map("order_item_id") @db.Uuid
+  orderItem          OrderItem        @relation(fields: [orderItemId], references: [id])
+  voucherPromotion   VoucherPromotion @relation(fields: [voucherPromotionId], references: [id])
+  voucherPromotionId String           @map("voucher_promotion_id") @db.Uuid
+
+  @@map("order_item_promotion")
+}
+
+model OrderItemPackage {
+  id           String         @id @default(uuid(7)) @db.Uuid
+  orderItemId  String         @unique @map("order_item_id") @db.Uuid
+  orderItem    OrderItem      @relation(fields: [orderItemId], references: [id])
+  package      PackageVoucher @relation(fields: [packageId], references: [id])
+  packageId    String         @map("package_id") @db.Uuid
+  quotaVoucher Boolean
+  voucherId    String         @map("voucher_id") @db.Uuid
+  voucher      Voucher        @relation(fields: [voucherId], references: [id])
+
+  @@map("order_item_package")
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model TransactionSystem {
+  id     String @id @default(uuid(7)) @db.Uuid
+  system String @unique @db.VarChar(90)
+
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  Transaction Transaction[]
+}
+
+model Transaction {
+  id                  String            @id @default(uuid(7)) @db.Uuid
+  orderId             String            @map("order_id") @db.Uuid
+  order               Order             @relation(fields: [orderId], references: [id])
+  transactionSystem   TransactionSystem @relation(fields: [transactionSystemId], references: [id])
+  status              TransactionStatus @default(PENDING)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime          @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt           DateTime?         @map("deleted_at") @db.Timestamptz(3)
+  transactionSystemId String            @map("transaction_system_id") @db.Uuid
+
+  @@map("transaction")
+}

@@ -4,4 +4,7 @@ export type AppConfig = {
   workingDir: string;
   port: number | string;
   apiPrefix: string;
+  desc: string;
+  apiVersion: string;
+  host: string;
 };

@@ -2,7 +2,10 @@ export enum AccountPath {
   Base = '/account',
 }
 export enum AuthPath {
+  Name = 'Auth',
   Base = '/auth',
-  Login = '/auth/login',
-  Register = '/auth/register',
+  Login = '/login',
+  Register = '/register',
+  GoogleLogin = '/google/login',
+  GoogleCallback = '/google/callback',
 }
