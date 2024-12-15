@@ -10,18 +10,12 @@ import {
 } from '@nestjs/common';
 import { AuthPath } from '../../config/api-path';
 import { AuthService } from './auth.service';
-import {
-  ApiOkResponse,
-  ApiCreatedResponse,
-  ApiBadRequestResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOkResponse, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { AuthEmailRegisterReqDto } from './dto/auth-email-register-req.dto';
 import { AuthEmailLoginReqDto } from './dto/auth-email-login-req.dto';
 import { RoleEnum } from '../../resources/account/types/account.type';
 import { RegisterResponseDto } from './dto/register-response.dto';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @ApiTags(AuthPath.Name)
 @Controller({ path: AuthPath.Base, version: '1' })
@@ -49,15 +43,5 @@ export class AuthController {
   @Post(AuthPath.Login)
   login(@Body() Body: AuthEmailLoginReqDto): Promise<LoginResponseDto> {
     return this.authService.login();
-  }
-
-  @Get(AuthPath.GoogleLogin)
-  @UseGuards(GoogleAuthGuard)
-  loginViaGoogle() {}
-
-  @Get(AuthPath.GoogleCallback)
-  @UseGuards(GoogleAuthGuard)
-  googleAuthCallback() {
-    return 'Hello';
   }
 }

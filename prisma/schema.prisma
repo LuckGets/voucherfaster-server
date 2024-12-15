@@ -177,6 +177,7 @@ model VoucherPromotion {
 model PackageVoucher {
   id                   String                 @id @default(uuid(7)) @db.Uuid
   quotaVoucherId       String                 @map("quota_voucher_id") @db.Uuid
+  name                 String                 @db.VarChar(191)
   voucher              Voucher                @relation(fields: [quotaVoucherId], references: [id])
   packagePrice         Decimal                @map("package_price") @db.Decimal(8, 2)
   quotaAmount          Int                    @map("quota_amount") @db.SmallInt

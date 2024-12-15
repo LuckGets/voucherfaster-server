@@ -32,5 +32,6 @@ export default registerAs(AllConfigTypeEnum.App, () => {
     port: process.env.APP_PORT ? parseInt(process.env.APP_PORT) : 8000,
     apiPrefix: process.env.API_PREFIX || 'api',
     apiVersion: process.env.API_VERSION || 'v1',
+    frontendDomain: process.env.FRONTEND_DOMAIN || 'http://localhost:5173',
   };
 });

@@ -6,6 +6,9 @@ export enum AuthPath {
   Base = '/auth',
   Login = '/login',
   Register = '/register',
-  GoogleLogin = '/google/login',
-  GoogleCallback = '/google/callback',
+}
+
+export enum AuthGooglePath {
+  Login = '/login',
+  Callback = '/callback',
 }

@@ -49,7 +49,7 @@ export class AccountDomain {
     type: () => AccountProviderEnum,
     example: AccountProviderEnum.Google,
   })
-  account_provider: AccountProvider;
+  accountProvider: AccountProvider;
   @ApiProperty()
   createdAt: NullAble<Date>;
   @ApiProperty()

@@ -13,9 +13,16 @@ import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from './config/all-config.type';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import { HTTPMethod } from './utils/types/http.type';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule, {
+    cors: {
+      origin: 'http://localhost:3000',
+      methods: [HTTPMethod.Get, HTTPMethod.Post, HTTPMethod.Patch],
+      credentials: true,
+    },
+  });
   const configService = app.get(ConfigService<AllConfigType>);
 
   // useContainer for class-validator

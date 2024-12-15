@@ -2,6 +2,7 @@ import { registerAs } from '@nestjs/config';
 import validateConfig from '../../../utils/validateConfig';
 import { AllConfigTypeEnum } from '../../../config/all-config.type';
 import { IsString } from 'class-validator';
+import { AuthConfig } from './auth-config.type';
 
 class EnvironmentAuthVarValidator {
   @IsString()
@@ -12,12 +13,8 @@ class EnvironmentAuthVarValidator {
   GOOGLE_CALLBACK_URL: string;
 }
 
-export default registerAs(AllConfigTypeEnum.Auth, () => {
+export default registerAs<AuthConfig>(AllConfigTypeEnum.Auth, () => {
   validateConfig(process.env, EnvironmentAuthVarValidator);
 
-  return {
-    googleClientID: process.env.GOOGLE_CLIENT_ID,
-    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    googleCallbackURL: process.env.GOOGLE_CALLBACK_URL,
-  };
+  return {};
 });
