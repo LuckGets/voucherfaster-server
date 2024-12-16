@@ -1,1 +1,3 @@
-export type JwtPayload = {};
+export type JwtPayload = {
+  accessToken: string;
+};

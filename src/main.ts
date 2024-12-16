@@ -30,9 +30,9 @@ async function bootstrap() {
   // Using global validation pipe
   app.useGlobalPipes(new ValidationPipe(globalPipeValidationOption));
   // Using Global interceptors
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector))),
-    // Using cookie-parser for middleware
-    app.use(cookieParser());
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  // Using cookie-parser for middleware
+  app.use(cookieParser());
   // Set Global prefix
   app.setGlobalPrefix(
     configService.getOrThrow('app.apiPrefix', { infer: true }),

@@ -12,6 +12,9 @@ export abstract class AccountRepository {
     socialId: AccountDomain['socialId'],
     provider: AccountDomain['accountProvider'],
   ): Promise<NullAble<AccountDomain>>;
+  abstract findByPhoneNumber(
+    phone: AccountDomain['phone'],
+  ): Promise<NullAble<AccountDomain>>;
   abstract update(
     id: AccountDomain['id'],
     data: Partial<AccountDomain>,

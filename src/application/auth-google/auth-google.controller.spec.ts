@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthGoogleController } from './auth-google.controller';
-import { AccountService } from '../../resources/account/account.service';
 import { AuthService } from '../auth/auth.service';
 
 describe('AuthGoogleController', () => {
@@ -19,5 +18,6 @@ describe('AuthGoogleController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(authService).toBeDefined();
   });
 });

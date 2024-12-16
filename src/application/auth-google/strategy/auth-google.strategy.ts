@@ -30,7 +30,11 @@ export class GoogleStrategy extends PassportStrategy(
         `${AllConfigTypeEnum.Google}.googleCallbackURL`,
         { infer: true },
       ),
-      scope: ['profile', 'email'],
+      scope: [
+        'profile',
+        'email',
+        'https://www.googleapis.com/auth/user.phonenumbers.read',
+      ],
     });
   }
 
@@ -47,8 +51,8 @@ export class GoogleStrategy extends PassportStrategy(
       email: emails[0].value,
       photo: photos[0].value,
       accountProvider: provider,
+      accessToken,
     };
-    console.log(profile);
     done(null, user);
   }
 }

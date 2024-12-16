@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
 import { Allow } from 'class-validator';
-import { UUID } from 'crypto';
 import {
   AccountProvider,
   AccountProviderEnum,
@@ -9,8 +8,9 @@ import {
   RoleEnum,
 } from '../types/account.type';
 import { NullAble } from '../../../utils/types/NullAble.type';
+import { UUIDTypes } from 'uuid';
 
-type IDType = number | UUID;
+export type IDType = number | UUIDTypes;
 
 export class AccountDomain {
   @ApiProperty()

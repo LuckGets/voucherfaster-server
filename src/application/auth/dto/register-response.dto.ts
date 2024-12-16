@@ -1,13 +1,13 @@
-import { Transform } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
+import { ApiResponse } from 'src/common/api-response';
+import { AuthPath } from 'src/config/api-path';
 
-export class RegisterResponseDto {
-  @IsOptional()
-  @IsString()
-  @Transform((value) => {
-    if (!value) {
-      return 'Account has been created. Registered successful';
-    }
-  })
-  massage: string;
+export class RegisterResponseDto extends ApiResponse<null> {}
+
+export const REGISTER_RESPONSE_MESSAGE = {
+  sucess: 'Registered successfully.',
+  failed: 'Registered unsuccess. Please try again',
+} as const;
+
+export enum RegisterHATEOASLinks {
+  Login = `${AuthPath.Base}/${AuthPath.Login}`,
 }

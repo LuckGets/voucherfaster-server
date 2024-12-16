@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import {
   registerDecorator,
   ValidationOptions,
-  ValidationArguments,
   ValidatorConstraintInterface,
   isEmail,
   isPhoneNumber,
@@ -14,20 +13,17 @@ import {
 export class IsValidIdentifierValidator
   implements ValidatorConstraintInterface
 {
-  validate(
-    value: any,
-    validationArguments?: ValidationArguments,
-  ): Promise<boolean> | boolean {
+  validate(value: any): Promise<boolean> | boolean {
     return isEmail(value) || isPhoneNumber(value, 'TH');
   }
 
-  defaultMessage(validationArguments?: ValidationArguments): string {
+  defaultMessage(): string {
     return 'Identifier must be Email or Phone number';
   }
 }
 
 export function IsValidIdentifier(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'is valid identifier',
       propertyName: propertyName,

@@ -1,22 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { AccountRepository } from '../account.repository';
+import { AccountDomain } from '@resources/account/domain/account.domain';
 import { PrismaService } from '../../config/prisma.service';
-import { AccountDomain } from '../../../../resources/account/domain/account.domain';
-import { CreateAccountDto } from '../../../../resources/account/dto/create-account.dto';
-import { NullAble } from '../../../../utils/types/NullAble.type';
-import { UUID } from 'crypto';
+import { NullAble } from '@utils/types/NullAble.type';
+import { AccountMapper } from './account.mapper';
 
 @Injectable()
-export class AccountRelationalPrismaORMRepository implements AccountRepository {
+export class AccountRelationalPrismaORMRepository {
   constructor(private prismaService: PrismaService) {}
-  async create(
-    data: Omit<AccountDomain, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>,
-  ): Promise<AccountDomain> {}
   async findById(id: AccountDomain['id']): Promise<NullAble<AccountDomain>> {
-    return this.prismaService.account.findUnique({
+    const user = await this.prismaService.account.findUnique({
       where: {
-        id: id as UUID,
+        id: id as string,
       },
     });
+    return AccountMapper.toDomain(user);
+  }
+  async findByEmail(
+    email: AccountDomain['email'],
+  ): Promise<NullAble<AccountDomain>> {
+    const user = await this.prismaService.account.findUnique({
+      where: {
+        email,
+      },
+    });
+    return user ? AccountMapper.toDomain(user) : null;
+  }
+
+  async findByPhoneNumber(
+    phone: AccountDomain['phone'],
+  ): Promise<NullAble<AccountDomain>> {
+    const user = await this.prismaService.account.findUnique({
+      where: {
+        phone,
+      },
+    });
+    return user ? AccountMapper.toDomain(user) : null;
   }
 }

@@ -7,5 +7,6 @@ export interface RequestGoogleUser extends Request {
     email: string;
     photo: string;
     accountProvider: string;
+    accessToken: string;
   };
 }

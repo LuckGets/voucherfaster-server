@@ -1,4 +1,4 @@
-import { IsString, IsStrongPassword, Validate } from 'class-validator';
+import { IsString, IsStrongPassword } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsValidIdentifier } from '../../../utils/validators/IsValidIdentifier';
 

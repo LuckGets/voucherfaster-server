@@ -1,24 +1,29 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AccountService } from '../../resources/account/account.service';
-import { RegisterResponseDto } from './dto/register-response.dto';
-import { plainToClass } from 'class-transformer';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { NullAble } from '../../utils/types/NullAble.type';
 import { AccountDomain } from '../../resources/account/domain/account.domain';
 import { AccountProvider } from '../../resources/account/types/account.type';
+import { AuthEmailRegisterReqDto } from './dto/auth-email-register-req.dto';
+import { ErrorApiResponse } from 'src/common/api-response';
 
 @Injectable()
 export class AuthService {
   constructor(private accountService: AccountService) {}
-  async register(): Promise<RegisterResponseDto> {
-    return plainToClass(RegisterResponseDto, {
-      message: 'Account has been created. Registered successful',
-    });
+  async register(data: AuthEmailRegisterReqDto): Promise<AccountDomain> {
+    const isEmailExist = await this.accountService.findByEmail(data.email);
+    if (isEmailExist) {
+      throw ErrorApiResponse.conflictRequest('This Email already registered');
+    }
+    const isPhoneExist = await this.accountService.findByPhoneNumber(
+      data.phone,
+    );
+    if (isPhoneExist) {
+      throw ErrorApiResponse.conflictRequest(
+        'This Phone number already registered',
+      );
+    }
+    return this.accountService.create(data);
   }
 
   async login(): Promise<LoginResponseDto> {

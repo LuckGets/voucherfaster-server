@@ -16,6 +16,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@resources/*": ["src/resources/*"],
+      "@application/*": ["src/application/*"],
+      "@infrastructure/*": ["src/infrastructure"],
+      "@utils/*": ["src/utils/*"]
+    }
   }
 }

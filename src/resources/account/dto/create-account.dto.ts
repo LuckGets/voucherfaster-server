@@ -4,7 +4,7 @@ export class CreateAccountDto {
   @ApiProperty({ type: String, example: 'johndoe@mail.com' })
   email: string;
   @ApiProperty({ type: String, example: '0812223333' })
-  phone: string;
+  phone?: string;
   @ApiProperty({ type: String, example: 'http://picsum.photos/100/100' })
   photo?: string;
   @ApiProperty({ type: String, example: 'Qwerty' })
