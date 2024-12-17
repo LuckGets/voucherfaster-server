@@ -5,13 +5,14 @@ import { AccountModule } from './resources/account/account.module';
 import appConfig from './config/app.config';
 import { CustomValidatorModule } from './utils/validators/custom-validators.module';
 import { AuthGoogleModule } from './application/auth-google/auth-google.module';
+import clientConfig from './config/client/client.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['./.env.development'],
-      load: [appConfig],
+      load: [appConfig, clientConfig],
     }),
     AuthModule,
     AccountModule,

@@ -1,6 +1,5 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AccountService } from '../../resources/account/account.service';
-import { LoginResponseDto } from './dto/login-response.dto';
 import { NullAble } from '../../utils/types/NullAble.type';
 import { AccountDomain } from '../../resources/account/domain/account.domain';
 import { AccountProvider } from '../../resources/account/types/account.type';
@@ -11,17 +10,18 @@ import { JwtService } from '@nestjs/jwt';
 import { CryptoService } from '@utils/services/crypto.service';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
+import { MailService } from '@application/mail/mail.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private accountService: AccountService,
     private jwtService: JwtService,
-    @Inject(CryptoService)
     private cryptoService: CryptoService,
     private configService: ConfigService<AllConfigType>,
+    private mailService: MailService,
   ) {}
-  public async register(data: AuthEmailRegisterReqDto): Promise<AccountDomain> {
+  public async register(data: AuthEmailRegisterReqDto): Promise<void> {
     const isEmailExist = await this.accountService.findByEmail(data.email);
     if (isEmailExist) {
       throw ErrorApiResponse.conflictRequest('This Email already registered');
@@ -44,11 +44,23 @@ export class AuthService {
       password: hashPassword,
     });
 
-    // This is only to pass eslint
-    return user;
+    const hash = await this.jwtService.signAsync(
+      { userId: user.id },
+      {
+        secret: this.configService.getOrThrow('auth.verifyEmailSecret', {
+          infer: true,
+        }),
+        expiresIn: this.configService.getOrThrow(
+          'auth.verifyEmailExpiredTime',
+          { infer: true },
+        ),
+      },
+    );
+
+    await this.mailService.verifyEmail({ to: data.email, data: { hash } });
   }
 
-  public async login(data: AuthEmailLoginReqDto): Promise<LoginResponseDto> {
+  public async login(data: AuthEmailLoginReqDto): Promise<AccountDomain> {
     let user: NullAble<AccountDomain> = null;
     if (data.identifier.match(new RegExp(/^(\+66|0)[0-9]{9}$/))) {
       user = await this.accountService.findByPhoneNumber(data.identifier);
@@ -60,6 +72,7 @@ export class AuthService {
         'The email requested could not be find on this server',
       );
     }
+    return user;
   }
 
   public async validateSocialLogin(

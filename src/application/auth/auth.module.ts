@@ -12,7 +12,6 @@ import authConfig from './config/auth.config';
   imports: [
     AccountModule,
     JwtModule.register({}),
-    CryptoService,
     MailModule,
     ConfigModule.forFeature(authConfig),
   ],

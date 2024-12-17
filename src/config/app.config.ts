@@ -2,6 +2,7 @@ import { registerAs } from '@nestjs/config';
 import { IsOptional, IsInt, Max, IsString } from 'class-validator';
 import validateConfig from 'src/utils/validateConfig';
 import { AllConfigTypeEnum } from './all-config.type';
+import { AppConfig } from './app-config.type';
 
 enum Environment {
   Development = 'development',
@@ -20,7 +21,7 @@ class EnvironmentVarValidator {
   API_PREFIX: string;
 }
 
-export default registerAs(AllConfigTypeEnum.App, () => {
+export default registerAs<AppConfig>(AllConfigTypeEnum.App, () => {
   validateConfig(process.env, EnvironmentVarValidator);
 
   return {
@@ -32,6 +33,5 @@ export default registerAs(AllConfigTypeEnum.App, () => {
     port: process.env.APP_PORT ? parseInt(process.env.APP_PORT) : 8000,
     apiPrefix: process.env.API_PREFIX || 'api',
     apiVersion: process.env.API_VERSION || 'v1',
-    frontendDomain: process.env.FRONTEND_DOMAIN || 'http://localhost:5173',
   };
 });
