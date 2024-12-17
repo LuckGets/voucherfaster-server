@@ -22,7 +22,7 @@ export class MatcherValidator implements ValidatorConstraintInterface {
 }
 
 export function Match(property: string, validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'Matcher validator',
       propertyName: propertyName,

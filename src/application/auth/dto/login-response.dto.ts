@@ -1,6 +1,9 @@
-import { HATEOSLink } from 'src/common/hateos.type';
+import { CoreApiResponse } from 'src/common/core-api-response';
 
-export class LoginResponseDto {
+export class LoginResponseDto extends CoreApiResponse<{
   accessToken: string;
-  links: HATEOSLink;
-}
+}> {}
+
+export const LoginResponseHATEOASLink = {
+  Me: '/account/me',
+} as const;

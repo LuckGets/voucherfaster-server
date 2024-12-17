@@ -1,7 +1,7 @@
-import { ApiResponse } from 'src/common/api-response';
+import { CoreApiResponse } from 'src/common/core-api-response';
 import { AuthPath } from 'src/config/api-path';
 
-export class RegisterResponseDto extends ApiResponse<null> {}
+export class RegisterResponseDto extends CoreApiResponse<null> {}
 
 export const REGISTER_RESPONSE_MESSAGE = {
   sucess: 'Registered successfully.',
@@ -9,5 +9,5 @@ export const REGISTER_RESPONSE_MESSAGE = {
 } as const;
 
 export enum RegisterHATEOASLinks {
-  Login = `${AuthPath.Base}/${AuthPath.Login}`,
+  Login = `${AuthPath.Base}${AuthPath.Login}`,
 }

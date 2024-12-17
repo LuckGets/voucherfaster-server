@@ -3,10 +3,18 @@ import { AccountDomain } from '@resources/account/domain/account.domain';
 import { PrismaService } from '../../config/prisma.service';
 import { NullAble } from '@utils/types/NullAble.type';
 import { AccountMapper } from './account.mapper';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AccountRelationalPrismaORMRepository {
   constructor(private prismaService: PrismaService) {}
+  async create(data: Prisma.AccountCreateInput): Promise<AccountDomain> {
+    const user = await this.prismaService.account.create({
+      data,
+    });
+    return AccountMapper.toDomain(user);
+  }
+
   async findById(id: AccountDomain['id']): Promise<NullAble<AccountDomain>> {
     const user = await this.prismaService.account.findUnique({
       where: {

@@ -14,7 +14,7 @@ export class IsValidIdentifierValidator
   implements ValidatorConstraintInterface
 {
   validate(value: any): Promise<boolean> | boolean {
-    return isEmail(value) || isPhoneNumber(value, 'TH');
+    return isEmail(value) ? true : isPhoneNumber(value, 'TH');
   }
 
   defaultMessage(): string {

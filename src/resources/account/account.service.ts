@@ -3,14 +3,12 @@ import { AccountRepository } from '../../infrastructure/persistence/account/acco
 import { NullAble } from '../../utils/types/NullAble.type';
 import { AccountDomain } from './domain/account.domain';
 import { AccountProvider } from './types/account.type';
-import * as createAccountDto from './dto/create-account.dto';
+import { CreateAccountDto } from './dto/create-account.dto';
 
 @Injectable()
 export class AccountService {
   constructor(private accountRepository: AccountRepository) {}
-  public create(
-    createAccountDto: createAccountDto.CreateAccountDto,
-  ): Promise<AccountDomain> {
+  public create(createAccountDto: CreateAccountDto): Promise<AccountDomain> {
     return this.accountRepository.create(createAccountDto);
   }
   public findById(id: AccountDomain['id']): Promise<NullAble<AccountDomain>> {

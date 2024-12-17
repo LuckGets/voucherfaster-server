@@ -1,20 +1,24 @@
 import { registerAs } from '@nestjs/config';
 import validateConfig from '../../../utils/validateConfig';
 import { AllConfigTypeEnum } from '../../../config/all-config.type';
-import { IsString } from 'class-validator';
+import { IsNumber, IsString, Max, Min } from 'class-validator';
 import { AuthConfig } from './auth-config.type';
 
 class EnvironmentAuthVarValidator {
   @IsString()
-  GOOGLE_CLIENT_ID: string;
-  @IsString()
-  GOOGLE_CLIENT_SECRET: string;
-  @IsString()
-  GOOGLE_CALLBACK_URL: string;
+  ACCESS_TOKEN_EXPIRES_IN: string;
+
+  @IsNumber()
+  @Min(10)
+  @Max(14)
+  BCRYPT_SALT_ROUND: number;
 }
 
 export default registerAs<AuthConfig>(AllConfigTypeEnum.Auth, () => {
   validateConfig(process.env, EnvironmentAuthVarValidator);
 
-  return {};
+  return {
+    accessTokenExpireTime: process.env.ACCESS_TOKEN_EXPIRES_IN,
+    bcryptSaltRound: Number(process.env.BCRYPT_SALT_ROUND) || 11,
+  };
 });
