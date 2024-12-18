@@ -5,6 +5,7 @@ import { AccountModule } from './resources/account/account.module';
 import appConfig from './config/app.config';
 import { CustomValidatorModule } from './utils/validators/custom-validators.module';
 import { AuthGoogleModule } from './application/auth-google/auth-google.module';
+import { SessionModule } from './resources/session/session.module';
 import clientConfig from './config/client/client.config';
 
 @Module({
@@ -18,6 +19,7 @@ import clientConfig from './config/client/client.config';
     AccountModule,
     CustomValidatorModule,
     AuthGoogleModule,
+    SessionModule,
   ],
 })
 export class AppModule {}

@@ -7,6 +7,9 @@ import { CryptoService } from '@utils/services/crypto.service';
 import { MailModule } from '@application/mail/mail.module';
 import { ConfigModule } from '@nestjs/config';
 import authConfig from './config/auth.config';
+import { UUIDService } from '@utils/services/uuid.service';
+import { SessionModule } from '@resources/session/session.module';
+import { RefreshTokenAuthGuard } from './auth.guard';
 
 @Module({
   imports: [
@@ -14,8 +17,9 @@ import authConfig from './config/auth.config';
     JwtModule.register({}),
     MailModule,
     ConfigModule.forFeature(authConfig),
+    SessionModule,
   ],
-  providers: [AuthService, CryptoService],
+  providers: [AuthService, CryptoService, UUIDService, RefreshTokenAuthGuard],
   controllers: [AuthController],
   exports: [AuthService],
 })

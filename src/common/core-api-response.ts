@@ -3,7 +3,7 @@ import { NullAble } from '../utils/types/NullAble.type';
 import { HATEOSLink } from './hateos.type';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CoreApiResponse<TData> {
+export class CoreApiResponse {
   @ApiProperty({
     type: Number,
     description: 'HTTP status code',
@@ -28,7 +28,7 @@ export class CoreApiResponse<TData> {
     description: 'The actual response data',
     nullable: true,
   })
-  public data: NullAble<TData>;
+  public data: NullAble<unknown>;
   @ApiProperty({
     type: Object,
     description: 'Response message.',
@@ -39,7 +39,7 @@ export class CoreApiResponse<TData> {
     code: number,
     message: string,
     links: HATEOSLink,
-    data?: NullAble<TData>,
+    data?: NullAble<unknown>,
   ) {
     this.HTTPStatusCode = code;
     this.message = message;
@@ -48,22 +48,22 @@ export class CoreApiResponse<TData> {
     this.timestamp = new Date(Date.now()).toLocaleString();
   }
 
-  public static success<TData>(
+  public success(
     message: string,
     links: HATEOSLink,
     statusCode?: number,
-    data?: TData,
-  ): CoreApiResponse<TData> {
+    data?: unknown,
+  ): CoreApiResponse {
     const resultCode = statusCode || HttpStatus.OK;
     const responseMessage = message || 'Success.';
     return new CoreApiResponse(resultCode, responseMessage, links, data);
   }
-  public static error<TData>(
+  public static error(
     message: string,
     links: HATEOSLink,
     statusCode?: number,
-    data?: TData,
-  ): CoreApiResponse<TData> {
+    data?: unknown,
+  ): CoreApiResponse {
     const resultCode = statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
     const responseMessage = message || 'Internal Server Error.';
     return new CoreApiResponse(resultCode, responseMessage, links, data);
@@ -84,9 +84,19 @@ export class ErrorApiResponse {
   }
 
   public static notFoundRequest(message?: string) {
+    const responseMessage =
+      message || 'The requested resource can not be found on this server.';
     return new HttpException(
-      new ErrorApiResponse(message),
+      new ErrorApiResponse(responseMessage),
       HttpStatus.NOT_FOUND,
+    );
+  }
+
+  public static unauthorizedRequest(message?: string) {
+    const responseMessage = message || 'This request is unauthorized.';
+    return new HttpException(
+      new ErrorApiResponse(responseMessage),
+      HttpStatus.UNAUTHORIZED,
     );
   }
 }

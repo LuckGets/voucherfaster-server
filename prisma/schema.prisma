@@ -162,6 +162,7 @@ model VoucherUsageDays {
 
 model VoucherPromotion {
   id                 String               @id @default(uuid(7)) @db.Uuid
+  name               String               @db.VarChar(191)
   promotionPrice     Decimal              @map("promotion_price") @db.Decimal(8, 2)
   voucherId          String               @map("voucher_id") @db.Uuid
   voucher            Voucher              @relation(fields: [voucherId], references: [id])

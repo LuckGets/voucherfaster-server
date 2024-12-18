@@ -6,6 +6,8 @@ export enum AuthPath {
   Base = '/auth',
   Login = '/login',
   Register = '/register',
+  Refresh = '/refresh',
+  Logout = '/logout',
 }
 
 export enum AuthGooglePath {

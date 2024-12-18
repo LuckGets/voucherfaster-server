@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UUIDTypes } from 'uuid';
 
 export class CreateAccountDto {
+  id?: UUIDTypes;
   @ApiProperty({ type: String, example: 'johndoe@mail.com' })
   email: string;
   @ApiProperty({ type: String, example: '0812223333' })
