@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { SessionRepository } from 'src/infrastructure/persistence/session/session.respository';
 import { SessionDomain } from './domain/session.domain';
-import { NullAble } from '@utils/types/NullAble.type';
 import { UUIDService } from '@utils/services/uuid.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CreateSessionDto, UpdateSessionDto } from './dto/session.dto';
+import { NullAble } from '@utils/types/common.type';
 
 @Injectable()
 export class SessionService {
@@ -44,5 +44,8 @@ export class SessionService {
     accountId: SessionDomain['account'],
   ): Promise<NullAble<SessionDomain>> {
     return this.sessionRepository.findByAccountId(accountId);
+  }
+  public deleteById(sessionId: SessionDomain['id']): Promise<void> {
+    return this.sessionRepository.deleteById(sessionId);
   }
 }

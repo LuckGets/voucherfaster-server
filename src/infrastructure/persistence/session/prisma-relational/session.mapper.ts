@@ -9,7 +9,6 @@ export class SessionMapper {
     domain.token = data.token;
     domain.createdAt = data.createdAt;
     domain.updatedAt = data.updatedAt;
-    domain.deletedAt = data.deletedAt;
     return domain;
   }
 }

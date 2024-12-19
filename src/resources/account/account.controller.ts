@@ -1,23 +1,80 @@
-import { Controller, Get, SerializeOptions, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Req,
+  SerializeOptions,
+  UseGuards,
+} from '@nestjs/common';
 import { AccountPath } from '../../config/api-path';
 import { AccountService } from './account.service';
 import { AccessTokenAuthGuard } from 'src/common/guards/access-token.guard';
 import { RoleEnum } from './types/account.type';
 import { GetMeResponseDto } from './dto/get-me-response.dto';
-import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { HttpRequestWithUser } from 'src/common/http.type';
+import {
+  ChangePasswordDto,
+  ChangePasswordResponse,
+} from './dto/change-password.dto';
 
+@ApiTags(AccountPath.Name)
 @Controller({ path: AccountPath.Base, version: '1' })
 export class AccountController {
   constructor(private accountService: AccountService) {}
 
   @ApiOkResponse({
-    type: GetMeResponseDto,
+    type: () => GetMeResponseDto,
   })
-  @ApiBearerAuth()
+  @ApiBearerAuth('Bearer token')
   @SerializeOptions({
     groups: [RoleEnum.Me],
   })
   @UseGuards(AccessTokenAuthGuard)
   @Get('me')
-  me(): Promise<GetMeResponseDto> {}
+  async me(@Req() req: HttpRequestWithUser): Promise<GetMeResponseDto> {
+    const account = await this.accountService.findById(req.user.accountId);
+    return GetMeResponseDto.success(account);
+  }
+
+  @ApiOkResponse({
+    type: () => GetMeResponseDto,
+  })
+  @ApiBearerAuth('Bearer token')
+  @SerializeOptions({
+    groups: [RoleEnum.Me],
+  })
+  @UseGuards(AccessTokenAuthGuard)
+  @Patch(AccountPath.Update)
+  async update() {
+    // @Body() body: string, // @Param(AccountPath.AccountIdParam) accountId: string,
+    return 'Hello';
+  }
+
+  @ApiOkResponse({
+    type: () => ChangePasswordResponse,
+  })
+  @ApiBearerAuth('Bearer token')
+  @SerializeOptions({
+    groups: [RoleEnum.Me],
+  })
+  @UseGuards(AccessTokenAuthGuard)
+  @Patch(AccountPath.ChangePassword)
+  async resetPassword(
+    @Param(AccountPath.AccountIdParam) accountId: string,
+    @Req() req: HttpRequestWithUser,
+    @Body() body: ChangePasswordDto,
+  ) {
+    const account = await this.accountService.changePassword(
+      accountId,
+      req.user,
+      body,
+    );
+    return ChangePasswordResponse.success({
+      id: account.id,
+      verifiedAt: account.verifiedAt,
+    });
+  }
 }

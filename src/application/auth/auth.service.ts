@@ -1,6 +1,5 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AccountService } from '../../resources/account/account.service';
-import { NullAble } from '../../utils/types/NullAble.type';
 import { AccountDomain } from '../../resources/account/domain/account.domain';
 import {
   AccountProvider,
@@ -17,6 +16,14 @@ import { MailService } from '@application/mail/mail.service';
 import { UUIDService } from '@utils/services/uuid.service';
 import { SessionDomain } from '@resources/session/domain/session.domain';
 import { SessionService } from '@resources/session/session.service';
+import { NullAble } from '@utils/types/common.type';
+import {
+  JwtPayloadType,
+  RefreshTokenPayloadType,
+} from './types/jwt-payload.type';
+import { CreateAccountDto } from '@resources/account/dto/create-account.dto';
+import { RequestGoogleUser } from '@application/auth-google/types/req-user.type';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -104,33 +111,75 @@ export class AuthService {
 
   public async validateSocialLogin(
     authProvider: AccountProvider,
-    socialData: { socialId: string; email: string },
-  ) {
-    let user: NullAble<AccountDomain> = null;
-    let userByEmail: NullAble<AccountDomain> = null;
+    socialData: RequestGoogleUser['user'],
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    sessionId: string;
+  }> {
+    let account: NullAble<AccountDomain> = null;
+    let accountByEmail: NullAble<AccountDomain> = null;
 
-    userByEmail = await this.accountService.findByEmail(socialData.email);
+    accountByEmail = await this.accountService.findByEmail(socialData.email);
 
-    user = await this.accountService.findBySocialIdAndProvider(
+    account = await this.accountService.findBySocialIdAndProvider(
       socialData.socialId,
       authProvider,
     );
 
-    if (userByEmail) {
-      if (!user || userByEmail.id != user.id) {
-        throw new HttpException(
-          `This account have been provided identity via ${userByEmail.accountProvider}. Please login via the correct provider}`,
-          HttpStatus.CONFLICT,
+    if (accountByEmail) {
+      if (!account || accountByEmail.id != account.id) {
+        throw ErrorApiResponse.conflictRequest(
+          `This account have been provided identity via ${accountByEmail.accountProvider}. Please login via the correct provider}`,
+        );
+      }
+      if (accountByEmail.accountProvider !== authProvider) {
+        throw ErrorApiResponse.conflictRequest(
+          `This account have been provided identity via ${accountByEmail.accountProvider}. Please login via the correct provider}`,
         );
       }
     }
 
-    if (!user) {
-      return null;
+    if (!account) {
+      /**
+       * Uncomment in case I can resolve the response from people API for phoneNumbers
+       */
+      // const googleUserPhoneResp = await fetch(
+      //   `https://people.googleapis.com/v1/people/me?personFields=phoneNumbers`,
+      //   {
+      //     method: 'GET',
+      //     headers: { Authorization: `Bearer ${req.user.accessToken}` },
+      //   },
+      // )
+      //   .then((res) => res.json())
+      //   .catch((err) => console.log('error', err));
+      // console.log(googleUserPhoneResp);
+      const createAccountObject: CreateAccountDto = {
+        email: socialData.email,
+        fullname: socialData.fullname,
+        photo: socialData.photo,
+        account_provider: AccountProviderEnum.Google,
+        socialId: socialData.socialId,
+      };
+      account = await this.accountService.create(
+        plainToInstance(CreateAccountDto, createAccountObject),
+      );
     }
+    return this.getTokenAndUpsertSession(account);
   }
 
-  public async logout() {}
+  public async logout({
+    refreshToken,
+    sessionId,
+  }: {
+    refreshToken: string;
+    sessionId: string;
+  }): Promise<void> {
+    if (refreshToken) {
+      return this.sessionService.deleteById(sessionId);
+    }
+    return;
+  }
 
   public async refreshToken(
     refreshToken: string,
@@ -140,11 +189,12 @@ export class AuthService {
     newRefreshToken: string;
     sessionId: string;
   }> {
-    const exisitingSession = await this.sessionService.findById(sessionId);
+    const exisitingSession: NullAble<SessionDomain> =
+      await this.sessionService.findById(sessionId);
     if (exisitingSession.token !== refreshToken) {
       throw ErrorApiResponse.unauthorizedRequest();
     }
-    const refreshTokenPayload: { sub: string } = this.jwtService.verify(
+    const refreshTokenPayload: RefreshTokenPayloadType = this.jwtService.verify(
       refreshToken,
       {
         secret: this.configService.get('auth.refreshTokenSecret', {
@@ -152,16 +202,28 @@ export class AuthService {
         }),
       },
     );
-    if (exisitingSession.account != refreshTokenPayload.sub) {
+    if (exisitingSession.account != refreshTokenPayload.sub.accountId) {
       throw ErrorApiResponse.unauthorizedRequest();
     }
+    const account: AccountDomain = await this.accountService.findById(
+      exisitingSession.account,
+    );
     const [newAccessToken, newRefreshToken] = await Promise.all([
-      this.generateToken(
-        { accountId: exisitingSession.id as string },
+      this.generateToken<JwtPayloadType>(
+        {
+          sub: {
+            accountId: account.id as string,
+            role: account.role,
+          },
+        },
         'access',
       ),
-      this.generateToken(
-        { accountId: exisitingSession.id as string },
+      this.generateToken<RefreshTokenPayloadType>(
+        {
+          sub: {
+            accountId: exisitingSession.account as string,
+          },
+        },
         'access',
       ),
     ]);
@@ -179,10 +241,9 @@ export class AuthService {
     };
   }
 
-  public async generateToken(
-    payload: Record<string, Record<string, string> | string>,
-    tokenType: 'access' | 'refresh',
-  ): Promise<string> {
+  public async generateToken<
+    T extends JwtPayloadType | RefreshTokenPayloadType,
+  >(payload: T, tokenType: 'access' | 'refresh'): Promise<string> {
     const jwtSecret = this.configService.get(
       tokenType === 'access'
         ? 'auth.accessTokenSecret'
@@ -204,5 +265,46 @@ export class AuthService {
       secret: jwtSecret,
       expiresIn: expiredTime,
     });
+  }
+  public async getTokenAndUpsertSession(account: AccountDomain): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    sessionId: string;
+  }> {
+    let session: NullAble<SessionDomain> =
+      await this.sessionService.findbyAccountId(account.id);
+    const [accessToken, refreshToken] = await Promise.all([
+      this.generateToken<JwtPayloadType>(
+        {
+          sub: {
+            accountId: account.id,
+            role: account.role,
+          },
+        },
+        'access',
+      ),
+      this.generateToken<RefreshTokenPayloadType>(
+        {
+          sub: {
+            accountId: String(account.id),
+          },
+        },
+        'refresh',
+      ),
+    ]);
+
+    if (!session) {
+      session = await this.sessionService.create({
+        account: account.id,
+        token: refreshToken,
+        id: this.uuidService.make(),
+      });
+    } else {
+      session = await this.sessionService.update(session.id, {
+        token: refreshToken,
+      });
+    }
+
+    return { accessToken, refreshToken, sessionId: String(session.id) };
   }
 }

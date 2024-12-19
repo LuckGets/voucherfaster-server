@@ -4,7 +4,6 @@ import { CookieOptions } from 'express';
 export const cookieOption: CookieOptions = {
   httpOnly: true,
   sameSite: 'none',
-  domain: `${process.env.SERVER_DOMAIN}:${process.env.APP_PORT}`,
 };
 
 export const Cookies = createParamDecorator(

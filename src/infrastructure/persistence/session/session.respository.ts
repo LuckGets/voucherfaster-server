@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SessionDomain } from '@resources/session/domain/session.domain';
-import { NullAble } from '@utils/types/NullAble.type';
+import { NullAble } from '@utils/types/common.type';
 
 @Injectable()
 export abstract class SessionRepository {
@@ -15,4 +15,5 @@ export abstract class SessionRepository {
   abstract findByAccountId(
     accountId: SessionDomain['account'],
   ): Promise<NullAble<SessionDomain>>;
+  abstract deleteById(sessionId: SessionDomain['id']): Promise<void>;
 }

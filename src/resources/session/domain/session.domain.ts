@@ -5,5 +5,4 @@ export class SessionDomain {
   account: AccountDomain['id'];
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date;
 }

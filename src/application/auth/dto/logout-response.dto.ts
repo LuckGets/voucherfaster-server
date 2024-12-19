@@ -20,7 +20,7 @@ export class LogoutResponseDto extends CoreApiResponse {
   })
   public links: HATEOSLink;
   @ApiProperty({
-    type: null,
+    type: () => Object,
   })
   public data: null;
 

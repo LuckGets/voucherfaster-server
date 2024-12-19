@@ -1,6 +1,7 @@
-import { IsString, Matches, MinLength } from 'class-validator';
+import { Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsValidIdentifier } from '../../../utils/validators/IsValidIdentifier';
+import { IsPasswordValid } from '@utils/validators/PasswordFormat';
 
 export class AuthEmailLoginReqDto {
   @ApiProperty({ type: String, examples: ['johndoe@mail.com', '0112223333'] })
@@ -8,8 +9,7 @@ export class AuthEmailLoginReqDto {
   identifier: string;
 
   @ApiProperty({ type: String, example: 'johndoe@mail.com' })
-  @MinLength(6)
-  @Matches(/(?=.*[A-Z])(?=.*[a-z])/)
-  @IsString()
+  @Length(6, 20)
+  @IsPasswordValid()
   password: string;
 }

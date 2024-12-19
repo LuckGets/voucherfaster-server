@@ -7,13 +7,12 @@ import {
   Role,
   RoleEnum,
 } from '../types/account.type';
-import { NullAble } from '../../../utils/types/NullAble.type';
-import { UUIDTypes } from 'uuid';
+import { NullAble } from '@utils/types/common.type';
 
-export type IDType = number | UUIDTypes;
+export type IDType = string;
 
 export class AccountDomain {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id: IDType;
 
   @ApiProperty({ type: String, example: 'johndoe@mail.com' })
@@ -43,6 +42,7 @@ export class AccountDomain {
 
   @ApiProperty({ type: String, example: 'sfq131200a9123sds' })
   @Allow()
+  @Expose({ groups: [RoleEnum.Admin] })
   socialId?: NullAble<string>;
 
   @ApiProperty({
@@ -59,5 +59,7 @@ export class AccountDomain {
   @ApiProperty()
   @Expose({ groups: [RoleEnum.Me, RoleEnum.Admin] })
   deletedAt?: NullAble<Date>;
+  @ApiProperty()
+  @Expose({ groups: [RoleEnum.Admin] })
   verifiedAt: NullAble<Date>;
 }

@@ -13,7 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from './config/all-config.type';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
-import { HTTPMethod } from './utils/types/http.type';
+import { HTTPMethod } from './common/http.type';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

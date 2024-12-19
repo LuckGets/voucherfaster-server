@@ -16,10 +16,13 @@ export class RegisterResponseDto extends CoreApiResponse {
   })
   public message: string;
   @ApiProperty({
-    type: Object,
+    type: () => Object,
     example: '{"login": "/auth/login"}',
   })
   public links: HATEOSLink;
+  @ApiProperty({
+    type: () => Object,
+  })
   public data: null;
   public static success(
     message: string,

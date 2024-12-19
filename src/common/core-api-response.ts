@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { NullAble } from '../utils/types/NullAble.type';
 import { HATEOSLink } from './hateos.type';
 import { ApiProperty } from '@nestjs/swagger';
+import { NullAble } from '@utils/types/common.type';
 
 export class CoreApiResponse {
   @ApiProperty({

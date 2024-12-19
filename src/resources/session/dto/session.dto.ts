@@ -8,5 +8,4 @@ export class CreateSessionDto {
 }
 export class UpdateSessionDto {
   token: string;
-  deletedAt?: Date;
 }

@@ -17,10 +17,7 @@ import {
   ApiConflictResponse,
   ApiCookieAuth,
 } from '@nestjs/swagger';
-import {
-  LoginResponseDto,
-  LoginResponseHATEOASLink,
-} from './dto/login-response.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
 import { AuthEmailRegisterReqDto } from './dto/auth-email-register-req.dto';
 import { AuthEmailLoginReqDto } from './dto/auth-email-login-req.dto';
 import {
@@ -28,11 +25,8 @@ import {
   RegisterHATEOASLinks,
   RegisterResponseDto,
 } from './dto/register-response.dto';
-import { SessionService } from '@resources/session/session.service';
-import { SessionDomain } from '@resources/session/domain/session.domain';
-import { NullAble } from '@utils/types/NullAble.type';
 import { Response } from 'express';
-import { cookieOption, Cookies, CookiesKey } from 'src/common/cookie';
+import { Cookies, CookiesKey, cookieOption } from 'src/common/cookie';
 import { RefreshTokenAuthGuard } from './auth.guard';
 import {
   refreshReponseHATEOASLink,
@@ -43,10 +37,7 @@ import { LogoutResponseDto } from './dto/logout-response.dto';
 @ApiTags(AuthPath.Name)
 @Controller({ path: AuthPath.Base, version: '1' })
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private sessionService: SessionService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   @ApiCreatedResponse({
     type: () => RegisterResponseDto,
@@ -68,7 +59,7 @@ export class AuthController {
   }
 
   @ApiOkResponse({
-    type: LoginResponseDto,
+    type: () => LoginResponseDto,
   })
   @HttpCode(HttpStatus.OK)
   @Post(AuthPath.Login)
@@ -79,44 +70,16 @@ export class AuthController {
     // validate the account via local login
     const account = await this.authService.validateLogin(body);
     // finding the existing account session
-    let session: NullAble<SessionDomain> =
-      await this.sessionService.findbyAccountId(account.id);
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.authService.generateToken(
-        {
-          sub: {
-            accountId: account.id as string,
-            role: account.role,
-          },
-        },
-        'access',
-      ),
-      this.authService.generateToken({ sub: account.id as string }, 'refresh'),
-    ]);
-
-    // If account does not have session before
-    if (!session) {
-      // Creating new session for this account
-      session = await this.sessionService.create({
-        account: account.id,
-        token: refreshToken,
-      });
-    }
-
-    res.cookie('sessionId', session.id, cookieOption);
-    res.cookie('refreshToken', session.token, cookieOption);
-    return LoginResponseDto.success(
-      'Login Successfully.',
-      LoginResponseHATEOASLink,
-      HttpStatus.OK,
-      { accessToken },
-    );
+    const { accessToken, refreshToken, sessionId } =
+      await this.authService.getTokenAndUpsertSession(account);
+    res.cookie('sessionId', sessionId, cookieOption);
+    res.cookie('refreshToken', refreshToken, cookieOption);
+    return LoginResponseDto.success({ accessToken });
   }
 
   @ApiCookieAuth('Refresh')
   @ApiOkResponse({
-    type: RefreshResponseDto,
+    type: () => RefreshResponseDto,
   })
   @UseGuards(RefreshTokenAuthGuard)
   @Get(AuthPath.Refresh)
@@ -125,8 +88,10 @@ export class AuthController {
     @Cookies(CookiesKey.sessionId) session: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<RefreshResponseDto> {
+    // Get all the token and create session
     const { newAccessToken, newRefreshToken, sessionId } =
       await this.authService.refreshToken(refreshToken, session);
+    // Attach the cookie in response
     res.cookie(CookiesKey.sessionId, sessionId, cookieOption);
     res.cookie(CookiesKey.sessionId, newRefreshToken, cookieOption);
     return RefreshResponseDto.success(refreshReponseHATEOASLink, {
@@ -134,12 +99,17 @@ export class AuthController {
     });
   }
 
-  @ApiOkResponse()
+  @ApiCookieAuth('Refresh')
+  @ApiOkResponse({ type: () => LogoutResponseDto })
   @Get(AuthPath.Logout)
   async logout(
+    @Cookies(CookiesKey.refreshToken) refreshToken: string,
+    @Cookies(CookiesKey.sessionId) sessionId: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LogoutResponseDto> {
-    // Should clear session or not?
+    // Delete the session for logout
+    await this.authService.logout({ refreshToken, sessionId });
+    // Clearing the cookies from the response
     res.clearCookie(CookiesKey.refreshToken);
     res.clearCookie(CookiesKey.sessionId);
     return LogoutResponseDto.success();

@@ -17,25 +17,31 @@ export class LoginResponseDto extends CoreApiResponse {
   })
   public message: string;
   @ApiProperty({
-    type: Object,
+    type: () => Object,
     example: '{"me": "/account/me"}',
   })
   public links: HATEOSLink;
   @ApiProperty({
-    type: Object,
+    type: () => Object,
     example:
       '{"accessToken": "$2a$10$arotB0E5ZC2Y2Ly6j.x1Pedfu7/UldzaQAFoxLgHJ6u8reFO1sdE"}',
   })
   public data: loginResponseDataType;
   public static success(
-    message: string,
-    links: HATEOSLink,
+    data: loginResponseDataType,
+    message?: string,
+    links?: HATEOSLink,
     statusCode?: number,
-    data?: loginResponseDataType,
   ): LoginResponseDto {
     const responseMessage = message ?? 'Login Successfully';
-    const responseCode = statusCode ?? HttpStatus.ACCEPTED;
-    return new LoginResponseDto(responseCode, responseMessage, links, data);
+    const responseCode = statusCode ?? HttpStatus.OK;
+    const responseLinks = links ?? LoginResponseHATEOASLink;
+    return new LoginResponseDto(
+      responseCode,
+      responseMessage,
+      responseLinks,
+      data,
+    );
   }
 }
 

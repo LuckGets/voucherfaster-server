@@ -7,6 +7,7 @@ import { CustomValidatorModule } from './utils/validators/custom-validators.modu
 import { AuthGoogleModule } from './application/auth-google/auth-google.module';
 import { SessionModule } from './resources/session/session.module';
 import clientConfig from './config/client/client.config';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import clientConfig from './config/client/client.config';
       envFilePath: ['./.env.development'],
       load: [appConfig, clientConfig],
     }),
+    JwtModule.register({ global: true }),
     AuthModule,
     AccountModule,
     CustomValidatorModule,

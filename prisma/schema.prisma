@@ -55,9 +55,8 @@ model Session {
   accountId String  @unique @map("account_id") @db.Uuid
   account   Account @relation(fields: [accountId], references: [id])
 
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
 
   @@map("session")
 }
@@ -166,7 +165,10 @@ model VoucherPromotion {
   promotionPrice     Decimal              @map("promotion_price") @db.Decimal(8, 2)
   voucherId          String               @map("voucher_id") @db.Uuid
   voucher            Voucher              @relation(fields: [voucherId], references: [id])
-  startedAt          DateTime             @map("started_at") @db.Timestamptz(3)
+  sellStartedAt      DateTime             @map("sell_started_at") @db.Timestamptz(3)
+  sellExpiredAt      DateTime             @map("sell_expired_at") @db.Timestamptz(3)
+  usableAt           DateTime             @map("usable_started_at") @db.Timestamptz(3)
+  usableExpiredAt    DateTime             @map("usable_expired_at") @db.Timestamptz(3)
   expiredAt          DateTime             @map("expired_at") @db.Timestamptz(3)
   createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime             @updatedAt() @map("updated_at") @db.Timestamptz(3)

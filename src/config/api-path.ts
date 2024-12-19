@@ -1,8 +1,13 @@
 export enum AccountPath {
+  Name = 'account',
   Base = '/account',
+  Update = '/:accountId',
+  ChangePassword = ':accountId/password',
+  Reverify = '/:accountId/reverify',
+  AccountIdParam = 'accountId',
 }
 export enum AuthPath {
-  Name = 'Auth',
+  Name = 'auth',
   Base = '/auth',
   Login = '/login',
   Register = '/register',

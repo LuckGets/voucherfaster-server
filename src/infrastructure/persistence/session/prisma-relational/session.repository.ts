@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { SessionRepository } from '../session.respository';
 import { SessionDomain } from '@resources/session/domain/session.domain';
-import { NullAble } from '@utils/types/NullAble.type';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
 import { SessionMapper } from './session.mapper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { NullAble } from '@utils/types/common.type';
 
 @Injectable()
 export class SessionRelationalPrismaORMRepository implements SessionRepository {
@@ -35,7 +35,7 @@ export class SessionRelationalPrismaORMRepository implements SessionRepository {
   async findById(id: SessionDomain['id']): Promise<NullAble<SessionDomain>> {
     const session = await this.prismaService.session.findUnique({
       where: {
-        id: id as string,
+        id: String(id),
       },
     });
     return session ? SessionMapper.toDomain(session) : null;
@@ -60,5 +60,13 @@ export class SessionRelationalPrismaORMRepository implements SessionRepository {
         },
       }),
     );
+  }
+  async deleteById(sessionId: SessionDomain['id']): Promise<void> {
+    await this.prismaService.session.delete({
+      where: {
+        id: String(sessionId),
+      },
+    });
+    return;
   }
 }

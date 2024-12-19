@@ -1,6 +1,6 @@
+import { NullAble } from '@utils/types/common.type';
 import { AccountDomain } from '../../../resources/account/domain/account.domain';
 import { CreateAccountDto } from '../../../resources/account/dto/create-account.dto';
-import { NullAble } from '../../../utils/types/NullAble.type';
 
 export abstract class AccountRepository {
   abstract create(data: CreateAccountDto): Promise<AccountDomain>;

@@ -3,11 +3,11 @@ import {
   IsNotEmpty,
   IsPhoneNumber,
   IsString,
-  Matches,
-  MinLength,
+  Length,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Match } from '../../../utils/validators/Match';
+import { IsPasswordValid } from '@utils/validators/PasswordFormat';
 
 export class AuthEmailRegisterReqDto {
   @ApiProperty({
@@ -36,16 +36,13 @@ export class AuthEmailRegisterReqDto {
     type: String,
     example: 'Qwerty',
   })
-  @IsString()
-  @MinLength(6)
-  @Matches(/(?=.*[A-Z])(?=.*[a-z])/)
+  @Length(6, 20)
+  @IsPasswordValid()
   password: string;
   @ApiProperty({
     type: String,
     example: 'Qwerty',
   })
-  @IsNotEmpty()
-  @IsString()
   @Match('password')
   confirmPassword: string;
 }
