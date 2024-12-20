@@ -3,9 +3,9 @@ import { UndefinAble } from '@utils/types/common.type';
 import { Request } from 'express';
 import { ErrorApiResponse } from '../core-api-response';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayloadType } from '@application/auth/types/jwt-payload.type';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
+import { JwtPayloadType } from '../types/token-payload.type';
 
 @Injectable()
 export class AccessTokenAuthGuard implements CanActivate {
@@ -18,18 +18,18 @@ export class AccessTokenAuthGuard implements CanActivate {
     const token = this.extractJwtFromHeader(request);
     if (!token) throw ErrorApiResponse.unauthorizedRequest();
     try {
-      const { sub }: JwtPayloadType = await this.jwtService.verifyAsync(token, {
+      const payload: JwtPayloadType = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get('auth.accessTokenSecret', {
           infer: true,
         }),
       });
       const { accountId } = request.params;
-      if (accountId && accountId !== sub.accountId) {
+      if (accountId && accountId !== payload.sub) {
         throw ErrorApiResponse.unauthorizedRequest(
           'The URL path does not match with identifier',
         );
       }
-      request['user'] = sub;
+      request['user'] = { accountId: payload.sub, role: payload.role };
     } catch (err) {
       throw ErrorApiResponse.unauthorizedRequest(err.message);
     }

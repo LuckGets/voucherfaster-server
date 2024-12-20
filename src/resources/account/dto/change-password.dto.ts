@@ -34,6 +34,11 @@ export class ChangePasswordDto {
   confirmNewPassword: string;
 }
 
+export class ConfirmChangePasswordDto {
+  @Length(10, 20)
+  token: string;
+}
+
 export class ChangePasswordResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
@@ -62,8 +67,9 @@ export class ChangePasswordResponse extends CoreApiResponse {
     links?: HATEOSLink,
     statusCode?: number,
   ): ChangePasswordResponse {
-    const responseMessage = message ?? 'Login Successfully';
-    const responseCode = statusCode ?? HttpStatus.ACCEPTED;
+    const responseMessage =
+      message ?? 'Request for changing the password successful.';
+    const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink =
       links ??
       GenerateAccountResponseHATEOASLink(data.id as string, !!data.verifiedAt);

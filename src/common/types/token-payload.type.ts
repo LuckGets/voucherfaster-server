@@ -1,18 +1,13 @@
 export type JwtPayloadType = {
-  sub: {
-    accountId: string;
-    role: string;
-  };
+  sub: string;
+  role: string;
 };
 
 export type RefreshTokenPayloadType = {
-  sub: {
-    accountId: string;
-  };
+  sub: string;
 };
 
 export type VerifyTokenPayloadType = {
-  sub: {
-    accountId: string;
-  };
+  sub: string;
+  newPassword?: string;
 };

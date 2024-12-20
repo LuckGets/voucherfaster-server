@@ -17,13 +17,23 @@ import { VerifyTokenPayloadType } from 'src/common/types/token-payload.type';
 
 @Injectable()
 export class AccountService {
+  private readonly verifyEmailSecret: string;
+  private readonly changePasswordSecret: string;
   constructor(
     private accountRepository: AccountRepository,
     private cryptoService: CryptoService,
     private configService: ConfigService<AllConfigType>,
     private mailService: MailService,
     private jwtService: JwtService,
-  ) {}
+  ) {
+    this.changePasswordSecret = configService.get(
+      'account.changePasswordSecret',
+      { infer: true },
+    );
+    this.verifyEmailSecret = configService.get('auth.verifyEmailSecret', {
+      infer: true,
+    });
+  }
   public create(createAccountDto: CreateAccountDto): Promise<AccountDomain> {
     return this.accountRepository.create(createAccountDto);
   }
@@ -58,7 +68,7 @@ export class AccountService {
     accountId: AccountDomain['id'],
     data: UpdateAccountDto,
   ): Promise<NullAble<AccountDomain>> {
-    if (data.password) {
+    if (data.email) {
       data.verifiedAt = null;
     }
     const account = await this.accountRepository.findById(accountId);
@@ -68,7 +78,21 @@ export class AccountService {
       );
     }
 
-    return this.accountRepository.update(accountId, data);
+    const updatedAccount = await this.accountRepository.update(accountId, data);
+    if (updatedAccount.email !== account.email) {
+      const payload: VerifyTokenPayloadType = { sub: updatedAccount.id };
+      const token = await this.jwtService.signAsync(payload, {
+        secret: this.verifyEmailSecret,
+        expiresIn: this.configService.get('auth.verifyEmailExpiredTime', {
+          infer: true,
+        }),
+      });
+      await this.mailService.verifyEmail({
+        to: updatedAccount.email,
+        data: { token },
+      });
+    }
+    return updatedAccount;
   }
 
   public async changePassword(
@@ -99,15 +123,12 @@ export class AccountService {
 
     // setting the payload before sending via email
     const tokenPayload: VerifyTokenPayloadType = {
-      sub: {
-        accountId: account.id,
-      },
+      sub: account.id,
+      newPassword: data.newPassword,
     };
     // sign the token the
     const token = await this.jwtService.signAsync(tokenPayload, {
-      secret: this.configService.get('account.changePasswordSecret', {
-        infer: true,
-      }),
+      secret: this.changePasswordSecret,
       expiresIn: this.configService.get('account.changePasswordExpiredTime', {
         infer: true,
       }),
@@ -121,15 +142,12 @@ export class AccountService {
     // Returning the account for sending link
     return account;
   }
-  public async confirmChangePassword(
-    accountId: AccountDomain['id'],
-    data: ChangePasswordDto,
-  ) {
-    const newPassword = await this.cryptoService.hash(
-      data.newPassword,
-      this.configService.get('auth.bcryptSaltRound', { infer: true }),
-    );
-    return this.update(accountId, {
+  public async confirmChangePassword(token: string): Promise<AccountDomain> {
+    const { sub, newPassword } =
+      await this.jwtService.verifyAsync<VerifyTokenPayloadType>(token, {
+        secret: this.changePasswordSecret,
+      });
+    return this.update(sub, {
       password: newPassword,
     });
   }

@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { Role } from '@resources/account/types/account.type';
 
 export enum HTTPMethod {
   Get = 'GET',
@@ -11,6 +12,6 @@ export enum HTTPMethod {
 export interface HttpRequestWithUser extends Request {
   user: {
     accountId: string;
-    role: string;
+    role: Role;
   };
 }

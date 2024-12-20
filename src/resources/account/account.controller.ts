@@ -17,6 +17,7 @@ import { HttpRequestWithUser } from 'src/common/http.type';
 import {
   ChangePasswordDto,
   ChangePasswordResponse,
+  ConfirmChangePasswordDto,
 } from './dto/change-password.dto';
 
 @ApiTags(AccountPath.Name)
@@ -61,7 +62,7 @@ export class AccountController {
   })
   @UseGuards(AccessTokenAuthGuard)
   @Patch(AccountPath.ChangePassword)
-  async resetPassword(
+  async changePassword(
     @Req() req: HttpRequestWithUser,
     @Body() body: ChangePasswordDto,
   ) {
@@ -70,5 +71,27 @@ export class AccountController {
       id: account.id,
       verifiedAt: account.verifiedAt,
     });
+  }
+
+  @ApiOkResponse({
+    type: () => ChangePasswordResponse,
+  })
+  @ApiBearerAuth('Bearer token')
+  @SerializeOptions({
+    groups: [RoleEnum.Me],
+  })
+  @UseGuards(AccessTokenAuthGuard)
+  @Patch(AccountPath.ConfirmChangePassword)
+  async confirmChangePassword(
+    @Body() body: ConfirmChangePasswordDto,
+  ): Promise<ChangePasswordResponse> {
+    const account = await this.accountService.confirmChangePassword(body.token);
+    return ChangePasswordResponse.success(
+      {
+        id: account.id,
+        verifiedAt: account.verifiedAt,
+      },
+      `Changed password successfully. Please Login with the newly changed password.`,
+    );
   }
 }

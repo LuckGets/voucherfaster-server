@@ -23,10 +23,14 @@ import { plainToInstance } from 'class-transformer';
 import {
   JwtPayloadType,
   RefreshTokenPayloadType,
+  VerifyTokenPayloadType,
 } from 'src/common/types/token-payload.type';
 
 @Injectable()
 export class AuthService {
+  private readonly verifyEmailSecret: string;
+  private readonly accessTokenSecret: string;
+  private readonly refreshTokenSecret: string;
   constructor(
     private accountService: AccountService,
     private jwtService: JwtService,
@@ -35,7 +39,17 @@ export class AuthService {
     private mailService: MailService,
     private uuidService: UUIDService,
     private sessionService: SessionService,
-  ) {}
+  ) {
+    this.verifyEmailSecret = configService.get('auth.verifyEmailSecret', {
+      infer: true,
+    });
+    this.accessTokenSecret = configService.get('auth.accessTokenSecret', {
+      infer: true,
+    });
+    this.refreshTokenSecret = configService.get('auth.refreshTokenSecret', {
+      infer: true,
+    });
+  }
   public async register(data: AuthEmailRegisterReqDto): Promise<void> {
     const isEmailExist = await this.accountService.findByEmail(data.email);
     if (isEmailExist) {
@@ -63,9 +77,7 @@ export class AuthService {
     const token = await this.jwtService.signAsync(
       { userId: user.id },
       {
-        secret: this.configService.getOrThrow('auth.verifyEmailSecret', {
-          infer: true,
-        }),
+        secret: this.verifyEmailSecret,
         expiresIn: this.configService.getOrThrow(
           'auth.verifyEmailExpiredTime',
           { infer: true },
@@ -164,6 +176,14 @@ export class AuthService {
       account = await this.accountService.create(
         plainToInstance(CreateAccountDto, createAccountObject),
       );
+      const payload: VerifyTokenPayloadType = { sub: account.id };
+      const token: string = await this.jwtService.signAsync(payload, {
+        secret: this.verifyEmailSecret,
+      });
+      await this.mailService.verifyEmail({
+        to: account.email,
+        data: { token },
+      });
     }
     return this.getTokenAndUpsertSession(account);
   }
@@ -197,12 +217,10 @@ export class AuthService {
     const refreshTokenPayload: RefreshTokenPayloadType = this.jwtService.verify(
       refreshToken,
       {
-        secret: this.configService.get('auth.refreshTokenSecret', {
-          infer: true,
-        }),
+        secret: this.refreshTokenSecret,
       },
     );
-    if (exisitingSession.account != refreshTokenPayload.sub.accountId) {
+    if (exisitingSession.account != refreshTokenPayload.sub) {
       throw ErrorApiResponse.unauthorizedRequest();
     }
     const account: AccountDomain = await this.accountService.findById(
@@ -211,18 +229,14 @@ export class AuthService {
     const [newAccessToken, newRefreshToken] = await Promise.all([
       this.generateToken<JwtPayloadType>(
         {
-          sub: {
-            accountId: account.id as string,
-            role: account.role,
-          },
+          sub: account.id,
+          role: account.role,
         },
         'access',
       ),
       this.generateToken<RefreshTokenPayloadType>(
         {
-          sub: {
-            accountId: exisitingSession.account as string,
-          },
+          sub: exisitingSession.account as string,
         },
         'access',
       ),
@@ -244,14 +258,8 @@ export class AuthService {
   public async generateToken<
     T extends JwtPayloadType | RefreshTokenPayloadType,
   >(payload: T, tokenType: 'access' | 'refresh'): Promise<string> {
-    const jwtSecret = this.configService.get(
-      tokenType === 'access'
-        ? 'auth.accessTokenSecret'
-        : 'auth.refreshTokenSecret',
-      {
-        infer: true,
-      },
-    );
+    const jwtSecret =
+      tokenType === 'access' ? this.accessTokenSecret : this.refreshTokenSecret;
     const expiredTime = this.configService.get(
       tokenType === 'access'
         ? 'auth.accessTokenExpireTime'
@@ -276,18 +284,14 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.generateToken<JwtPayloadType>(
         {
-          sub: {
-            accountId: account.id,
-            role: account.role,
-          },
+          sub: account.id,
+          role: account.role,
         },
         'access',
       ),
       this.generateToken<RefreshTokenPayloadType>(
         {
-          sub: {
-            accountId: String(account.id),
-          },
+          sub: account.id,
         },
         'refresh',
       ),
