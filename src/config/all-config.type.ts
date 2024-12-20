@@ -3,6 +3,7 @@ import { AuthGoogleConfig } from '../application/auth-google/config/auth-google-
 import { AuthConfig } from '../application/auth/config/auth-config.type';
 import { AppConfig } from './app-config.type';
 import { ClientConfig } from './client/client-config.type';
+import { AccountConfig } from '@resources/account/config/account-config.type';
 
 export enum AllConfigTypeEnum {
   App = 'app',
@@ -10,6 +11,7 @@ export enum AllConfigTypeEnum {
   Auth = 'auth',
   Google = 'google',
   Mail = 'mail',
+  Account = 'account',
 }
 
 export type AllConfigType = {
@@ -18,4 +20,5 @@ export type AllConfigType = {
   google: AuthGoogleConfig;
   mail: MailConfig;
   client: ClientConfig;
+  account: AccountConfig;
 };

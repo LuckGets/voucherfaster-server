@@ -6,5 +6,6 @@ export default registerAs<ClientConfig>(AllConfigTypeEnum.Client, () => {
   return {
     domain: process.env.CLIENT_DOMAIN || 'http://localhost:5173',
     verifyEmailPath: '/confirm-email',
+    changePasswordPath: '/change-password',
   };
 });

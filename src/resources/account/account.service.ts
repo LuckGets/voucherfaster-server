@@ -11,6 +11,9 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { MailService } from '@application/mail/mail.service';
+import { JwtService } from '@nestjs/jwt';
+import { VerifyTokenPayloadType } from 'src/common/types/token-payload.type';
 
 @Injectable()
 export class AccountService {
@@ -18,6 +21,8 @@ export class AccountService {
     private accountRepository: AccountRepository,
     private cryptoService: CryptoService,
     private configService: ConfigService<AllConfigType>,
+    private mailService: MailService,
+    private jwtService: JwtService,
   ) {}
   public create(createAccountDto: CreateAccountDto): Promise<AccountDomain> {
     return this.accountRepository.create(createAccountDto);
@@ -67,21 +72,21 @@ export class AccountService {
   }
 
   public async changePassword(
-    accountId: AccountDomain['id'],
     reqUser: HttpRequestWithUser['user'],
     data: ChangePasswordDto,
   ): Promise<AccountDomain> {
-    const account = await this.findById(accountId);
+    // Finding the account via access token
+    const account = await this.findById(reqUser.accountId);
+    // If account not existing throw an error
     if (!account) {
       throw ErrorApiResponse.notFoundRequest();
     }
-    if (reqUser.accountId !== account.id) {
-      throw ErrorApiResponse.unauthorizedRequest();
-    }
+    // If account not registered via local, there should not have password
     if (account.accountProvider !== AccountProviderEnum.Local) {
       throw ErrorApiResponse.conflictRequest();
     }
 
+    // Check if old password match the registered password
     const isPasswordMatch = await this.cryptoService.compare(
       data.oldPassword,
       account.password,
@@ -92,8 +97,28 @@ export class AccountService {
       );
     }
 
-    // Sending confirm email for changing password
+    // setting the payload before sending via email
+    const tokenPayload: VerifyTokenPayloadType = {
+      sub: {
+        accountId: account.id,
+      },
+    };
+    // sign the token the
+    const token = await this.jwtService.signAsync(tokenPayload, {
+      secret: this.configService.get('account.changePasswordSecret', {
+        infer: true,
+      }),
+      expiresIn: this.configService.get('account.changePasswordExpiredTime', {
+        infer: true,
+      }),
+    });
 
+    // Sending confirm email for changing password
+    await this.mailService.changePassword({
+      to: account.email,
+      data: { token },
+    });
+    // Returning the account for sending link
     return account;
   }
   public async confirmChangePassword(

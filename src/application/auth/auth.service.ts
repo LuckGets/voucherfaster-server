@@ -17,13 +17,13 @@ import { UUIDService } from '@utils/services/uuid.service';
 import { SessionDomain } from '@resources/session/domain/session.domain';
 import { SessionService } from '@resources/session/session.service';
 import { NullAble } from '@utils/types/common.type';
-import {
-  JwtPayloadType,
-  RefreshTokenPayloadType,
-} from './types/jwt-payload.type';
 import { CreateAccountDto } from '@resources/account/dto/create-account.dto';
 import { RequestGoogleUser } from '@application/auth-google/types/req-user.type';
 import { plainToInstance } from 'class-transformer';
+import {
+  JwtPayloadType,
+  RefreshTokenPayloadType,
+} from 'src/common/types/token-payload.type';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +60,7 @@ export class AuthService {
       password: hashPassword,
     });
 
-    const hash = await this.jwtService.signAsync(
+    const token = await this.jwtService.signAsync(
       { userId: user.id },
       {
         secret: this.configService.getOrThrow('auth.verifyEmailSecret', {
@@ -73,7 +73,7 @@ export class AuthService {
       },
     );
 
-    await this.mailService.verifyEmail({ to: data.email, data: { hash } });
+    await this.mailService.verifyEmail({ to: data.email, data: { token } });
   }
 
   public async validateLogin(

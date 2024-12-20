@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Patch,
   Req,
   SerializeOptions,
@@ -63,15 +62,10 @@ export class AccountController {
   @UseGuards(AccessTokenAuthGuard)
   @Patch(AccountPath.ChangePassword)
   async resetPassword(
-    @Param(AccountPath.AccountIdParam) accountId: string,
     @Req() req: HttpRequestWithUser,
     @Body() body: ChangePasswordDto,
   ) {
-    const account = await this.accountService.changePassword(
-      accountId,
-      req.user,
-      body,
-    );
+    const account = await this.accountService.changePassword(req.user, body);
     return ChangePasswordResponse.success({
       id: account.id,
       verifiedAt: account.verifiedAt,

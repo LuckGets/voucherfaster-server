@@ -4,12 +4,16 @@ import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
 import { IMailData } from './mail-data.interface';
 import * as path from 'path';
-import { VERIFY_EMAIL_CONSTANT } from './config/mail.constant';
+import {
+  CHANGE_PASSWORD_CONSTANT,
+  VERIFY_EMAIL_CONSTANT,
+} from './config/mail.constant';
 
 @Injectable()
 export class MailService {
   private basePath: string;
   private appName: string;
+  private clientDomain: string;
   constructor(
     private mailerService: MailerService,
     private configService: ConfigService<AllConfigType>,
@@ -18,17 +22,17 @@ export class MailService {
       configService.get('app.workingDir', { infer: true }) ?? process.cwd();
     this.appName =
       configService.get('app.name', { infer: true }) ?? 'Voucher Faster';
-  }
-
-  async verifyEmail(mailData: IMailData<{ hash: string }>): Promise<void> {
-    const clientDomain = this.configService.get('client.domain', {
+    this.clientDomain = configService.get('client.domain', {
       infer: true,
     });
+  }
+
+  async verifyEmail(mailData: IMailData<{ token: string }>): Promise<void> {
     const verifyEmailPath = this.configService.get('client.verifyEmailPath', {
       infer: true,
     });
-    const url = new URL(`${clientDomain}${verifyEmailPath}`);
-    url.searchParams.set('hash', mailData.data.hash);
+    const url = new URL(`${this.clientDomain}${verifyEmailPath}`);
+    url.searchParams.set('hash', mailData.data.token);
     await this.mailerService.sendMail({
       templatePath: path.join(
         this.basePath,
@@ -47,6 +51,38 @@ export class MailService {
         text1: VERIFY_EMAIL_CONSTANT.firstText,
         text2: VERIFY_EMAIL_CONSTANT.secondText,
         text3: VERIFY_EMAIL_CONSTANT.thirdText,
+        url,
+      },
+    });
+  }
+
+  async changePassword(mailData: IMailData<{ token: string }>): Promise<void> {
+    const changePasswordPath = this.configService.get(
+      'client.changePasswordPath',
+      {
+        infer: true,
+      },
+    );
+    const url = new URL(`${this.clientDomain}${changePasswordPath}`);
+    url.searchParams.set('hash', mailData.data.token);
+    await this.mailerService.sendMail({
+      templatePath: path.join(
+        this.basePath,
+        'src',
+        'application',
+        'mail',
+        'templates',
+        'verify.hbs',
+      ),
+      to: mailData.to,
+      subject: CHANGE_PASSWORD_CONSTANT.title,
+      context: {
+        title: CHANGE_PASSWORD_CONSTANT.title,
+        app_name: this.appName,
+        actionTitle: CHANGE_PASSWORD_CONSTANT.actionTitle,
+        text1: CHANGE_PASSWORD_CONSTANT.firstText,
+        text2: CHANGE_PASSWORD_CONSTANT.secondText,
+        text3: CHANGE_PASSWORD_CONSTANT.thirdText,
         url,
       },
     });

@@ -10,3 +10,9 @@ export type RefreshTokenPayloadType = {
     accountId: string;
   };
 };
+
+export type VerifyTokenPayloadType = {
+  sub: {
+    accountId: string;
+  };
+};
