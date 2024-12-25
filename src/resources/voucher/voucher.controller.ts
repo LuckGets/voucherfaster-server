@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Get,
+  Patch,
   Post,
   SerializeOptions,
   UploadedFiles,
@@ -19,6 +21,7 @@ import { RoleEnum } from '@resources/account/types/account.type';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { ApiConsumes } from '@nestjs/swagger';
+import { VoucherCategoryDomain } from './domain/voucher.domain';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -50,12 +53,12 @@ export class VoucherController {
     },
     @Body() body: CreateVoucherDto,
   ) {
-    console.log('FILES::', files);
-    await this.voucherService.createVoucher(
+    const voucher = await this.voucherService.createVoucher(
       body,
       files.mainImg,
       files.voucherImg,
     );
+    console.log('VOUCHER HOORAY!!:', voucher);
   }
 
   /**
@@ -76,9 +79,11 @@ export class VoucherController {
     return VoucherTagResponse.createSuccess(newVoucherTag);
   }
 
-  @Post(VoucherPath.Tag)
+  @Patch(VoucherPath.Tag)
   async updateVoucherTag() {}
 
+  @Get()
+  async getPaginationVoucherTag() {}
   /**
    *
    * ---- Voucher ----
@@ -92,9 +97,14 @@ export class VoucherController {
   @Post(VoucherPath.Category)
   async createVoucherCategory(
     @Body() body: CreateVoucherCategoryDto,
-  ): Promise<VoucherCategoryResponse> {
+  ): Promise<VoucherCategoryResponse<VoucherCategoryDomain>> {
     const newVoucherCategory =
       await this.voucherService.createVoucherCategory(body);
     return VoucherCategoryResponse.createSuccess(newVoucherCategory);
+  }
+  @Get(VoucherPath.Category)
+  async getPaginationVoucherCategory(): Promise<VoucherCategoryResponse<any>> {
+    const voucherCat = await this.voucherService.getPaginationVoucherCategory();
+    return VoucherCategoryResponse.success(voucherCat);
   }
 }

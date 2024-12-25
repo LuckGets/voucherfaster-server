@@ -38,17 +38,10 @@ import { VerifyEmailResponse } from './dto/verify-emai.dto';
 @ApiTags(AccountPath.Name)
 @Controller({ path: AccountPath.Base, version: '1' })
 export class AccountController {
-  private accountService: AccountService;
-  private mediaService: MediaService;
   constructor(
-    // private accountService: AccountService,
-    // private mediaService: MediaService,
-    accountService,
-    mediaService,
-  ) {
-    this.accountService = accountService;
-    this.mediaService = mediaService;
-  }
+    private accountService: AccountService,
+    private mediaService: MediaService,
+  ) {}
 
   @ApiOkResponse({
     type: () => GetMeResponseDto,

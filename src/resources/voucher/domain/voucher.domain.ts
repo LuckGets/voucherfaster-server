@@ -7,6 +7,10 @@ export enum VoucherStatusEnum {
   INACTIVE = 'INACTIVE',
 }
 
+/**
+ * The Domain
+ * of voucher
+ */
 export class VoucherDomain {
   @ApiProperty({ type: String })
   id: string;
@@ -18,8 +22,12 @@ export class VoucherDomain {
   usageExpiredTime: Date;
   termAndCond?: { th: string[]; en: string[] };
   saleExpiredTime: Date;
-  img: { path: string; mainImg: boolean }[];
+  img: { imgPath: string; mainImg: boolean }[];
 }
+
+export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {
+  tagId: VoucherTagDomain['id'];
+};
 
 export class VoucherCategoryDomain {
   @ApiProperty({ type: String })
@@ -66,3 +74,47 @@ export class VoucherTagDomain {
   @ApiProperty({ type: Date, nullable: true })
   deletedAt?: Date;
 }
+
+/**
+ * The Domain
+ * of term and condition
+ * of one voucher
+ */
+export class VoucherTermAndCondDomain {
+  id: string;
+  description: string;
+  voucherId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  inactiveAt?: Date;
+}
+/**
+ * The input type
+ * for creating voucher term and condition
+ */
+export type VoucherTermAndCondCreateInput = Omit<
+  VoucherTermAndCondDomain,
+  'createdAt' | 'updatedAt' | 'inactiveAt'
+>;
+
+/**
+ * The Voucher Image Domain
+ */
+export class VoucherImgDomain {
+  id: string;
+  imgPath: string;
+  voucherId: string;
+  mainImg: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+}
+
+/**
+ * The input type
+ * for creating voucher image
+ */
+export type VoucherImgCreateInput = Pick<
+  VoucherImgDomain,
+  'id' | 'imgPath' | 'voucherId' | 'mainImg'
+>;

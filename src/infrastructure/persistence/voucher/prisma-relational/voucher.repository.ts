@@ -1,7 +1,9 @@
 import {
   VoucherCategoryDomain,
-  VoucherDomain,
+  VoucherDomainCreateInput,
+  VoucherImgCreateInput,
   VoucherTagDomain,
+  VoucherTermAndCondCreateInput,
 } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 import { PrismaService } from '../../config/prisma.service';
@@ -12,12 +14,45 @@ import {
 } from '../voucher.repository';
 import { Prisma } from '@prisma/client';
 import { Inject } from '@nestjs/common';
+import {
+  defaultPaginationOption,
+  IPaginationOption,
+} from 'src/common/types/pagination.type';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
-  create(): Promise<VoucherDomain> {}
-  findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
-    return this.prismaService.voucher.findUnique({ where: { id } });
+  /**
+   * We need to
+   * creating a voucher
+   * term and condition
+   * and store the voucher-related image
+   * in one transaction
+   */
+  async createVoucherAndTermAndImgTransaction({
+    voucherData,
+    termAndCondThArr,
+    termAndCondEnArr,
+    image,
+  }: {
+    voucherData: VoucherDomainCreateInput;
+    termAndCondThArr: VoucherTermAndCondCreateInput[];
+    termAndCondEnArr: VoucherTermAndCondCreateInput[];
+    image: VoucherImgCreateInput[];
+  }): Promise<{ voucher; termAndCondTh; termAndCondEn; voucherImg }> {
+    return this.prismaService.$transaction(async (txUnit) => {
+      const voucher = await txUnit.voucher.create({
+        data: voucherData,
+      });
+      const [termAndCondTh, termAndCondEn, voucherImg] = await Promise.all([
+        txUnit.voucherTermAndCondTh.createMany({ data: termAndCondThArr }),
+        txUnit.voucherTermAndCondEN.createMany({ data: termAndCondEnArr }),
+        txUnit.voucherImg.createMany({ data: image }),
+      ]);
+      return { voucher, termAndCondTh, termAndCondEn, voucherImg };
+    });
+  }
+  async findById(): Promise<NullAble<void>> {
+    return;
   }
 }
 
@@ -34,6 +69,26 @@ export class VoucherCategoryRelationalPrismaORMRepository
       },
     });
   }
+  async findManyWithPagination(
+    paginationOption?: IPaginationOption,
+  ): Promise<any> {
+    const paginationPage = paginationOption?.page
+      ? (paginationOption.page - 1) * paginationOption?.limit
+      : (defaultPaginationOption.page - 1) * defaultPaginationOption.limit;
+    const cat = await this.prismaService.voucherCategory.findMany({
+      skip: paginationPage,
+      take: paginationOption?.limit ?? defaultPaginationOption.limit,
+      include: {
+        VoucherTags: {
+          where: {
+            deletedAt: null,
+          },
+        },
+      },
+    });
+    return cat;
+  }
+
   create(
     data: Omit<VoucherCategoryDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
   ): Promise<VoucherCategoryDomain> {

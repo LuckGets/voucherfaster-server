@@ -45,14 +45,11 @@ export class MediaS3Service implements MediaService {
     try {
       await this.uploadFileToS3(filePath, fileKey, file.mimetype);
       const linkUrl = `${this.CLOUDFRONT_DOMAIN_NAME}/${fileKey}`;
-      console.log(linkUrl);
       return linkUrl;
     } catch (err) {
       console.error(err);
     } finally {
-      unlink(
-        path.resolve(process.cwd(), `${file.destination}/${file.filename}`),
-      );
+      unlink(filePath);
     }
   }
 

@@ -16,7 +16,7 @@ export class CreateVoucherCategoryDto {
   name: string;
 }
 
-export class VoucherCategoryResponse extends CoreApiResponse {
+export class VoucherCategoryResponse<T> extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -36,14 +36,14 @@ export class VoucherCategoryResponse extends CoreApiResponse {
     type: Object,
     example: 'sdfsdf',
   })
-  public data: unknown;
+  public data: T;
 
-  public static success(
-    data: unknown,
+  public static success<T>(
+    data: T,
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): VoucherCategoryResponse {
+  ): VoucherCategoryResponse<T> {
     const responseMessage = message ?? 'Login Successfully';
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
@@ -64,7 +64,7 @@ export class VoucherCategoryResponse extends CoreApiResponse {
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): VoucherCategoryResponse {
+  ): VoucherCategoryResponse<VoucherCategoryDomain> {
     const responseMessage = message ?? 'Create voucher category Successfully';
     const responseCode = statusCode ?? HttpStatus.CREATED;
     const responseLink = links;

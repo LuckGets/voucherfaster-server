@@ -3,26 +3,31 @@ import { CreateVoucherCategoryDto } from './dto/voucher-category.dto';
 import { CreateVoucherTagDto } from './dto/voucher-tag.dto';
 import {
   VoucherCategoryDomain,
+  VoucherDomainCreateInput,
+  VoucherImgCreateInput,
+  VoucherStatusEnum,
   VoucherTagDomain,
+  VoucherTermAndCondCreateInput,
 } from './domain/voucher.domain';
 import {
   VoucherCategoryRepository,
-  // VoucherRepository,
+  VoucherRepository,
   VoucherTagRepository,
 } from 'src/infrastructure/persistence/voucher/voucher.repository';
 import { UUIDService } from '@utils/services/uuid.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-// import { CreateVoucherDto } from './dto/create-voucher.dto';
-// import { MediaService } from '@application/media/media.service';
+import { CreateVoucherDto } from './dto/create-voucher.dto';
+import { MediaService } from '@application/media/media.service';
+import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 
 @Injectable()
 export class VoucherService {
   constructor(
-    // private voucherRepository: VoucherRepository,
+    private voucherRepository: VoucherRepository,
     private voucherTagRepository: VoucherTagRepository,
     private voucherCategoryRepository: VoucherCategoryRepository,
     private uuidService: UUIDService,
-    // private mediaService: MediaService,
+    private mediaService: MediaService,
   ) {}
 
   /**
@@ -31,14 +36,90 @@ export class VoucherService {
    * --- PART ---
    *
    */
-  public async createVoucher() {
-    // voucherImg: Express.Multer.File[], // voucherMainImg: Express.Multer.File[], // data: CreateVoucherDto,
-    // create voucher first
-    // const voucherCreateInput = '';
-    // const newVoucher = await this.voucherRepository;
-    // add all term and condition
-    // upload image to s3
-    // collect image link in repository
+  public async createVoucher(
+    data: CreateVoucherDto,
+    mainImg: Express.Multer.File[],
+    voucherImg: Express.Multer.File[],
+  ): Promise<{ voucher; termAndCondTh; termAndCondEn; voucherImg }> {
+    // Check first if voucher tag exists or no
+    const isTagExists = await this.voucherTagRepository.findById(data.tagId);
+    if (!isTagExists)
+      throw ErrorApiResponse.notFoundRequest(
+        'The tag ID provided could not be found on this server.',
+      );
+
+    // ---------------------------------------------------------
+    // ------------------ CREATE VOUCHER PART  ------------------
+    //---------------------------------------------------------
+    //---------------------------------------------------------
+
+    // Firstly we need to upload the img to s3 and get the link back.
+    const allVoucherImgLinks = await Promise.all(
+      [...mainImg, ...voucherImg].map((item) =>
+        this.mediaService.uploadFile(
+          item as Express.Multer.File,
+          s3BucketDirectory.voucherImg,
+        ),
+      ),
+    );
+    // ------- SECOND PART : SET UP INFORMATION -------
+
+    // Extract the term and condition from data
+    const { termAndCondTh, termAndCondEn, ...restData } = data;
+
+    // Set up the voucher information before store in database
+    const voucherData: VoucherDomainCreateInput = {
+      ...restData,
+      id: String(this.uuidService.make()),
+      status: VoucherStatusEnum.ACTIVE,
+    };
+
+    // Set up the Thai Term and condition before store in database
+    const termAndCondThWithVoucherId: VoucherTermAndCondCreateInput[] =
+      termAndCondTh.map((item) => {
+        return {
+          id: String(this.uuidService.make()),
+          voucherId: voucherData.id,
+          description: item,
+        };
+      });
+
+    // Set up the English Term and condition before store in database
+    const termAndCondEnWithVoucherId: VoucherTermAndCondCreateInput[] =
+      termAndCondEn.map((item) => {
+        return {
+          id: String(this.uuidService.make()),
+          voucherId: voucherData.id,
+          description: item,
+        };
+      });
+
+    // Set up the image before store in database
+    const voucherImgToStore: VoucherImgCreateInput[] = allVoucherImgLinks.map(
+      (item, index) => {
+        if (index === 0)
+          return {
+            id: String(this.uuidService.make()),
+            mainImg: true,
+            imgPath: item,
+            voucherId: voucherData.id,
+          };
+        return {
+          id: String(this.uuidService.make()),
+          mainImg: false,
+          imgPath: item,
+          voucherId: voucherData.id,
+        };
+      },
+    );
+
+    // ------- THIRD PART : CREATE VOUCHER  -------
+    return this.voucherRepository.createVoucherAndTermAndImgTransaction({
+      voucherData,
+      termAndCondThArr: termAndCondThWithVoucherId,
+      termAndCondEnArr: termAndCondEnWithVoucherId,
+      image: voucherImgToStore,
+    });
   }
 
   /**
@@ -77,6 +158,11 @@ export class VoucherService {
    * --- PART ---
    *
    */
+  //---------------------
+
+  /**
+   * Create voucher category
+   */
   public createVoucherCategory(
     data: CreateVoucherCategoryDto,
   ): Promise<VoucherCategoryDomain> {
@@ -88,5 +174,14 @@ export class VoucherService {
       name: data.name,
     };
     return this.voucherCategoryRepository.create(createInput);
+  }
+
+  /**
+   * Find voucher category
+   * via pagination by
+   * cursor and page
+   */
+  public async getPaginationVoucherCategory() {
+    return this.voucherCategoryRepository.findManyWithPagination();
   }
 }
