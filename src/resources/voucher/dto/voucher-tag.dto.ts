@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
@@ -15,6 +15,22 @@ export class CreateVoucherTagDto {
   })
   @IsString()
   categoryId: string;
+}
+
+export class UpdateVoucherTagDto {
+  @ApiProperty({ type: String, examples: ['Breakfast', 'Lunch'] })
+  @IsOptional()
+  @IsString()
+  name?: string;
+  @ApiProperty({
+    type: String,
+    example: '0193f3cc-c977-7182-9627-debca7376208',
+  })
+  @IsOptional()
+  @IsString()
+  updateCategoryId?: string;
+  @IsString()
+  tagId: string;
 }
 
 export class VoucherTagResponse extends CoreApiResponse {

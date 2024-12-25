@@ -14,15 +14,22 @@ export enum VoucherStatusEnum {
 export class VoucherDomain {
   @ApiProperty({ type: String })
   id: string;
+  @ApiProperty({ type: String })
   code: string;
+  @ApiProperty({ type: String })
   title: string;
+  @ApiProperty({ type: () => VoucherStatusEnum })
   status: VoucherStatusEnum;
+  @ApiProperty({ type: () => String })
   description: string;
+  @ApiProperty({ type: () => String })
   price: number;
+  @ApiProperty({ type: () => Date })
   usageExpiredTime: Date;
+  @ApiProperty({ type: () => Object })
   termAndCond?: { th: string[]; en: string[] };
+  @ApiProperty({ type: () => Date })
   saleExpiredTime: Date;
-  img: { imgPath: string; mainImg: boolean }[];
 }
 
 export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {

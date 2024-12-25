@@ -28,4 +28,5 @@ export enum VoucherPath {
   TagsName = 'tags',
   Tag = '/categories/:categoryId/tags',
   Category = '/categories',
+  UpdateTag = '/categories/:categoryId/tags/:tagId',
 }

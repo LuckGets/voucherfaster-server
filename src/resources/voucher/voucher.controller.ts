@@ -15,12 +15,19 @@ import {
   VoucherCategoryResponse,
 } from './dto/voucher-category.dto';
 import { VoucherService } from './voucher.service';
-import { CreateVoucherTagDto, VoucherTagResponse } from './dto/voucher-tag.dto';
+import {
+  CreateVoucherTagDto,
+  UpdateVoucherTagDto,
+  VoucherTagResponse,
+} from './dto/voucher-tag.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { CreateVoucherDto } from './dto/create-voucher.dto';
-import { ApiConsumes } from '@nestjs/swagger';
+import {
+  CreateVoucherDto,
+  CreateVoucherResponse,
+} from './dto/create-voucher.dto';
+import { ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swagger';
 import { VoucherCategoryDomain } from './domain/voucher.domain';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
@@ -32,7 +39,11 @@ export class VoucherController {
    * ---- Voucher ----
    * ---- PART ----
    */
+  @SerializeOptions({
+    groups: [RoleEnum.Admin, RoleEnum.Me],
+  })
   @ApiConsumes('multipart/formdata')
+  @ApiBody({})
   @UseInterceptors(
     FileFieldsInterceptor([
       {
@@ -60,9 +71,20 @@ export class VoucherController {
       files.mainImg,
       files.voucherImg,
     );
-    console.log('VOUCHER HOORAY!!:', voucher);
+    return CreateVoucherResponse.success(
+      voucher,
+      `Voucher code: ${voucher.id} have been created successfully.`,
+    );
   }
 
+  @ApiOkResponse({
+    description: 'Get many voucher with pagination.',
+  })
+  // @Get()
+  // getVoucher(
+  //   @Query() tag: VoucherTagDomain['id'],
+  //   @Query() category: VoucherCategoryDomain['name'],
+  // ) {}
   /**
    *
    * ---- Voucher ----
@@ -81,11 +103,22 @@ export class VoucherController {
     return VoucherTagResponse.createSuccess(newVoucherTag);
   }
 
-  @Patch(VoucherPath.Tag)
-  async updateVoucherTag() {}
+  @SerializeOptions({
+    groups: [RoleEnum.Admin],
+  })
+  @UseGuards(AdminGuard)
+  @Patch(VoucherPath.UpdateTag)
+  async updateVoucherTag(@Body() body: UpdateVoucherTagDto) {
+    return this.voucherService.updateVoucherTag(body);
+  }
 
-  @Get()
-  async getPaginationVoucherTag() {}
+  @SerializeOptions({
+    groups: [RoleEnum.Admin, RoleEnum.User],
+  })
+  @Get(VoucherPath.TagsName)
+  async getVoucherTag() {
+    return this.voucherService.getVoucherTag();
+  }
   /**
    *
    * ---- Voucher ----
@@ -104,9 +137,10 @@ export class VoucherController {
       await this.voucherService.createVoucherCategory(body);
     return VoucherCategoryResponse.createSuccess(newVoucherCategory);
   }
+
   @Get(VoucherPath.Category)
-  async getPaginationVoucherCategory(): Promise<VoucherCategoryResponse<any>> {
+  async getVoucherCategory(): Promise<VoucherCategoryResponse<any>> {
     const voucherCat = await this.voucherService.getPaginationVoucherCategory();
-    return VoucherCategoryResponse.success(voucherCat);
+    return VoucherCategoryResponse.findManySuccess(voucherCat);
   }
 }

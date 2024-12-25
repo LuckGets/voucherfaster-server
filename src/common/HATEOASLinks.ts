@@ -1,6 +1,10 @@
-import { AccountPath, AuthPath } from 'src/config/api-path';
+import { AccountPath, AuthPath, VoucherPath } from 'src/config/api-path';
 import { HTTPMethod } from './http.type';
 import { UUIDTypes } from 'uuid';
+import {
+  VoucherCategoryDomain,
+  VoucherTagDomain,
+} from '@resources/voucher/domain/voucher.domain';
 
 const generateVerfifiedAccountLink = (accountId: string) => ({
   account: {
@@ -41,4 +45,55 @@ export const GenerateAccountResponseHATEOASLink = (
           },
         },
       };
+};
+
+// export const generateVoucherReponseHATEOASLink = (
+//   voucherId: VoucherDomain['id'],
+// ) => {
+//   return {};
+// };
+
+export const generateVoucherCategoryResponseHATEOASLink = (
+  voucherCategoryId: VoucherCategoryDomain['id'],
+  voucherTagId?: VoucherTagDomain['id'],
+) => {
+  const links = {
+    category: {
+      update: {
+        method: HTTPMethod.Patch,
+        path: `${VoucherPath.Category}/${voucherCategoryId}`,
+      },
+    },
+    tags: {
+      create: {
+        method: HTTPMethod.Post,
+        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}`,
+      },
+    },
+  };
+  if (voucherTagId) {
+    links.tags['update'] = {
+      method: HTTPMethod.Patch,
+      path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}/${voucherTagId}`,
+    };
+  }
+  return links;
+};
+
+export const generateVoucherTagResponseHATEOASLink = (
+  voucherCategoryId: VoucherCategoryDomain['id'],
+  voucherTagId: VoucherTagDomain['id'],
+) => {
+  return {
+    tags: {
+      create: {
+        method: HTTPMethod.Post,
+        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}`,
+      },
+      update: {
+        method: HTTPMethod.Patch,
+        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}/${voucherTagId}`,
+      },
+    },
+  };
 };

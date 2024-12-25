@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { CreateVoucherCategoryDto } from './dto/voucher-category.dto';
-import { CreateVoucherTagDto } from './dto/voucher-tag.dto';
+import {
+  CreateVoucherTagDto,
+  UpdateVoucherTagDto,
+} from './dto/voucher-tag.dto';
 import {
   VoucherCategoryDomain,
+  VoucherDomain,
   VoucherDomainCreateInput,
   VoucherImgCreateInput,
   VoucherStatusEnum,
@@ -40,7 +44,7 @@ export class VoucherService {
     data: CreateVoucherDto,
     mainImg: Express.Multer.File[],
     voucherImg: Express.Multer.File[],
-  ): Promise<{ voucher; termAndCondTh; termAndCondEn; voucherImg }> {
+  ): Promise<VoucherDomain> {
     // Check first if voucher tag exists or no
     const isTagExists = await this.voucherTagRepository.findById(data.tagId);
     if (!isTagExists)
@@ -122,6 +126,7 @@ export class VoucherService {
     });
   }
 
+  public async getVoucher() {}
   /**
    *
    * --- VOUCHER ---
@@ -151,6 +156,34 @@ export class VoucherService {
     return this.voucherTagRepository.create(createInput);
   }
 
+  public async getVoucherTag() {}
+
+  public async updateVoucherTag(
+    data: UpdateVoucherTagDto,
+  ): Promise<VoucherTagDomain> {
+    const isVoucherTagExist: VoucherTagDomain =
+      await this.voucherTagRepository.findById(data.tagId);
+    if (!isVoucherTagExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `The tag ID: ${data.tagId} could not be found on this server.`,
+      );
+    const isCategoryExist: VoucherCategoryDomain =
+      await this.voucherCategoryRepository.findById(data.updateCategoryId);
+    if (!isCategoryExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `The voucher category ID: ${data.updateCategoryId} could not be found on this server.`,
+      );
+    const { tagId, ...rest } = data;
+    const input:
+      | Partial<VoucherTagDomain>
+      | (Partial<VoucherTagDomain> & {
+          categoryId: VoucherCategoryDomain['id'];
+        }) = { ...rest };
+    if (rest.updateCategoryId) {
+      input.categoryId = rest.updateCategoryId;
+    }
+    return this.voucherTagRepository.update(tagId, input);
+  }
   /**
    *
    * --- VOUCHER ---
@@ -181,7 +214,7 @@ export class VoucherService {
    * via pagination by
    * cursor and page
    */
-  public async getPaginationVoucherCategory() {
+  public getPaginationVoucherCategory() {
     return this.voucherCategoryRepository.findManyWithPagination();
   }
 }

@@ -5,6 +5,7 @@ import {
   Logger,
   NestInterceptor,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { unlink } from 'fs/promises';
 import * as path from 'path';
 import { Observable, tap } from 'rxjs';
@@ -15,7 +16,7 @@ export class UnlinkFileInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Observable<any> | Promise<Observable<any>> {
-    const req = context.switchToHttp().getRequest();
+    const req: Request = context.switchToHttp().getRequest();
     return next.handle().pipe(
       tap({
         finalize: () => {
@@ -33,7 +34,6 @@ export class UnlinkFileInterceptor implements NestInterceptor {
               } else {
                 Object.values(req.files).forEach(
                   (fileArray: Express.Multer.File[]) => {
-                    console.log('File array::', fileArray);
                     fileArray.forEach((file: Express.Multer.File) =>
                       unlink(
                         path.resolve(

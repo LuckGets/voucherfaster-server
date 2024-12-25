@@ -28,7 +28,7 @@ export abstract class VoucherRepository {
     termAndCondThArr: VoucherTermAndCondCreateInput[];
     termAndCondEnArr: VoucherTermAndCondCreateInput[];
     image: VoucherImgCreateInput[];
-  }): Promise<{ voucher; termAndCondTh; termAndCondEn; voucherImg }>;
+  }): Promise<VoucherDomain>;
   abstract findById(id: VoucherDomain['id']): Promise<NullAble<void>>;
 }
 
@@ -41,7 +41,7 @@ export abstract class VoucherCategoryRepository {
   ): Promise<VoucherCategoryDomain>;
   abstract findManyWithPagination(
     paginationOption?: IPaginationOption,
-  ): Promise<any>;
+  ): Promise<(VoucherCategoryDomain & { VoucherTags: VoucherTagDomain[] })[]>;
 }
 
 export abstract class VoucherTagRepository {
@@ -50,5 +50,11 @@ export abstract class VoucherTagRepository {
   ): Promise<NullAble<VoucherTagDomain>>;
   abstract create(
     data: Omit<VoucherTagDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
+  ): Promise<VoucherTagDomain>;
+  abstract update(
+    tagId: VoucherDomain['id'],
+    payload:
+      | Partial<VoucherTagDomain>
+      | Partial<VoucherTagDomain & { categoryId: VoucherCategoryDomain['id'] }>,
   ): Promise<VoucherTagDomain>;
 }

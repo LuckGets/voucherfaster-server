@@ -3,9 +3,19 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
-import { HTTPMethod } from 'src/common/http.type';
-import { AuthPath, VoucherPath } from 'src/config/api-path';
-import { VoucherCategoryDomain } from '../domain/voucher.domain';
+import { AuthPath } from 'src/config/api-path';
+import {
+  VoucherCategoryDomain,
+  VoucherTagDomain,
+} from '../domain/voucher.domain';
+import {
+  generateVoucherCategoryResponseHATEOASLink,
+  generateVoucherTagResponseHATEOASLink,
+} from 'src/common/HATEOASLinks';
+
+export type VoucherCategoryResponseDataType = VoucherCategoryDomain & {
+  links: HATEOSLink;
+};
 
 export class CreateVoucherCategoryDto {
   @ApiProperty({
@@ -24,7 +34,7 @@ export class VoucherCategoryResponse<T> extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Account details for account id 123',
+    example: 'Get all voucher category response',
   })
   public message: string;
   @ApiProperty({
@@ -39,36 +49,58 @@ export class VoucherCategoryResponse<T> extends CoreApiResponse {
   public data: T;
 
   public static success<T>(
-    data: T,
+    data: unknown,
     message?: string,
-    links?: HATEOSLink,
+    link?: HATEOSLink,
     statusCode?: number,
   ): VoucherCategoryResponse<T> {
-    const responseMessage = message ?? 'Login Successfully';
+    const responseMessage = message ?? 'Get voucher category Successfully';
     const responseCode = statusCode ?? HttpStatus.OK;
-    const responseLink = links;
-    // GenerateAccountResponseHATEOASLink(
-    //   data.id as UUIDTypes,
-    //   !!data.verifiedAt,
-    // );
     return new VoucherCategoryResponse(
       responseCode,
       responseMessage,
-      responseLink,
+      link,
       data,
+    );
+  }
+
+  public static findManySuccess(
+    data: (VoucherCategoryDomain & {
+      VoucherTags: VoucherTagDomain[];
+    })[],
+    message?: string,
+    link?: HATEOSLink,
+    statusCode?: number,
+  ) {
+    const responseMessage = message ?? 'Get voucher category Successfully';
+    const responseCode = statusCode ?? HttpStatus.OK;
+    const responseDataWithLinks = data.map((item) => {
+      item.VoucherTags.forEach(
+        (voucherTag) =>
+          (voucherTag['links'] = generateVoucherTagResponseHATEOASLink(
+            item.id,
+            voucherTag.id,
+          )),
+      );
+      item['links'] = generateVoucherCategoryResponseHATEOASLink(item.id);
+      return item;
+    });
+    return new VoucherCategoryResponse(
+      responseCode,
+      responseMessage,
+      link,
+      responseDataWithLinks,
     );
   }
 
   public static createSuccess(
     data: VoucherCategoryDomain,
     message?: string,
-    links?: HATEOSLink,
     statusCode?: number,
   ): VoucherCategoryResponse<VoucherCategoryDomain> {
     const responseMessage = message ?? 'Create voucher category Successfully';
     const responseCode = statusCode ?? HttpStatus.CREATED;
-    const responseLink = links;
-    generateVoucherCategoryResponseHATEOASLink(data.id);
+    const responseLink = generateVoucherCategoryResponseHATEOASLink(data.id);
     return new VoucherCategoryResponse(
       responseCode,
       responseMessage,
@@ -77,26 +109,3 @@ export class VoucherCategoryResponse<T> extends CoreApiResponse {
     );
   }
 }
-
-const generateVoucherCategoryResponseHATEOASLink = (
-  voucherCategoryId: string,
-) => {
-  return {
-    category: {
-      update: {
-        method: HTTPMethod.Patch,
-        path: `${VoucherPath.Category}/${voucherCategoryId}`,
-      },
-    },
-    tags: {
-      create: {
-        method: HTTPMethod.Post,
-        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}`,
-      },
-      update: {
-        method: HTTPMethod.Patch,
-        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}`,
-      },
-    },
-  };
-};

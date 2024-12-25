@@ -1,5 +1,6 @@
 import {
   VoucherCategoryDomain,
+  VoucherDomain,
   VoucherDomainCreateInput,
   VoucherImgCreateInput,
   VoucherTagDomain,
@@ -16,6 +17,7 @@ import { Prisma } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
+import { VoucherMapper } from './voucher.mapper';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -36,18 +38,19 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     termAndCondThArr: VoucherTermAndCondCreateInput[];
     termAndCondEnArr: VoucherTermAndCondCreateInput[];
     image: VoucherImgCreateInput[];
-  }): Promise<{ voucher; termAndCondTh; termAndCondEn; voucherImg }> {
-    return this.prismaService.$transaction(async (txUnit) => {
+  }): Promise<VoucherDomain> {
+    const voucher = await this.prismaService.$transaction(async (txUnit) => {
       const voucher = await txUnit.voucher.create({
         data: voucherData,
       });
-      const [termAndCondTh, termAndCondEn, voucherImg] = await Promise.all([
+      await Promise.all([
         txUnit.voucherTermAndCondTh.createMany({ data: termAndCondThArr }),
         txUnit.voucherTermAndCondEN.createMany({ data: termAndCondEnArr }),
         txUnit.voucherImg.createMany({ data: image }),
       ]);
-      return { voucher, termAndCondTh, termAndCondEn, voucherImg };
+      return voucher;
     });
+    return VoucherMapper.toDomain(voucher);
   }
   async findById(): Promise<NullAble<void>> {
     return;
@@ -69,7 +72,7 @@ export class VoucherCategoryRelationalPrismaORMRepository
   }
   async findManyWithPagination(
     paginationOption?: IPaginationOption,
-  ): Promise<any> {
+  ): Promise<(VoucherCategoryDomain & { VoucherTags: VoucherTagDomain[] })[]> {
     const paginationQuery = generatePaginationQueryOption<Record<string, any>>({
       paginationOption,
     });
@@ -118,5 +121,20 @@ export class VoucherTagRelationalPrismaORMRepository
       voucherCategory: { connect: { id: data.categoryId } },
     };
     return this.prismaService.voucherTag.create({ data: createdInput });
+  }
+  update(
+    tagId: VoucherDomain['id'],
+    payload:
+      | Partial<VoucherTagDomain>
+      | Partial<
+          VoucherTagDomain & { updateCategoryId: VoucherCategoryDomain['id'] }
+        >,
+  ): Promise<VoucherTagDomain> {
+    return this.prismaService.voucherTag.update({
+      where: {
+        id: tagId,
+      },
+      data: payload,
+    });
   }
 }
