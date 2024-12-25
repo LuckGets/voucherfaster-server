@@ -6,9 +6,9 @@ import { Length } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
-import { GenerateAccountResponseHATEOASLink } from './get-me-response.dto';
 import { AccountDomain } from '../domain/account.domain';
 import { IsPasswordValid } from '@utils/validators/PasswordFormat';
+import { GenerateAccountResponseHATEOASLink } from 'src/common/HATEOASLinks';
 
 type ChangePasswordResponseDataType = {
   id: AccountDomain['id'];

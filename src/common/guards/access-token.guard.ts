@@ -15,6 +15,7 @@ export class AccessTokenAuthGuard implements CanActivate {
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
+    console.log(request.baseUrl);
     const token = this.extractJwtFromHeader(request);
     if (!token) throw ErrorApiResponse.unauthorizedRequest();
     try {

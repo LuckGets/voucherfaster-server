@@ -2,10 +2,11 @@ export enum AccountPath {
   Name = 'account',
   Base = '/account',
   Update = '/:accountId',
+  Me = '/me',
   ChangePassword = ':accountId/password',
   ConfirmChangePassword = '/password/confirm',
-  Reverify = '/:accountId/reverify',
   AccountIdParam = 'accountId',
+  Verify = ':accountId/verify',
 }
 export enum AuthPath {
   Name = 'auth',
@@ -19,4 +20,12 @@ export enum AuthPath {
 export enum AuthGooglePath {
   Login = '/login',
   Callback = '/callback',
+}
+
+export enum VoucherPath {
+  Name = 'vouchers',
+  Base = '/vouchers',
+  TagsName = 'tags',
+  Tag = '/categories/:categoryId/tags',
+  Category = '/categories',
 }

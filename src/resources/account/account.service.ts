@@ -151,4 +151,38 @@ export class AccountService {
       password: newPassword,
     });
   }
+
+  public async verifyEmail(token: string): Promise<AccountDomain> {
+    const payload: VerifyTokenPayloadType = await this.jwtService.verifyAsync(
+      token,
+      {
+        secret: this.verifyEmailSecret,
+      },
+    );
+    return this.accountRepository.update(payload.sub, {
+      verifiedAt: new Date(Date.now()),
+    });
+  }
+
+  public async resendVerifyEmail(
+    id: AccountDomain['id'],
+  ): Promise<AccountDomain> {
+    const account = await this.findById(id);
+    if (!account) {
+      throw ErrorApiResponse.notFoundRequest();
+    }
+
+    const payload: VerifyTokenPayloadType = { sub: account.id };
+    const token: string = await this.jwtService.signAsync(payload, {
+      secret: this.verifyEmailSecret,
+      expiresIn: this.configService.getOrThrow('auth.verifyEmailExpiredTime', {
+        infer: true,
+      }),
+    });
+    await this.mailService.verifyEmail({
+      data: { token },
+      to: account.email,
+    });
+    return account;
+  }
 }

@@ -4,6 +4,7 @@ import { AuthConfig } from '../application/auth/config/auth-config.type';
 import { AppConfig } from './app-config.type';
 import { ClientConfig } from './client/client-config.type';
 import { AccountConfig } from '@resources/account/config/account-config.type';
+import { MediaConfig } from '@application/media/s3/media-s3.config';
 
 export enum AllConfigTypeEnum {
   App = 'app',
@@ -12,6 +13,7 @@ export enum AllConfigTypeEnum {
   Google = 'google',
   Mail = 'mail',
   Account = 'account',
+  Media = 'media',
 }
 
 export type AllConfigType = {
@@ -21,4 +23,5 @@ export type AllConfigType = {
   mail: MailConfig;
   client: ClientConfig;
   account: AccountConfig;
+  media: MediaConfig;
 };

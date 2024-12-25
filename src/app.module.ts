@@ -8,6 +8,7 @@ import { AuthGoogleModule } from './application/auth-google/auth-google.module';
 import { SessionModule } from './resources/session/session.module';
 import clientConfig from './config/client/client.config';
 import { JwtModule } from '@nestjs/jwt';
+import { VoucherModule } from './resources/voucher/voucher.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JwtModule } from '@nestjs/jwt';
     CustomValidatorModule,
     AuthGoogleModule,
     SessionModule,
+    VoucherModule,
   ],
 })
 export class AppModule {}
