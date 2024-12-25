@@ -1,5 +1,9 @@
 import { Prisma } from '@prisma/client';
-// import { IPaginationOption } from 'src/common/types/pagination.type';
+import { NullAble } from '@utils/types/common.type';
+import {
+  defaultPaginationOption,
+  IPaginationOption,
+} from 'src/common/types/pagination.type';
 
 /**
  *
@@ -43,8 +47,46 @@ export const utcToTimeZoneMiddleware: Prisma.Middleware = async (
   return convertDates(result);
 };
 
-// export const paginationQueryOption = ({
-//   paginationOption,
-// }: {
-//   paginationOption?: IPaginationOption;
-// }) => {};
+/**
+ *
+ * @param param
+ * @return
+ *
+ * Function for creating
+ * prisma query
+ */
+export function generatePaginationQueryOption<S extends Record<string, any>>({
+  paginationOption,
+  cursor,
+  sortOption,
+}: {
+  paginationOption?: NullAble<IPaginationOption>;
+  cursor?: NullAble<string>;
+  sortOption?: NullAble<S>;
+}) {
+  let query: Record<string, number | string | Record<string, string>> = {};
+  if (sortOption && Object.keys(sortOption).length > 0) {
+    const [property, method] = Object.entries(sortOption)[0];
+    query.orderBy = {
+      [property]: method,
+    };
+  }
+  if (cursor) {
+    query = {
+      ...query,
+      cursor,
+      skip: 1,
+      take: paginationOption.limit || defaultPaginationOption.limit,
+    };
+  } else {
+    const paginationPage = paginationOption?.page
+      ? (paginationOption.page - 1) * paginationOption?.limit
+      : (defaultPaginationOption.page - 1) * defaultPaginationOption.limit;
+    query = {
+      ...query,
+      skip: paginationPage,
+      take: paginationOption?.limit ?? defaultPaginationOption.limit,
+    };
+  }
+  return query;
+}

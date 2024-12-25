@@ -10,6 +10,7 @@ import { MailModule } from '@application/mail/mail.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MediaModule } from '@application/media/media.module';
+import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
 @Module({
   imports: [
@@ -28,7 +29,12 @@ import { MediaModule } from '@application/media/media.module';
     MediaModule,
   ],
   controllers: [AccountController],
-  providers: [AccountService, AccessTokenAuthGuard, CryptoService],
+  providers: [
+    AccountService,
+    AccessTokenAuthGuard,
+    CryptoService,
+    UnlinkFileInterceptor,
+  ],
   exports: [AccountService],
 })
 export class AccountModule {}

@@ -14,10 +14,8 @@ import {
 } from '../voucher.repository';
 import { Prisma } from '@prisma/client';
 import { Inject } from '@nestjs/common';
-import {
-  defaultPaginationOption,
-  IPaginationOption,
-} from 'src/common/types/pagination.type';
+import { IPaginationOption } from 'src/common/types/pagination.type';
+import { generatePaginationQueryOption } from '@utils/prisma/service';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -72,12 +70,12 @@ export class VoucherCategoryRelationalPrismaORMRepository
   async findManyWithPagination(
     paginationOption?: IPaginationOption,
   ): Promise<any> {
-    const paginationPage = paginationOption?.page
-      ? (paginationOption.page - 1) * paginationOption?.limit
-      : (defaultPaginationOption.page - 1) * defaultPaginationOption.limit;
-    const cat = await this.prismaService.voucherCategory.findMany({
-      skip: paginationPage,
-      take: paginationOption?.limit ?? defaultPaginationOption.limit,
+    const paginationQuery = generatePaginationQueryOption<Record<string, any>>({
+      paginationOption,
+    });
+
+    const categories = await this.prismaService.voucherCategory.findMany({
+      ...paginationQuery,
       include: {
         VoucherTags: {
           where: {
@@ -86,7 +84,7 @@ export class VoucherCategoryRelationalPrismaORMRepository
         },
       },
     });
-    return cat;
+    return categories;
   }
 
   create(

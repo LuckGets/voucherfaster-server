@@ -3,7 +3,7 @@ import { MediaService } from '../media.service';
 import { AllConfigType } from 'src/config/all-config.type';
 import * as AWS from '@aws-sdk/client-s3';
 import { Inject } from '@nestjs/common';
-import { readFile, unlink } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import * as path from 'path';
 
 export class MediaS3Service implements MediaService {
@@ -48,8 +48,6 @@ export class MediaS3Service implements MediaService {
       return linkUrl;
     } catch (err) {
       console.error(err);
-    } finally {
-      unlink(filePath);
     }
   }
 

@@ -34,6 +34,7 @@ import {
 } from './dto/update-account.dto';
 import { MediaService } from '@application/media/media.service';
 import { VerifyEmailResponse } from './dto/verify-emai.dto';
+import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
 @ApiTags(AccountPath.Name)
 @Controller({ path: AccountPath.Base, version: '1' })
@@ -69,7 +70,7 @@ export class AccountController {
     groups: [RoleEnum.Me],
   })
   @UseGuards(AccessTokenAuthGuard)
-  @UseInterceptors(FileInterceptor('accountImage'))
+  @UseInterceptors(FileInterceptor('accountImage'), UnlinkFileInterceptor)
   @Patch(AccountPath.Update)
   async update(
     @Req() req: HttpRequestWithUser,

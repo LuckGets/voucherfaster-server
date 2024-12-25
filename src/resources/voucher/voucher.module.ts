@@ -6,6 +6,7 @@ import { UUIDService } from '@utils/services/uuid.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MediaModule } from '@application/media/media.module';
+import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { MediaModule } from '@application/media/media.module';
     MediaModule,
   ],
   controllers: [VoucherController],
-  providers: [VoucherService, UUIDService],
+  providers: [VoucherService, UUIDService, UnlinkFileInterceptor],
 })
 export class VoucherModule {}

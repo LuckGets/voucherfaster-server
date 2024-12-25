@@ -22,6 +22,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { ApiConsumes } from '@nestjs/swagger';
 import { VoucherCategoryDomain } from './domain/voucher.domain';
+import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -42,6 +43,7 @@ export class VoucherController {
         name: 'voucherImg',
       },
     ]),
+    UnlinkFileInterceptor,
   )
   @UseGuards(AdminGuard)
   @Post()
