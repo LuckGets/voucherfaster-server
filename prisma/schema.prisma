@@ -92,7 +92,7 @@ model VoucherTag {
 
 model Voucher {
   id                   String                 @id @default(uuid(7)) @db.Uuid
-  code                 String                 @db.VarChar(20)
+  code                 String                 @unique @db.VarChar(20)
   title                String                 @db.VarChar(191)
   status               VoucherStatus          @default(ACTIVE)
   description          String
@@ -173,7 +173,7 @@ model VoucherPromotion {
   sellExpiredAt      DateTime             @map("sell_expired_at") @db.Timestamptz(3)
   usableAt           DateTime             @map("usable_started_at") @db.Timestamptz(3)
   usableExpiredAt    DateTime             @map("usable_expired_at") @db.Timestamptz(3)
-  expiredAt          DateTime             @map("expired_at") @db.Timestamptz(3)
+  deletedAt          DateTime?            @map("deleted_at") @db.Timestamptz(3)
   createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime             @updatedAt() @map("updated_at") @db.Timestamptz(3)
   OrderItemPromotion OrderItemPromotion[]

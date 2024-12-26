@@ -3,6 +3,7 @@ import {
   VoucherDomain,
   VoucherDomainCreateInput,
   VoucherImgCreateInput,
+  VoucherStatusEnum,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
 } from '@resources/voucher/domain/voucher.domain';
@@ -39,6 +40,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     termAndCondEnArr: VoucherTermAndCondCreateInput[];
     image: VoucherImgCreateInput[];
   }): Promise<VoucherDomain> {
+    console.log('Voucher input', voucherData);
     const voucher = await this.prismaService.$transaction(async (txUnit) => {
       const voucher = await txUnit.voucher.create({
         data: voucherData,
@@ -48,12 +50,120 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         txUnit.voucherTermAndCondEN.createMany({ data: termAndCondEnArr }),
         txUnit.voucherImg.createMany({ data: image }),
       ]);
+      console.log('voucher', voucher);
       return voucher;
     });
     return VoucherMapper.toDomain(voucher);
   }
-  async findById(): Promise<NullAble<void>> {
-    return;
+  async findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
+    const voucher = await this.prismaService.voucher.findUnique({
+      where: {
+        id,
+      },
+    });
+    return voucher ? VoucherMapper.toDomain(voucher) : null;
+  }
+  async findByVoucherCode(
+    code: VoucherDomain['code'],
+  ): Promise<NullAble<VoucherDomain>> {
+    const voucher = await this.prismaService.voucher.findUnique({
+      where: {
+        code,
+      },
+    });
+    return voucher ? VoucherMapper.toDomain(voucher) : null;
+  }
+
+  async findMany({
+    tag,
+    category,
+    paginationOption,
+    cursor,
+    sortOption,
+  }: {
+    tag?: VoucherTagDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    paginationOption?: IPaginationOption;
+    cursor?: VoucherDomain['id'];
+    sortOption?: unknown;
+  }): Promise<NullAble<VoucherDomain[]>> {
+    let tagListFromCategories: NullAble<{ id: VoucherTagDomain['id'] }[]>;
+    const paginatedQueryOptiion = generatePaginationQueryOption({
+      cursor,
+      paginationOption,
+      sortOption,
+    });
+    const whereQueryOption = {
+      where: {
+        status: VoucherStatusEnum.ACTIVE,
+      },
+    };
+    if (category) {
+      const tagWhereOption = {};
+      if (tag) {
+        tagWhereOption['where'] = {
+          name: {
+            contains: tag,
+          },
+        };
+      }
+      tagListFromCategories = await this.prismaService.voucherCategory
+        .findFirst({
+          where: {
+            name: {
+              contains: category,
+            },
+          },
+        })
+        .VoucherTags({
+          select: {
+            id: true,
+          },
+          ...tagWhereOption,
+        });
+      console.log('Voucher list via Catego', tagListFromCategories);
+      whereQueryOption.where['tagId'] = {
+        in: tagListFromCategories.map((item) => item.id),
+      };
+      console.log(whereQueryOption);
+    } else if (!category && tag) {
+      whereQueryOption['where']['tagId'] = { contains: tag };
+    }
+    const voucherList = await this.prismaService.voucher.findMany({
+      ...paginatedQueryOptiion,
+      ...whereQueryOption,
+      include: {
+        VoucherImg: {
+          where: {
+            mainImg: {
+              equals: true,
+            },
+          },
+          select: {
+            id: true,
+            imgPath: true,
+            mainImg: true,
+          },
+        },
+        VoucherPromotion: {
+          where: {
+            AND: {
+              sellStartedAt: {
+                lte: new Date(Date.now()),
+              },
+              sellExpiredAt: {
+                gt: new Date(Date.now()),
+              },
+              deletedAt: {
+                equals: null,
+              },
+            },
+          },
+        },
+      },
+    });
+    console.log('Voucher List', voucherList);
+    return voucherList.map(VoucherMapper.toDomain);
   }
 }
 

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Decimal } from '@prisma/client/runtime/library';
 import { RoleEnum } from '@resources/account/types/account.type';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export enum VoucherStatusEnum {
   ACTIVE = 'ACTIVE',
@@ -18,11 +19,17 @@ export class VoucherDomain {
   code: string;
   @ApiProperty({ type: String })
   title: string;
+  @Expose({
+    toClassOnly: true,
+  })
   @ApiProperty({ type: () => VoucherStatusEnum })
   status: VoucherStatusEnum;
   @ApiProperty({ type: () => String })
   description: string;
-  @ApiProperty({ type: () => String })
+  @Transform(({ value }) =>
+    value instanceof Decimal ? value.toNumber() : Number(value),
+  )
+  @ApiProperty({ type: () => Number })
   price: number;
   @ApiProperty({ type: () => Date })
   usageExpiredTime: Date;
@@ -30,6 +37,16 @@ export class VoucherDomain {
   termAndCond?: { th: string[]; en: string[] };
   @ApiProperty({ type: () => Date })
   saleExpiredTime: Date;
+  @ApiProperty({
+    type: () => Object,
+    example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
+  })
+  img?: {
+    imgPath: string;
+    mainImg: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }[];
 }
 
 export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {
@@ -58,6 +75,10 @@ export class VoucherCategoryDomain {
   deletedAt?: Date;
 }
 
+/**
+ * The Domain
+ * of voucher tag
+ */
 export class VoucherTagDomain {
   @ApiProperty({ type: String })
   id: string;

@@ -77,7 +77,7 @@ export class CreateVoucherResponse extends CoreApiResponse {
     statusCode?: number,
   ): CreateVoucherResponse {
     const responseMessage = message ?? 'Login Successfully';
-    const responseCode = statusCode ?? HttpStatus.OK;
+    const responseCode = statusCode ?? HttpStatus.CREATED;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
     return new CreateVoucherResponse(

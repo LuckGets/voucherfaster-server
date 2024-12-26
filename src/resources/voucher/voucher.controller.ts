@@ -4,6 +4,7 @@ import {
   Get,
   Patch,
   Post,
+  Query,
   SerializeOptions,
   UploadedFiles,
   UseGuards,
@@ -28,7 +29,11 @@ import {
   CreateVoucherResponse,
 } from './dto/create-voucher.dto';
 import { ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swagger';
-import { VoucherCategoryDomain } from './domain/voucher.domain';
+import {
+  VoucherCategoryDomain,
+  VoucherDomain,
+  VoucherTagDomain,
+} from './domain/voucher.domain';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
@@ -80,17 +85,21 @@ export class VoucherController {
   @ApiOkResponse({
     description: 'Get many voucher with pagination.',
   })
-  // @Get()
-  // getVoucher(
-  //   @Query() tag: VoucherTagDomain['id'],
-  //   @Query() category: VoucherCategoryDomain['name'],
-  // ) {}
-  /**
-   *
-   * ---- Voucher ----
-   * ---- TAG ----
-   * ---- PART ----
-   */
+  @Get()
+  async getVoucher(
+    @Query('tag') tag: VoucherTagDomain['name'],
+    @Query('category') category: VoucherCategoryDomain['name'],
+    @Query('cursor') cursor: VoucherDomain['id'],
+  ) {
+    const vouchersList = await this.voucherService.getVoucher({
+      tag,
+      category,
+      cursor,
+    });
+    return vouchersList;
+  }
+
+  // ------------------------- VOUCHER TAG PART -------------------------
   @SerializeOptions({
     groups: [RoleEnum.Admin],
   })

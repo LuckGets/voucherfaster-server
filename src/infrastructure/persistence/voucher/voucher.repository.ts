@@ -29,7 +29,38 @@ export abstract class VoucherRepository {
     termAndCondEnArr: VoucherTermAndCondCreateInput[];
     image: VoucherImgCreateInput[];
   }): Promise<VoucherDomain>;
-  abstract findById(id: VoucherDomain['id']): Promise<NullAble<void>>;
+  /**
+   *
+   * @param id |
+   * @returns {Promise<NullAble<VoucherDomain>>}
+   * Find the voucher in database by ID which can be
+   * the voucher domain or null
+   */
+  abstract findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>>;
+  /**
+   *
+   * @param code
+   * @returns {Promise<NullAble<VoucherDomain>>}
+   * Find the voucher in database by code which can be
+   * the voucher domain or null
+   */
+  abstract findByVoucherCode(
+    code: VoucherDomain['code'],
+  ): Promise<NullAble<VoucherDomain>>;
+
+  abstract findMany({
+    tag,
+    category,
+    cursor,
+    paginationOption,
+    sortOption,
+  }: {
+    tag?: VoucherTagDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    paginationOption?: IPaginationOption;
+    cursor?: VoucherDomain['id'];
+    sortOption?: unknown;
+  }): Promise<NullAble<VoucherDomain[]>>;
 }
 
 export abstract class VoucherCategoryRepository {

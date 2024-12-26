@@ -23,6 +23,7 @@ import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
+import { IPaginationOption } from 'src/common/types/pagination.type';
 
 @Injectable()
 export class VoucherService {
@@ -34,10 +35,12 @@ export class VoucherService {
     private mediaService: MediaService,
   ) {}
 
+  // ------------------------- VOUCHER PART -------------------------
+
   /**
-   *
-   * --- VOUCHER ---
-   * --- PART ---
+   *  CREATE
+   *  VOUCHER
+   *  SERVICE
    *
    */
   public async createVoucher(
@@ -52,6 +55,15 @@ export class VoucherService {
         'The tag ID provided could not be found on this server.',
       );
 
+    console.log('Check voucher code');
+    const isVoucherCodeExists = await this.voucherRepository.findByVoucherCode(
+      data.code,
+    );
+    if (isVoucherCodeExists)
+      throw ErrorApiResponse.conflictRequest(
+        `The voucher code ${data.code} has already exist. Please try again with new code.`,
+      );
+    console.log('After checking voucher code');
     // ---------------------------------------------------------
     // ------------------ CREATE VOUCHER PART  ------------------
     //---------------------------------------------------------
@@ -117,6 +129,7 @@ export class VoucherService {
       },
     );
 
+    console.log('Voucher Data before pass to repo', voucherData);
     // ------- THIRD PART : CREATE VOUCHER  -------
     return this.voucherRepository.createVoucherAndTermAndImgTransaction({
       voucherData,
@@ -126,12 +139,31 @@ export class VoucherService {
     });
   }
 
-  public async getVoucher() {}
+  public async getVoucher({
+    tag,
+    category,
+    cursor,
+    paginationOption,
+    sortOption,
+  }: {
+    tag?: VoucherTagDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    paginationOption?: IPaginationOption;
+    cursor?: VoucherDomain['id'];
+    sortOption?: unknown;
+  }) {
+    return this.voucherRepository.findMany({
+      tag,
+      category,
+      cursor,
+      paginationOption,
+      sortOption,
+    });
+  }
+
+  // ------------------------- VOUCHER TAG PART -------------------------
   /**
-   *
-   * --- VOUCHER ---
-   * --- TAG ---
-   * --- PART ---
+   * Service for create voucher tag.
    *
    */
   public async createVoucherTag(
