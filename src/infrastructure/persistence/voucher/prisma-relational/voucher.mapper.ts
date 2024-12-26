@@ -1,18 +1,30 @@
 import {
   Voucher,
+  VoucherCategory,
   VoucherImg,
+  VoucherTag,
   VoucherTermAndCondEN,
   VoucherTermAndCondTh,
 } from '@prisma/client';
 import {
+  VoucherCategoryDomain,
   VoucherDomain,
   VoucherStatusEnum,
+  VoucherTagDomain,
 } from '@resources/voucher/domain/voucher.domain';
+import { plainToInstance } from 'class-transformer';
 
 type AllVoucherInformation = Voucher & {
   VoucherTermAndCondEN?: Partial<VoucherTermAndCondEN>[];
   VoucherTermAndCondTh?: Partial<VoucherTermAndCondTh>[];
   VoucherImg?: Partial<VoucherImg>[];
+};
+
+type VoucherCategoryInformation = VoucherCategory & {
+  VoucherTag?: Pick<
+    VoucherTagDomain,
+    'id' | 'name' | 'categoryId' | 'createdAt' | 'updatedAt'
+  >[];
 };
 
 export class VoucherMapper {
@@ -29,6 +41,7 @@ export class VoucherMapper {
     if (voucherEntity.VoucherImg) {
       voucherDomain.img = voucherEntity.VoucherImg.map((item) => {
         const img: VoucherDomain['img'][0] = {
+          id: item.id,
           imgPath: item.imgPath,
           mainImg: item.mainImg,
         };
@@ -49,5 +62,20 @@ export class VoucherMapper {
       };
     }
     return voucherDomain;
+  }
+}
+
+export class VoucherCategoryMapper {
+  public static toDomain(
+    voucherCategoryEntity: VoucherCategoryInformation,
+  ): VoucherCategoryDomain {
+    const voucherCategoryDomain: VoucherCategoryDomain = plainToInstance(
+      VoucherCategoryDomain,
+      voucherCategoryEntity,
+    );
+    if (voucherCategoryEntity.VoucherTag) {
+      voucherCategoryDomain.voucherTags = voucherCategoryEntity.VoucherTag;
+    }
+    return voucherCategoryDomain;
   }
 }

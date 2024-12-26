@@ -47,12 +47,12 @@ export class AccountController {
   @ApiOkResponse({
     type: () => GetMeResponseDto,
   })
-  @ApiBearerAuth('Bearer token')
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Me],
   })
   @UseGuards(AccessTokenAuthGuard)
-  @Get('me')
+  @Get(AccountPath.Me)
   async me(@Req() req: HttpRequestWithUser): Promise<GetMeResponseDto> {
     const account = await this.accountService.findById(req.user.accountId);
     return GetMeResponseDto.success(account);
@@ -65,7 +65,7 @@ export class AccountController {
   @ApiOkResponse({
     type: () => UpdateAccountResponse,
   })
-  @ApiBearerAuth('Bearer token')
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Me],
   })
@@ -87,7 +87,7 @@ export class AccountController {
   @ApiOkResponse({
     type: () => ChangePasswordResponse,
   })
-  @ApiBearerAuth('Bearer token')
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Me],
   })
@@ -107,7 +107,7 @@ export class AccountController {
   @ApiOkResponse({
     type: () => ChangePasswordResponse,
   })
-  @ApiBearerAuth('Bearer token')
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Me],
   })

@@ -42,6 +42,7 @@ export class VoucherDomain {
     example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
   })
   img?: {
+    id: string;
     imgPath: string;
     mainImg: boolean;
     createdAt?: Date;
@@ -73,6 +74,7 @@ export class VoucherCategoryDomain {
   })
   @ApiProperty({ type: Date, nullable: true })
   deletedAt?: Date;
+  voucherTags?: VoucherTagDomain[];
 }
 
 /**
@@ -146,3 +148,9 @@ export type VoucherImgCreateInput = Pick<
   VoucherImgDomain,
   'id' | 'imgPath' | 'voucherId' | 'mainImg'
 >;
+
+/**
+ * The input type
+ * for updating voucher image
+ */
+export type VoucherImgUpdateInput = Partial<VoucherImgDomain>;

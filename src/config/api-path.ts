@@ -22,11 +22,18 @@ export enum AuthGooglePath {
   Callback = '/callback',
 }
 
-export enum VoucherPath {
-  Name = 'vouchers',
-  Base = '/vouchers',
-  TagsName = 'tags',
-  Tag = '/categories/:categoryId/tags',
-  Category = '/categories',
-  UpdateTag = '/categories/:categoryId/tags/:tagId',
-}
+export const VoucherPath = {
+  Name: 'vouchers',
+  Base: '/vouchers',
+  VoucherIdParm: 'voucherId',
+  GetVoucherId: ':voucherId',
+  UpdateVoucher: ':voucherId',
+  AddVoucherImg: ':voucherId/images',
+  UpdateVoucherImg: ':voucherId/images/:imageId',
+  TagsName: 'tags',
+  TagQuery: 'tag',
+  CreateTag: '/categories/:categoryId/tags',
+  Category: '/categories',
+  CategoryQuery: 'category',
+  UpdateTag: '/categories/:categoryId/tags/:tagId',
+} as const;

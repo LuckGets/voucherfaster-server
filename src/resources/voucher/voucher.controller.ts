@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
   Post,
   Query,
@@ -28,13 +29,20 @@ import {
   CreateVoucherDto,
   CreateVoucherResponse,
 } from './dto/create-voucher.dto';
-import { ApiBody, ApiConsumes, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import {
   VoucherCategoryDomain,
   VoucherDomain,
   VoucherTagDomain,
 } from './domain/voucher.domain';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
+import { UpdateVoucherDto } from './dto/update-voucher.dto';
+import { AddVoucherImgDto, UpdateVoucherImgDto } from './dto/voucher-img.dto';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -44,6 +52,7 @@ export class VoucherController {
    * ---- Voucher ----
    * ---- PART ----
    */
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Admin, RoleEnum.Me],
   })
@@ -86,25 +95,46 @@ export class VoucherController {
     description: 'Get many voucher with pagination.',
   })
   @Get()
-  async getVoucher(
-    @Query('tag') tag: VoucherTagDomain['name'],
-    @Query('category') category: VoucherCategoryDomain['name'],
+  getPaginationVoucher(
+    @Query(VoucherPath.TagQuery) tag: VoucherTagDomain['name'],
+    @Query(VoucherPath.CategoryQuery) category: VoucherCategoryDomain['name'],
     @Query('cursor') cursor: VoucherDomain['id'],
   ) {
-    const vouchersList = await this.voucherService.getVoucher({
+    return this.voucherService.getPaginationVoucher({
       tag,
       category,
       cursor,
     });
-    return vouchersList;
+  }
+
+  @ApiOkResponse({
+    description: 'Get many voucher with pagination.',
+  })
+  @Get(VoucherPath.GetVoucherId)
+  getSpecificVoucherById(
+    @Param(VoucherPath.VoucherIdParm) voucherId: VoucherDomain['id'],
+  ) {
+    return this.voucherService.getVoucherById(voucherId);
+  }
+
+  @ApiBearerAuth()
+  @SerializeOptions({
+    groups: [RoleEnum.Admin],
+  })
+  @ApiBody({ type: '' })
+  @UseGuards(AdminGuard)
+  @Patch(VoucherPath.UpdateVoucher)
+  updateVoucher(@Body() body: UpdateVoucherDto) {
+    return this.voucherService.updateVoucher(body);
   }
 
   // ------------------------- VOUCHER TAG PART -------------------------
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Admin],
   })
   @UseGuards(AdminGuard)
-  @Post(VoucherPath.Tag)
+  @Post(VoucherPath.CreateTag)
   async createVoucherTag(
     @Body() body: CreateVoucherTagDto,
   ): Promise<VoucherTagResponse> {
@@ -112,6 +142,7 @@ export class VoucherController {
     return VoucherTagResponse.createSuccess(newVoucherTag);
   }
 
+  @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Admin],
   })
@@ -125,8 +156,8 @@ export class VoucherController {
     groups: [RoleEnum.Admin, RoleEnum.User],
   })
   @Get(VoucherPath.TagsName)
-  async getVoucherTag() {
-    return this.voucherService.getVoucherTag();
+  async getPaginationVoucherTag() {
+    return this.voucherService.getPaginationVoucherTag();
   }
   /**
    *
@@ -148,8 +179,42 @@ export class VoucherController {
   }
 
   @Get(VoucherPath.Category)
-  async getVoucherCategory(): Promise<VoucherCategoryResponse<any>> {
+  async getPaginationVoucherCategory(): Promise<VoucherCategoryResponse<any>> {
     const voucherCat = await this.voucherService.getPaginationVoucherCategory();
     return VoucherCategoryResponse.findManySuccess(voucherCat);
   }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER IMAGE PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/formdata')
+  @UseGuards(AdminGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      {
+        name: 'mainImg',
+        maxCount: 1,
+      },
+      {
+        name: 'voucherImg',
+      },
+    ]),
+    UnlinkFileInterceptor,
+  )
+  @Post(VoucherPath.AddVoucherImg)
+  addVoucherImg(
+    @UploadedFiles()
+    files: {
+      mainImg: Express.Multer.File[];
+      voucherImg: Express.Multer.File[];
+    },
+    @Body() body: AddVoucherImgDto,
+  ) {
+    return this.voucherService;
+  }
+
+  @Patch(VoucherPath.UpdateVoucherImg)
+  updateVoucherImg(@Body() body: UpdateVoucherImgDto) {}
 }

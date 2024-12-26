@@ -46,6 +46,7 @@ async function bootstrap() {
     .setVersion(configService.getOrThrow('app.desc', { infer: true }))
     .setDescription(configService.getOrThrow('app.apiVersion', { infer: true }))
     .addCookieAuth()
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('docs', app, document);

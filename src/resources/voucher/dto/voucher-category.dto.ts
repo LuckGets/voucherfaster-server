@@ -65,9 +65,7 @@ export class VoucherCategoryResponse<T> extends CoreApiResponse {
   }
 
   public static findManySuccess(
-    data: (VoucherCategoryDomain & {
-      VoucherTags: VoucherTagDomain[];
-    })[],
+    data: VoucherCategoryDomain[],
     message?: string,
     link?: HATEOSLink,
     statusCode?: number,
@@ -75,7 +73,7 @@ export class VoucherCategoryResponse<T> extends CoreApiResponse {
     const responseMessage = message ?? 'Get voucher category Successfully';
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseDataWithLinks = data.map((item) => {
-      item.VoucherTags.forEach(
+      item.voucherTags.forEach(
         (voucherTag) =>
           (voucherTag['links'] = generateVoucherTagResponseHATEOASLink(
             item.id,

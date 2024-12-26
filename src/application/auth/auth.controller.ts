@@ -77,7 +77,7 @@ export class AuthController {
     return LoginResponseDto.success({ accessToken });
   }
 
-  @ApiCookieAuth('Refresh')
+  @ApiCookieAuth()
   @ApiOkResponse({
     type: () => RefreshResponseDto,
   })
@@ -99,7 +99,7 @@ export class AuthController {
     });
   }
 
-  @ApiCookieAuth('Refresh')
+  @ApiCookieAuth()
   @ApiOkResponse({ type: () => LogoutResponseDto })
   @Get(AuthPath.Logout)
   async logout(

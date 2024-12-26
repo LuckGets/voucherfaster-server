@@ -3,9 +3,12 @@ import {
   VoucherDomain,
   VoucherDomainCreateInput,
   VoucherImgCreateInput,
+  VoucherImgDomain,
+  VoucherImgUpdateInput,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
 } from '@resources/voucher/domain/voucher.domain';
+import { UpdateVoucherDto } from '@resources/voucher/dto/update-voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 
@@ -31,8 +34,9 @@ export abstract class VoucherRepository {
   }): Promise<VoucherDomain>;
   /**
    *
-   * @param id |
-   * @returns {Promise<NullAble<VoucherDomain>>}
+   * @param id
+   * @returns VoucherDomain
+   *
    * Find the voucher in database by ID which can be
    * the voucher domain or null
    */
@@ -61,6 +65,8 @@ export abstract class VoucherRepository {
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
   }): Promise<NullAble<VoucherDomain[]>>;
+
+  abstract update(data: UpdateVoucherDto): Promise<VoucherDomain>;
 }
 
 export abstract class VoucherCategoryRepository {
@@ -72,7 +78,7 @@ export abstract class VoucherCategoryRepository {
   ): Promise<VoucherCategoryDomain>;
   abstract findManyWithPagination(
     paginationOption?: IPaginationOption,
-  ): Promise<(VoucherCategoryDomain & { VoucherTags: VoucherTagDomain[] })[]>;
+  ): Promise<VoucherCategoryDomain[]>;
 }
 
 export abstract class VoucherTagRepository {
@@ -88,4 +94,19 @@ export abstract class VoucherTagRepository {
       | Partial<VoucherTagDomain>
       | Partial<VoucherTagDomain & { categoryId: VoucherCategoryDomain['id'] }>,
   ): Promise<VoucherTagDomain>;
+}
+
+export abstract class VoucherImgRepository {
+  abstract findManyByVoucherId(
+    voucherId: VoucherDomain['id'],
+  ): Promise<NullAble<VoucherImgDomain[]>>;
+  abstract updateVoucherImg(
+    id: VoucherImgDomain['id'],
+    payload: VoucherImgUpdateInput,
+  ): Promise<NullAble<VoucherImgDomain>>;
+  abstract updateNewMainImgVoucher(
+    mainImgId: VoucherImgDomain['id'],
+    data: VoucherImgCreateInput,
+  ): Promise<VoucherImgDomain>;
+  abstract createMany(dataList: VoucherImgCreateInput[]): Promise<void>;
 }

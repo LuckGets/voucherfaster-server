@@ -7,8 +7,6 @@ import { UUIDTypes } from 'uuid';
 import { AccountDomain } from '../domain/account.domain';
 import { GenerateAccountResponseHATEOASLink } from 'src/common/HATEOASLinks';
 
-type GetMeResponseType = AccountDomain;
-
 export class GetMeResponseDto extends CoreApiResponse {
   @ApiProperty({
     type: Number,
@@ -26,19 +24,19 @@ export class GetMeResponseDto extends CoreApiResponse {
   })
   public links: HATEOSLink;
   @ApiProperty({
-    type: Object,
+    type: () => GetMeResponseDto,
     example: 'sdfsdf',
   })
-  public data: GetMeResponseType;
+  public data: AccountDomain;
 
   public static success(
-    data: GetMeResponseType,
+    data: AccountDomain,
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
   ): GetMeResponseDto {
-    const responseMessage = message ?? 'Login Successfully';
-    const responseCode = statusCode ?? HttpStatus.ACCEPTED;
+    const responseMessage = message ?? 'Get my information Successfully';
+    const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink =
       links ??
       GenerateAccountResponseHATEOASLink(

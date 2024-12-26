@@ -9,12 +9,15 @@ import {
   VoucherDomain,
   VoucherDomainCreateInput,
   VoucherImgCreateInput,
+  VoucherImgDomain,
+  VoucherImgUpdateInput,
   VoucherStatusEnum,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
 } from './domain/voucher.domain';
 import {
   VoucherCategoryRepository,
+  VoucherImgRepository,
   VoucherRepository,
   VoucherTagRepository,
 } from 'src/infrastructure/persistence/voucher/voucher.repository';
@@ -24,6 +27,9 @@ import { CreateVoucherDto } from './dto/create-voucher.dto';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
+import { NullAble } from '@utils/types/common.type';
+import { UpdateVoucherDto } from './dto/update-voucher.dto';
+import { UpdateVoucherImgDto } from './dto/voucher-img.dto';
 
 @Injectable()
 export class VoucherService {
@@ -31,11 +37,14 @@ export class VoucherService {
     private voucherRepository: VoucherRepository,
     private voucherTagRepository: VoucherTagRepository,
     private voucherCategoryRepository: VoucherCategoryRepository,
+    private voucherImgRepository: VoucherImgRepository,
     private uuidService: UUIDService,
     private mediaService: MediaService,
   ) {}
 
-  // ------------------------- VOUCHER PART -------------------------
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER PART ----------------------------- //
+  // -------------------------------------------------------------------- //
 
   /**
    *  CREATE
@@ -55,7 +64,6 @@ export class VoucherService {
         'The tag ID provided could not be found on this server.',
       );
 
-    console.log('Check voucher code');
     const isVoucherCodeExists = await this.voucherRepository.findByVoucherCode(
       data.code,
     );
@@ -63,7 +71,6 @@ export class VoucherService {
       throw ErrorApiResponse.conflictRequest(
         `The voucher code ${data.code} has already exist. Please try again with new code.`,
       );
-    console.log('After checking voucher code');
     // ---------------------------------------------------------
     // ------------------ CREATE VOUCHER PART  ------------------
     //---------------------------------------------------------
@@ -129,7 +136,6 @@ export class VoucherService {
       },
     );
 
-    console.log('Voucher Data before pass to repo', voucherData);
     // ------- THIRD PART : CREATE VOUCHER  -------
     return this.voucherRepository.createVoucherAndTermAndImgTransaction({
       voucherData,
@@ -139,7 +145,7 @@ export class VoucherService {
     });
   }
 
-  public async getVoucher({
+  public async getPaginationVoucher({
     tag,
     category,
     cursor,
@@ -161,7 +167,51 @@ export class VoucherService {
     });
   }
 
-  // ------------------------- VOUCHER TAG PART -------------------------
+  public async getVoucherById(
+    id: VoucherDomain['id'],
+  ): Promise<NullAble<VoucherDomain>> {
+    const voucher = await this.voucherRepository.findById(id);
+    if (!voucher)
+      throw ErrorApiResponse.notFoundRequest(
+        `The voucher ID: ${id} could not be found on this server.`,
+      );
+    return voucher;
+  }
+
+  /**
+   * Service for updating
+   * existing voucher.
+   */
+  public async updateVoucher(data: UpdateVoucherDto): Promise<VoucherDomain> {
+    // Find the voucher via id
+    const voucher = await this.voucherRepository.findById(data.id);
+
+    // If the voucher does not exist
+    // throw the error.
+    if (!voucher)
+      throw ErrorApiResponse.notFoundRequest(
+        `The voucher ID: ${data.id} could not be found on this server`,
+      );
+    // If updated data contain
+    // changing the voucher code
+    // have to check first
+    // does the new code already exist?
+    if (data.code) {
+      const isVoucherCodeExists =
+        await this.voucherRepository.findByVoucherCode(data.code);
+      if (isVoucherCodeExists) {
+        throw ErrorApiResponse.conflictRequest(
+          `The voucher code: ${isVoucherCodeExists.code} already exists in this server. Please try again.`,
+        );
+      }
+    }
+    return this.voucherRepository.update(data);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER TAG PART ------------------------- //
+  // -------------------------------------------------------------------- //
+
   /**
    * Service for create voucher tag.
    *
@@ -188,7 +238,7 @@ export class VoucherService {
     return this.voucherTagRepository.create(createInput);
   }
 
-  public async getVoucherTag() {}
+  public async getPaginationVoucherTag() {}
 
   public async updateVoucherTag(
     data: UpdateVoucherTagDto,
@@ -216,14 +266,10 @@ export class VoucherService {
     }
     return this.voucherTagRepository.update(tagId, input);
   }
-  /**
-   *
-   * --- VOUCHER ---
-   * --- CATEGORY ---
-   * --- PART ---
-   *
-   */
-  //---------------------
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER CATEGORY PART -------------------- //
+  // -------------------------------------------------------------------- //
 
   /**
    * Create voucher category
@@ -242,11 +288,95 @@ export class VoucherService {
   }
 
   /**
-   * Find voucher category
-   * via pagination by
+   * Service for
+   * finding many
+   * voucher category
+   * via pagination which
+   * can provide
    * cursor and page
+   * to paginated
    */
-  public getPaginationVoucherCategory() {
+  public getPaginationVoucherCategory(): Promise<
+    NullAble<VoucherCategoryDomain[]>
+  > {
     return this.voucherCategoryRepository.findManyWithPagination();
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER IMAGE PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  /**
+   * Service for
+   * finding all
+   * voucher image
+   * of specific
+   * voucher ID
+   */
+  private async getAllVoucherImgByVoucherId(
+    id: VoucherDomain['id'],
+  ): Promise<NullAble<VoucherImgDomain[]>> {
+    return this.voucherImgRepository.findManyByVoucherId(id);
+  }
+
+  private async updateVoucherMainImage(
+    voucherId: VoucherDomain['id'],
+    oldVoucherMainImgId: VoucherImgDomain['id'],
+    mainImg: Express.Multer.File,
+  ): Promise<VoucherImgDomain> {
+    const mainImageLink = await this.mediaService.uploadFile(
+      mainImg[0],
+      s3BucketDirectory.voucherImg,
+    );
+    const mainImgToUpdate: VoucherImgCreateInput = {
+      id: String(this.uuidService.make()),
+      imgPath: mainImageLink,
+      mainImg: true,
+      voucherId: voucherId,
+    };
+    return this.voucherImgRepository.updateNewMainImgVoucher(
+      oldVoucherMainImgId,
+      mainImgToUpdate,
+    );
+  }
+  /**
+   * Service for
+   * update specific
+   * voucher image
+   * via ID
+   */
+  private async updateVoucherImg({}: {
+    data: UpdateVoucherImgDto;
+    mainImg: Express.Multer.File;
+    voucherImg: Express.Multer.File[];
+  }): Promise<VoucherImgDomain> {
+    return;
+  }
+  /**
+   * @param Express.Multer.File[]
+   * @param voucherId
+   * Service for
+   * create new
+   * voucher image
+   */
+  private async createVoucherImg(
+    voucherId: VoucherDomain['id'],
+    data: Express.Multer.File[],
+  ): Promise<void> {
+    const voucherImgLink = await Promise.all(
+      data.map((item) => {
+        return this.mediaService.uploadFile(item, s3BucketDirectory.voucherImg);
+      }),
+    );
+    const voucherImgToUpdate = voucherImgLink.map((item) => {
+      return {
+        id: String(this.uuidService.make()),
+        imgPath: item,
+        voucherId,
+        mainImg: false,
+      };
+    });
+
+    return this.voucherImgRepository.createMany(voucherImgToUpdate);
   }
 }
