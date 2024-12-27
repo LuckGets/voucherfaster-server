@@ -153,4 +153,4 @@ export type VoucherImgCreateInput = Pick<
  * The input type
  * for updating voucher image
  */
-export type VoucherImgUpdateInput = Partial<VoucherImgDomain>;
+export type VoucherImgUpdateInput = Pick<VoucherImgDomain, 'imgPath'>;

@@ -362,26 +362,46 @@ export class VoucherImgRelationalPrismaORMRepository
   implements VoucherImgRepository
 {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
+  findById(id: VoucherImgDomain['id']): Promise<NullAble<VoucherImgDomain>> {
+    return this.prismaService.voucherImg.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
   findManyByVoucherId(
     voucherId: VoucherDomain['id'],
   ): Promise<NullAble<VoucherImgDomain[]>> {
     return;
   }
-  updateNewMainImgVoucher(
-    mainImgId: VoucherImgDomain['id'],
-    data: VoucherImgCreateInput,
-  ): Promise<VoucherImgDomain> {
+  updateNewMainImgVoucher({
+    mainImgId,
+    data,
+    deleteMainImg,
+  }: {
+    mainImgId: VoucherImgDomain['id'];
+    data: VoucherImgCreateInput;
+    deleteMainImg: boolean;
+  }): Promise<VoucherImgDomain> {
     return this.prismaService.$transaction(async (txUnit) => {
       // Update the main image to non-main image
+      const mainImgAction = deleteMainImg
+        ? txUnit.voucherImg.delete({
+            where: {
+              id: mainImgId,
+            },
+          })
+        : txUnit.voucherImg.update({
+            where: {
+              id: mainImgId,
+            },
+            data: {
+              mainImg: false,
+            },
+          });
+
       const [, newVoucherImg] = await Promise.all([
-        txUnit.voucherImg.update({
-          where: {
-            id: mainImgId,
-          },
-          data: {
-            mainImg: false,
-          },
-        }),
+        mainImgAction,
         txUnit.voucherImg.create({
           data,
         }),

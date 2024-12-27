@@ -97,16 +97,24 @@ export abstract class VoucherTagRepository {
 }
 
 export abstract class VoucherImgRepository {
+  abstract findById(
+    id: VoucherImgDomain['id'],
+  ): Promise<NullAble<VoucherImgDomain>>;
   abstract findManyByVoucherId(
     voucherId: VoucherDomain['id'],
   ): Promise<NullAble<VoucherImgDomain[]>>;
+  abstract updateNewMainImgVoucher({
+    mainImgId,
+    data,
+    deleteMainImg,
+  }: {
+    mainImgId: VoucherImgDomain['id'];
+    data: VoucherImgCreateInput;
+    deleteMainImg: boolean;
+  }): Promise<VoucherImgDomain>;
+  abstract createMany(dataList: VoucherImgCreateInput[]): Promise<void>;
   abstract updateVoucherImg(
     id: VoucherImgDomain['id'],
-    payload: VoucherImgUpdateInput,
-  ): Promise<NullAble<VoucherImgDomain>>;
-  abstract updateNewMainImgVoucher(
-    mainImgId: VoucherImgDomain['id'],
-    data: VoucherImgCreateInput,
+    data: VoucherImgUpdateInput,
   ): Promise<VoucherImgDomain>;
-  abstract createMany(dataList: VoucherImgCreateInput[]): Promise<void>;
 }

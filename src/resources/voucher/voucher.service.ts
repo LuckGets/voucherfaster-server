@@ -29,7 +29,7 @@ import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
-import { UpdateVoucherImgDto } from './dto/voucher-img.dto';
+import { AddVoucherImgDto, UpdateVoucherImgDto } from './dto/voucher-img.dto';
 
 @Injectable()
 export class VoucherService {
@@ -313,19 +313,98 @@ export class VoucherService {
    * of specific
    * voucher ID
    */
-  private async getAllVoucherImgByVoucherId(
+  public async getAllVoucherImgByVoucherId(
     id: VoucherDomain['id'],
   ): Promise<NullAble<VoucherImgDomain[]>> {
     return this.voucherImgRepository.findManyByVoucherId(id);
   }
 
-  private async updateVoucherMainImage(
-    voucherId: VoucherDomain['id'],
-    oldVoucherMainImgId: VoucherImgDomain['id'],
-    mainImg: Express.Multer.File,
+  /**
+   * Service for
+   * update specific
+   * voucher image
+   * via ID
+   */
+  public async addVoucherImg({
+    data,
+    mainImg,
+    voucherImg,
+  }: {
+    data?: AddVoucherImgDto;
+    mainImg?: Express.Multer.File;
+    voucherImg?: Express.Multer.File[];
+  }): Promise<void> {
+    const voucher = await this.voucherRepository.findById(data.voucherId);
+    if (!voucher)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${data.voucherId} could not be found on this server.`,
+      );
+    if (mainImg) {
+      await this.updateVoucherMainImage({
+        voucherId: voucher.id,
+        toReplacedVoucherImgDomain: voucher.img.filter(
+          (item) => item.mainImg,
+        )[0],
+        mainImg,
+        deleteMainImg: data.deleteMainImg,
+      });
+    }
+    if (voucherImg) {
+      await this.createManyVoucherImg(voucher.id, voucherImg);
+    }
+    return;
+  }
+
+  /**
+   *
+   * @param data VoucherImgCreateInput
+   * @param file Express.Multer.File
+   * @returns VoucherImgDomain
+   */
+  public async updateSpecificVoucherImg(
+    data: UpdateVoucherImgDto,
+    file: Express.Multer.File,
   ): Promise<VoucherImgDomain> {
+    const voucherImg = await this.voucherImgRepository.findById(data.voucherId);
+    if (!voucherImg)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher image ID: ${data.voucherImgId} could not be found on this server.`,
+      );
+    const imageLink = await this.mediaService.uploadFile(
+      file,
+      s3BucketDirectory.voucherImg,
+    );
+    const updatedVoucherImg = await this.voucherImgRepository.updateVoucherImg(
+      data.voucherImgId,
+      { imgPath: imageLink },
+    );
+    return updatedVoucherImg;
+  }
+
+  /**
+   *
+   * @param voucherId
+   * @param toReplacedVoucherImgDomain
+   * @param mainImg
+   * @param boolean
+   * @returns VoucherImgDomain
+   */
+  private async updateVoucherMainImage({
+    voucherId,
+    toReplacedVoucherImgDomain,
+    mainImg,
+    deleteMainImg = false,
+  }: {
+    voucherId: VoucherDomain['id'];
+    toReplacedVoucherImgDomain: Pick<
+      VoucherImgDomain,
+      'id' | 'imgPath' | 'mainImg'
+    >;
+    mainImg: Express.Multer.File;
+    deleteMainImg?: boolean;
+  }): Promise<VoucherImgDomain> {
     const mainImageLink = await this.mediaService.uploadFile(
-      mainImg[0],
+      mainImg,
       s3BucketDirectory.voucherImg,
     );
     const mainImgToUpdate: VoucherImgCreateInput = {
@@ -334,32 +413,26 @@ export class VoucherService {
       mainImg: true,
       voucherId: voucherId,
     };
-    return this.voucherImgRepository.updateNewMainImgVoucher(
-      oldVoucherMainImgId,
-      mainImgToUpdate,
-    );
-  }
-  /**
-   * Service for
-   * update specific
-   * voucher image
-   * via ID
-   */
-  private async updateVoucherImg({}: {
-    data: UpdateVoucherImgDto;
-    mainImg: Express.Multer.File;
-    voucherImg: Express.Multer.File[];
-  }): Promise<VoucherImgDomain> {
-    return;
+    const voucherImg = await this.voucherImgRepository.updateNewMainImgVoucher({
+      mainImgId: toReplacedVoucherImgDomain.id,
+      data: mainImgToUpdate,
+      deleteMainImg,
+    });
+    if (deleteMainImg) {
+      await this.mediaService.deleteFile(toReplacedVoucherImgDomain.imgPath);
+    }
+    return voucherImg;
   }
   /**
    * @param Express.Multer.File[]
    * @param voucherId
+   * @returns null
+   *
    * Service for
-   * create new
+   * create many new
    * voucher image
    */
-  private async createVoucherImg(
+  private async createManyVoucherImg(
     voucherId: VoucherDomain['id'],
     data: Express.Multer.File[],
   ): Promise<void> {

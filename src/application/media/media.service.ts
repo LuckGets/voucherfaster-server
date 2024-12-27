@@ -6,4 +6,5 @@ export abstract class MediaService {
     file: Express.Multer.File,
     bucketDir: string,
   ): Promise<string>;
+  abstract deleteFile(imgPath: string): Promise<void>;
 }

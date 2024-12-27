@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   SerializeOptions,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -24,7 +25,10 @@ import {
 } from './dto/voucher-tag.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { RoleEnum } from '@resources/account/types/account.type';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import {
   CreateVoucherDto,
   CreateVoucherResponse,
@@ -34,6 +38,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOkResponse,
+  ApiOperation,
 } from '@nestjs/swagger';
 import {
   VoucherCategoryDomain,
@@ -42,16 +47,22 @@ import {
 } from './domain/voucher.domain';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
-import { AddVoucherImgDto, UpdateVoucherImgDto } from './dto/voucher-img.dto';
+import {
+  AddVoucherImgDto,
+  AddVoucherImgResponse,
+  UpdateVoucherImgDto,
+  VOUCHER_FILE_FILED,
+} from './dto/voucher-img.dto';
+import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
   constructor(private voucherService: VoucherService) {}
-  /**
-   *
-   * ---- Voucher ----
-   * ---- PART ----
-   */
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER PART ----------------------------- //
+  // -------------------------------------------------------------------- //
+
   @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Admin, RoleEnum.Me],
@@ -61,11 +72,11 @@ export class VoucherController {
   @UseInterceptors(
     FileFieldsInterceptor([
       {
-        name: 'mainImg',
+        name: VOUCHER_FILE_FILED.MainImg,
         maxCount: 1,
       },
       {
-        name: 'voucherImg',
+        name: VOUCHER_FILE_FILED.VoucherImg,
       },
     ]),
     UnlinkFileInterceptor,
@@ -98,7 +109,7 @@ export class VoucherController {
   getPaginationVoucher(
     @Query(VoucherPath.TagQuery) tag: VoucherTagDomain['name'],
     @Query(VoucherPath.CategoryQuery) category: VoucherCategoryDomain['name'],
-    @Query('cursor') cursor: VoucherDomain['id'],
+    @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherDomain['id'],
   ) {
     return this.voucherService.getPaginationVoucher({
       tag,
@@ -128,7 +139,10 @@ export class VoucherController {
     return this.voucherService.updateVoucher(body);
   }
 
+  // -------------------------------------------------------------------- //
   // ------------------------- VOUCHER TAG PART -------------------------
+  // -------------------------------------------------------------------- //
+
   @ApiBearerAuth()
   @SerializeOptions({
     groups: [RoleEnum.Admin],
@@ -159,12 +173,10 @@ export class VoucherController {
   async getPaginationVoucherTag() {
     return this.voucherService.getPaginationVoucherTag();
   }
-  /**
-   *
-   * ---- Voucher ----
-   * ---- CATEGORY ----
-   * ---- PART ----
-   */
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER CATEGORY PART -------------------- //
+  // -------------------------------------------------------------------- //
+
   @SerializeOptions({
     groups: [RoleEnum.Admin],
   })
@@ -188,33 +200,64 @@ export class VoucherController {
   // ------------------------- VOUCHER IMAGE PART ----------------------- //
   // -------------------------------------------------------------------- //
 
+  // Adding new image to existing voucher
+  // This endpoints can also be use to
+  // update main image to a new one
+  // and move the old one to sub-image
   @ApiBearerAuth()
+  @ApiOperation({
+    description:
+      "This endpoints can be use for two cases.\n1). Add new image to the exisiting voucher. The newly added image will be marked as non-main image.\n 2).Adding new main image and move the old main image to be non-main image.\n If  provided value body's property: deleteMainImg equal true. The to-be-replace main image will be delete.",
+  })
   @ApiConsumes('multipart/formdata')
   @UseGuards(AdminGuard)
   @UseInterceptors(
     FileFieldsInterceptor([
       {
-        name: 'mainImg',
+        name: VOUCHER_FILE_FILED.MainImg,
         maxCount: 1,
       },
       {
-        name: 'voucherImg',
+        name: VOUCHER_FILE_FILED.VoucherImg,
       },
     ]),
     UnlinkFileInterceptor,
   )
   @Post(VoucherPath.AddVoucherImg)
-  addVoucherImg(
+  async addVoucherImg(
     @UploadedFiles()
     files: {
-      mainImg: Express.Multer.File[];
-      voucherImg: Express.Multer.File[];
+      mainImg?: Express.Multer.File[];
+      voucherImg?: Express.Multer.File[];
     },
     @Body() body: AddVoucherImgDto,
-  ) {
-    return this.voucherService;
+  ): Promise<AddVoucherImgResponse> {
+    await this.voucherService.addVoucherImg({
+      data: body,
+      mainImg: files.mainImg[0],
+      voucherImg: files.voucherImg,
+    });
+    return AddVoucherImgResponse.success(null);
   }
 
+  // Updage existing voucher Image.
+
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/formdata')
+  @UseGuards(AdminGuard)
+  @UseInterceptors(
+    FileInterceptor(VOUCHER_FILE_FILED.VoucherImg),
+    UnlinkFileInterceptor,
+  )
   @Patch(VoucherPath.UpdateVoucherImg)
-  updateVoucherImg(@Body() body: UpdateVoucherImgDto) {}
+  async updateVoucherImg(
+    @Body() body: UpdateVoucherImgDto,
+    @UploadedFile()
+    file: Express.Multer.File,
+  ) {
+    const voucherImg = await this.voucherService.updateSpecificVoucherImg(
+      body,
+      file,
+    );
+  }
 }

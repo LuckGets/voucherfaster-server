@@ -66,4 +66,22 @@ export class MediaS3Service implements MediaService {
     const command = new AWS.PutObjectCommand(params);
     return this.s3Client.send(command);
   }
+
+  /**
+   *
+   * @param imgPath string
+   * @returns void
+   *
+   * Service for deleting the file
+   * in the media repository
+   */
+  async deleteFile(imgPath: string): Promise<void> {
+    const params: AWS.DeleteObjectCommandInput = {
+      Bucket: this.AWS_BUCKET_NAME,
+      Key: imgPath.split(`${this.CLOUDFRONT_DOMAIN_NAME}/`)[1],
+    };
+    const command = new AWS.DeleteObjectCommand(params);
+    await this.s3Client.send(command);
+    return;
+  }
 }
