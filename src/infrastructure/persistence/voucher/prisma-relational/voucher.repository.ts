@@ -23,6 +23,7 @@ import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { VoucherCategoryMapper, VoucherMapper } from './voucher.mapper';
 import { UpdateVoucherDto } from '@resources/voucher/dto/update-voucher.dto';
+import { contains } from 'class-validator';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -57,6 +58,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     });
     return VoucherMapper.toDomain(voucher);
   }
+
   async findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
     const voucher = await this.prismaService.voucher.findUnique({
       where: {
@@ -111,6 +113,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     });
     return voucher ? VoucherMapper.toDomain(voucher) : null;
   }
+
   async findByVoucherCode(
     code: VoucherDomain['code'],
   ): Promise<NullAble<VoucherDomain>> {
@@ -262,6 +265,103 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     return voucherList.map(VoucherMapper.toDomain);
   }
 
+  async findBySearchContent(
+    searchContent: string,
+  ): Promise<NullAble<VoucherDomain[]>> {
+    let voucherList: NullAble<VoucherDomain[]>;
+    const queryVoucherListResult = await this.prismaService.voucher.findMany({
+      where: {
+        OR: [
+          {
+            // code: {
+            //   startsWith: searchContent,
+            //   mode: 'insensitive',
+            // },
+            title: {
+              contains: searchContent,
+              mode: 'insensitive',
+            },
+          },
+        ],
+        status: 'ACTIVE',
+      },
+      include: {
+        VoucherImg: {
+          where: {
+            mainImg: true,
+          },
+          select: {
+            id: true,
+            imgPath: true,
+          },
+        },
+        VoucherPromotion: {
+          select: {
+            id: true,
+            name: true,
+            promotionPrice: true,
+            sellStartedAt: true,
+            sellExpiredAt: true,
+            usableAt: true,
+            usableExpiredAt: true,
+          },
+          where: {
+            deletedAt: {
+              not: null,
+            },
+            sellStartedAt: {
+              lte: new Date(Date.now()),
+            },
+            sellExpiredAt: {
+              gt: new Date(Date.now()),
+            },
+          },
+        },
+        PackageVoucher: {
+          where: {
+            deletedAt: {
+              not: null,
+            },
+            startedAt: {
+              lte: new Date(Date.now()),
+            },
+            expiredAt: {
+              gt: new Date(Date.now()),
+            },
+          },
+        },
+      },
+    });
+    if (queryVoucherListResult.length > 0) {
+      const { mappedVoucherList, packageVoucher } =
+        queryVoucherListResult.reduce(
+          (acc, curr) => {
+            const { PackageVoucher, ...data } = curr;
+            if (PackageVoucher && packageVoucher.length > 0) {
+              acc.packageVoucher.push(PackageVoucher);
+            }
+            acc.mappedVoucherList.push(VoucherMapper.toDomain(data));
+            return acc;
+          },
+          {
+            mappedVoucherList: [],
+            packageVoucher: [],
+          },
+        );
+    }
+    if (voucherList.length < 1) {
+      const voucherTagList = await this.prismaService.voucherCategory
+        .findFirst({
+          where: {
+            name: {
+              contains: searchContent,
+            },
+          },
+        })
+        .VoucherTags();
+    }
+    return;
+  }
   async update(payload: UpdateVoucherDto): Promise<VoucherDomain> {
     const { id, ...data } = payload;
     const voucher = await this.prismaService.voucher.update({
@@ -278,16 +378,17 @@ export class VoucherCategoryRelationalPrismaORMRepository
   implements VoucherCategoryRepository
 {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
-  findById(
+  async findById(
     id: VoucherCategoryDomain['id'],
   ): Promise<NullAble<VoucherCategoryDomain>> {
-    return this.prismaService.voucherCategory
-      .findUnique({
+    const voucherCategory = await this.prismaService.voucherCategory.findUnique(
+      {
         where: {
           id,
         },
-      })
-      .then((res) => VoucherCategoryMapper.toDomain(res));
+      },
+    );
+    return voucherCategory;
   }
   async findManyWithPagination(
     paginationOption?: IPaginationOption,

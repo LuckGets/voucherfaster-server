@@ -118,6 +118,14 @@ export class VoucherController {
     });
   }
 
+  @Get(VoucherPath.SearchVoucher)
+  async getSearchVoucher(
+    @Param(VoucherPath.SearchVoucherParam) searchContent: string,
+  ) {
+    const voucherList =
+      await this.voucherService.getSearchedVoucher(searchContent);
+  }
+
   @ApiOkResponse({
     description: 'Get many voucher with pagination.',
   })

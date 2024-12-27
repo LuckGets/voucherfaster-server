@@ -14,6 +14,13 @@ import { IPaginationOption } from 'src/common/types/pagination.type';
 
 export abstract class VoucherRepository {
   /**
+   * @abstract
+   * @param voucherData VoucherDomainCreateInput;
+   * @param termAndCondThArr VoucherTermAndCondCreateInput[];;
+   * @param termAndCondEnArr VoucherTermAndCondCreateInput[];
+   * @param image VoucherImgCreateInput[];
+   * @returns VoucherDomain
+   *
    * As a voucher have three related table
    * So by creating a voucher actually mean
    * putting data to the four record table
@@ -51,6 +58,20 @@ export abstract class VoucherRepository {
   abstract findByVoucherCode(
     code: VoucherDomain['code'],
   ): Promise<NullAble<VoucherDomain>>;
+
+  /**
+   *
+   * @param searchContent string
+   * @returns VoucherDomain[] or null
+   *
+   * Find the voucher in database
+   * by searching content
+   * which can be
+   * the voucher domain list or null
+   */
+  abstract findBySearchContent(
+    searchContent: string,
+  ): Promise<NullAble<VoucherDomain[]>>;
 
   abstract findMany({
     tag,

@@ -48,6 +48,16 @@ export class VoucherDomain {
     createdAt?: Date;
     updatedAt?: Date;
   }[];
+  promotion?: {
+    id: string;
+    promotionPrice: number;
+    sellStartedAt: Date;
+    sellExpiredAt: Date;
+    usableAt: Date;
+    usableExpiredAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
+  };
 }
 
 export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {

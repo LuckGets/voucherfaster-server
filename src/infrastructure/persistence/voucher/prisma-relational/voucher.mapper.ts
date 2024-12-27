@@ -27,6 +27,8 @@ type VoucherCategoryInformation = VoucherCategory & {
   >[];
 };
 
+// type VoucherPromotionInformation = VoucherPromotion
+
 export class VoucherMapper {
   public static toDomain(voucherEntity: AllVoucherInformation): VoucherDomain {
     const voucherDomain = new VoucherDomain();
@@ -78,4 +80,8 @@ export class VoucherCategoryMapper {
     }
     return voucherCategoryDomain;
   }
+}
+
+export class VoucherPromotionMapper {
+  public static toDomain() {}
 }

@@ -28,6 +28,8 @@ export const VoucherPath = {
   VoucherIdParm: 'voucherId',
   GetVoucherId: ':voucherId',
   UpdateVoucher: ':voucherId',
+  SearchVoucher: ':search',
+  SearchVoucherParam: 'search',
   AddVoucherImg: ':voucherId/images',
   UpdateVoucherImg: ':voucherId/images/:imageId',
   TagsName: 'tags',

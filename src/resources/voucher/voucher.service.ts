@@ -178,6 +178,11 @@ export class VoucherService {
     return voucher;
   }
 
+  public async getSearchedVoucher(
+    searchContent: string,
+  ): Promise<NullAble<VoucherDomain[]>> {
+    return this.voucherRepository.findBySearchContent(searchContent);
+  }
   /**
    * Service for updating
    * existing voucher.
