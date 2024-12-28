@@ -1,3 +1,4 @@
+import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
   VoucherCategoryDomain,
   VoucherDomain,
@@ -69,9 +70,10 @@ export abstract class VoucherRepository {
    * which can be
    * the voucher domain list or null
    */
-  abstract findBySearchContent(
-    searchContent: string,
-  ): Promise<NullAble<VoucherDomain[]>>;
+  abstract findBySearchContent(searchContent: string): Promise<{
+    voucher: NullAble<VoucherDomain[]>;
+    package: NullAble<VoucherPromotionDomain[]>;
+  }>;
 
   abstract findMany({
     tag,

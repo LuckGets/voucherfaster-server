@@ -10,7 +10,6 @@ import {
   VoucherDomainCreateInput,
   VoucherImgCreateInput,
   VoucherImgDomain,
-  VoucherImgUpdateInput,
   VoucherStatusEnum,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,

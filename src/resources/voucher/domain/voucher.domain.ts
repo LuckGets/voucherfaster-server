@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/library';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { Expose, Transform } from 'class-transformer';
+import { VoucherPromotionDomain } from './voucher-promotion.domain';
 
 export enum VoucherStatusEnum {
   ACTIVE = 'ACTIVE',
@@ -41,23 +42,8 @@ export class VoucherDomain {
     type: () => Object,
     example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
   })
-  img?: {
-    id: string;
-    imgPath: string;
-    mainImg: boolean;
-    createdAt?: Date;
-    updatedAt?: Date;
-  }[];
-  promotion?: {
-    id: string;
-    promotionPrice: number;
-    sellStartedAt: Date;
-    sellExpiredAt: Date;
-    usableAt: Date;
-    usableExpiredAt: Date;
-    createdAt?: Date;
-    updatedAt?: Date;
-  };
+  img?: Partial<VoucherImgDomain>[];
+  promotion?: Partial<VoucherPromotionDomain>[];
 }
 
 export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {
