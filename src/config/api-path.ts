@@ -6,7 +6,7 @@ export enum AccountPath {
   ChangePassword = ':accountId/password',
   ConfirmChangePassword = '/password/confirm',
   AccountIdParam = 'accountId',
-  Verify = ':accountId/verify',
+  Verify = '/verify',
 }
 export enum AuthPath {
   Name = 'auth',
@@ -18,6 +18,7 @@ export enum AuthPath {
 }
 
 export enum AuthGooglePath {
+  Base = 'auth/google',
   Login = '/login',
   Callback = '/callback',
 }
@@ -28,14 +29,19 @@ export const VoucherPath = {
   VoucherIdParm: 'voucherId',
   GetVoucherId: ':voucherId',
   UpdateVoucher: ':voucherId',
-  SearchVoucher: ':search',
+  SearchVoucher: 'search/:search',
   SearchVoucherParam: 'search',
   AddVoucherImg: ':voucherId/images',
   UpdateVoucherImg: ':voucherId/images/:imageId',
-  TagsName: 'tags',
   TagQuery: 'tag',
-  CreateTag: '/categories/:categoryId/tags',
-  Category: '/categories',
   CategoryQuery: 'category',
-  UpdateTag: '/categories/:categoryId/tags/:tagId',
+} as const;
+
+export const VoucherCategoryPath = {
+  Name: 'categories',
+  Base: '/categories',
+  TagsName: 'tags',
+  CreateTag: ':categoryId/tags',
+  UpdateTag: ':categoryId/tags/:tagId',
+  CategoryQuery: 'category',
 } as const;

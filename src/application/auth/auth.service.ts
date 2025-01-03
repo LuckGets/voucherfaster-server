@@ -70,7 +70,7 @@ export class AuthService {
     );
     const user = await this.accountService.create({
       ...data,
-      id: this.uuidService.make(),
+      id: String(this.uuidService.make()),
       password: hashPassword,
     });
 
@@ -170,16 +170,18 @@ export class AuthService {
         email: socialData.email,
         fullname: socialData.fullname,
         photo: socialData.photo,
-        account_provider: AccountProviderEnum.Google,
+        accountProvider: AccountProviderEnum.Google,
         socialId: socialData.socialId,
       };
       account = await this.accountService.create(
         plainToInstance(CreateAccountDto, createAccountObject),
       );
+      console.log('Account after create', account);
       const payload: VerifyTokenPayloadType = { sub: account.id };
       const token: string = await this.jwtService.signAsync(payload, {
         secret: this.verifyEmailSecret,
       });
+      console.log('Account email before sending mail', account.email);
       await this.mailService.verifyEmail({
         to: account.email,
         data: { token },

@@ -29,6 +29,8 @@ import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
 import { AddVoucherImgDto, UpdateVoucherImgDto } from './dto/voucher-img.dto';
+import { VoucherAndPackageDataType } from './dto/voucher.dto';
+import { VoucherPromotionCreateInput } from './domain/voucher-promotion.domain';
 
 @Injectable()
 export class VoucherService {
@@ -74,10 +76,12 @@ export class VoucherService {
     // ------------------ CREATE VOUCHER PART  ------------------
     //---------------------------------------------------------
     //---------------------------------------------------------
-
+    const allImgBuffer = [];
+    if (mainImg) allImgBuffer.push(...mainImg);
+    if (voucherImg) allImgBuffer.push(...voucherImg);
     // Firstly we need to upload the img to s3 and get the link back.
     const allVoucherImgLinks = await Promise.all(
-      [...mainImg, ...voucherImg].map((item) =>
+      allImgBuffer.map((item) =>
         this.mediaService.uploadFile(
           item as Express.Multer.File,
           s3BucketDirectory.voucherImg,
@@ -87,7 +91,7 @@ export class VoucherService {
     // ------- SECOND PART : SET UP INFORMATION -------
 
     // Extract the term and condition from data
-    const { termAndCondTh, termAndCondEn, ...restData } = data;
+    const { termAndCondTh, termAndCondEn, promotion, ...restData } = data;
 
     // Set up the voucher information before store in database
     const voucherData: VoucherDomainCreateInput = {
@@ -116,6 +120,16 @@ export class VoucherService {
         };
       });
 
+    // If the voucher creating input
+    // provided a promotion
+    let promotionData: VoucherPromotionCreateInput;
+    if (promotion) {
+      promotionData = {
+        ...promotion,
+        id: String(this.uuidService.make()),
+        voucherId: voucherData.id,
+      };
+    }
     // Set up the image before store in database
     const voucherImgToStore: VoucherImgCreateInput[] = allVoucherImgLinks.map(
       (item, index) => {
@@ -136,12 +150,15 @@ export class VoucherService {
     );
 
     // ------- THIRD PART : CREATE VOUCHER  -------
-    return this.voucherRepository.createVoucherAndTermAndImgTransaction({
-      voucherData,
-      termAndCondThArr: termAndCondThWithVoucherId,
-      termAndCondEnArr: termAndCondEnWithVoucherId,
-      image: voucherImgToStore,
-    });
+    return this.voucherRepository.createVoucherAndTermAndImgAndPromotionTransaction(
+      {
+        voucherData,
+        termAndCondThArr: termAndCondThWithVoucherId,
+        termAndCondEnArr: termAndCondEnWithVoucherId,
+        image: voucherImgToStore,
+        promotion: promotionData,
+      },
+    );
   }
 
   public async getPaginationVoucher({
@@ -151,7 +168,7 @@ export class VoucherService {
     paginationOption,
     sortOption,
   }: {
-    tag?: VoucherTagDomain['id'];
+    tag?: VoucherTagDomain['name'];
     category?: VoucherCategoryDomain['name'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
@@ -179,7 +196,7 @@ export class VoucherService {
 
   public async getSearchedVoucher(
     searchContent: string,
-  ): Promise<NullAble<VoucherDomain[]>> {
+  ): Promise<NullAble<VoucherAndPackageDataType>> {
     return this.voucherRepository.findBySearchContent(searchContent);
   }
   /**
@@ -242,7 +259,24 @@ export class VoucherService {
     return this.voucherTagRepository.create(createInput);
   }
 
-  public async getPaginationVoucherTag() {}
+  public async getPaginationVoucherTag({
+    category,
+    cursor,
+    paginationOption,
+    sortOption,
+  }: {
+    category?: VoucherCategoryDomain['name'];
+    paginationOption?: IPaginationOption;
+    cursor?: VoucherTagDomain['id'];
+    sortOption?: unknown;
+  }) {
+    return this.voucherTagRepository.findMany({
+      category,
+      cursor,
+      paginationOption,
+      sortOption,
+    });
+  }
 
   public async updateVoucherTag(
     data: UpdateVoucherTagDto,
@@ -303,6 +337,7 @@ export class VoucherService {
   public getPaginationVoucherCategory(): Promise<
     NullAble<VoucherCategoryDomain[]>
   > {
+    console.log('Hello');
     return this.voucherCategoryRepository.findManyWithPagination();
   }
 
@@ -344,11 +379,15 @@ export class VoucherService {
         `Voucher ID: ${data.voucherId} could not be found on this server.`,
       );
     if (mainImg) {
+      const voucherMainImg = voucher.img.filter((item) => item.mainImg)[0];
+      const toReplacedVoucherImgDomain = {
+        id: voucherMainImg.id,
+        imgPath: voucherMainImg.imgPath,
+        mainImg: voucherMainImg.mainImg,
+      };
       await this.updateVoucherMainImage({
         voucherId: voucher.id,
-        toReplacedVoucherImgDomain: voucher.img.filter(
-          (item) => item.mainImg,
-        )[0],
+        toReplacedVoucherImgDomain,
         mainImg,
         deleteMainImg: data.deleteMainImg,
       });

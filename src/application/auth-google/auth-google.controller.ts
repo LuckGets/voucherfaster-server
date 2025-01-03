@@ -1,4 +1,11 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  Res,
+  SerializeOptions,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGooglePath } from '../../config/api-path';
 import { GoogleAuthGuard } from './guards/auth-google.guard';
 import { AuthService } from '../auth/auth.service';
@@ -7,20 +14,26 @@ import { RequestGoogleUser } from './types/req-user.type';
 import { Response } from 'express';
 import { LoginResponseDto } from '@application/auth/dto/login-response.dto';
 import { cookieOption } from 'src/common/cookie';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags()
 @Controller({
-  path: 'auth/google',
+  path: AuthGooglePath.Base,
   version: '1',
 })
 export class AuthGoogleController {
   constructor(private authService: AuthService) {}
 
+  @ApiBody({
+    description: 'Endpoint for login via google account',
+  })
   @UseGuards(GoogleAuthGuard)
   @Get(AuthGooglePath.Login)
   loginViaGoogle() {}
 
+  @ApiBody({
+    description: 'This endpoint exist to only receive the request via google.',
+  })
   @ApiResponse({ type: () => LoginResponseDto })
   @UseGuards(GoogleAuthGuard)
   @Get(AuthGooglePath.Callback)

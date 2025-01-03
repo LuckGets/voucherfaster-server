@@ -5,10 +5,16 @@ import {
   AccountProviderEnum,
   RoleEnum,
 } from '@resources/account/types/account.type';
+import { NullAble } from '@utils/types/common.type';
 
 export class AccountMapper {
-  static toDomain(accountEntity: Account): AccountDomain {
-    const accountDomain = plainToInstance(AccountDomain, accountEntity);
+  static toDomain(
+    accountEntity: Account,
+    exposedRole: NullAble<RoleEnum> = null,
+  ): AccountDomain {
+    const accountDomain = plainToInstance(AccountDomain, accountEntity, {
+      groups: [exposedRole],
+    });
 
     accountDomain.accountProvider =
       AccountProviderEnum[

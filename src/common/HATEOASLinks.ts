@@ -1,4 +1,9 @@
-import { AccountPath, AuthPath, VoucherPath } from 'src/config/api-path';
+import {
+  AccountPath,
+  AuthPath,
+  VoucherCategoryPath,
+  VoucherPath,
+} from 'src/config/api-path';
 import { HTTPMethod } from './http.type';
 import { UUIDTypes } from 'uuid';
 import {
@@ -61,20 +66,20 @@ export const generateVoucherCategoryResponseHATEOASLink = (
     category: {
       update: {
         method: HTTPMethod.Patch,
-        path: `${VoucherPath.Category}/${voucherCategoryId}`,
+        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}`,
       },
     },
     tags: {
       create: {
         method: HTTPMethod.Post,
-        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}`,
+        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}`,
       },
     },
   };
   if (voucherTagId) {
     links.tags['update'] = {
       method: HTTPMethod.Patch,
-      path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}/${voucherTagId}`,
+      path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}/${voucherTagId}`,
     };
   }
   return links;
@@ -88,11 +93,11 @@ export const generateVoucherTagResponseHATEOASLink = (
     tags: {
       create: {
         method: HTTPMethod.Post,
-        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}`,
+        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}`,
       },
       update: {
         method: HTTPMethod.Patch,
-        path: `${VoucherPath.Category}/${voucherCategoryId}/${VoucherPath.TagsName}/${voucherTagId}`,
+        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}/${voucherTagId}`,
       },
     },
   };

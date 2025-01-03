@@ -10,49 +10,62 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';
+import { IsFutureDate } from '@utils/validators/IsFutureDate';
 
 export class UpdateVoucherDto {
-  @IsString()
+  @ApiProperty({ type: String })
+  @IsUUID(7)
   id: string;
+  @ApiProperty({ type: String })
   @IsString()
   @IsOptional()
   code?: string;
+  @ApiProperty({ type: String })
   @IsString()
   @IsOptional()
   title?: string;
+  @ApiProperty({ type: String })
   @IsString()
   @IsOptional()
   description?: string;
+  @ApiProperty({ type: Number })
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @IsOptional()
   price?: number;
-  @IsDate()
+  @ApiProperty({ type: Date })
+  @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
   usageExpiredTime?: Date;
-  @IsDate()
+  @ApiProperty({ type: Date })
+  @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
   saleExpiredTime?: Date;
-  @IsString()
+  @ApiProperty({ type: String })
+  @IsUUID(7)
   @IsOptional()
   tagId?: string;
+  @ApiProperty({ type: Array<string> })
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value,
   )
   @IsArray()
   @IsOptional()
   termAndCondTh?: string[];
+  @ApiProperty({ type: Array<string> })
   @IsArray()
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value,
   )
   @IsOptional()
   termAndCondEn?: string[];
+  @ApiProperty({ type: String, enum: VoucherStatusEnum })
   @IsEnumValue(VoucherStatusEnum)
   @IsOptional()
   status?: VoucherStatusEnum;

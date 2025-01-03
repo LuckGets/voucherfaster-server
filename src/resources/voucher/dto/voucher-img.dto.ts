@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { VoucherDomain, VoucherImgDomain } from '../domain/voucher.domain';
-import { IsBoolean, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HttpStatus } from '@nestjs/common';
@@ -24,6 +24,7 @@ export class AddVoucherImgDto {
     if (value === 'true' || value === 'false') return Boolean(value);
     return false;
   })
+  @IsOptional()
   @IsBoolean()
   deleteMainImg?: boolean;
 }

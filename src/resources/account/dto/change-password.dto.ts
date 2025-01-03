@@ -35,6 +35,10 @@ export class ChangePasswordDto {
 }
 
 export class ConfirmChangePasswordDto {
+  @ApiProperty({
+    type: String,
+    description: 'Token which provided via hash field in URL query.',
+  })
   @Length(10, 20)
   token: string;
 }

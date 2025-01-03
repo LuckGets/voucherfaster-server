@@ -19,6 +19,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOkResponse,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { HttpRequestWithUser } from 'src/common/http.type';
@@ -58,8 +59,29 @@ export class AccountController {
     return GetMeResponseDto.success(account);
   }
 
+  @ApiParam({ name: 'account ID' })
   @ApiBody({
     description: 'Update the account with expected field',
+    schema: {
+      type: 'object',
+      properties: {
+        accountImage: {
+          type: 'string',
+          format: 'binary',
+          description: 'Main image for the voucher',
+        },
+        email: {
+          type: 'string',
+          nullable: true,
+          description: 'email',
+        },
+        fullname: {
+          type: 'string',
+          description: 'fullname',
+          nullable: true,
+        },
+      },
+    },
   })
   @ApiConsumes('multipart/formdata')
   @ApiOkResponse({
@@ -84,6 +106,7 @@ export class AccountController {
     return UpdateAccountResponse.success(account);
   }
 
+  @ApiBody({ type: ChangePasswordDto })
   @ApiOkResponse({
     type: () => ChangePasswordResponse,
   })
@@ -104,6 +127,9 @@ export class AccountController {
     });
   }
 
+  @ApiBody({
+    type: () => ConfirmChangePasswordDto,
+  })
   @ApiOkResponse({
     type: () => ChangePasswordResponse,
   })
@@ -126,6 +152,17 @@ export class AccountController {
     );
   }
 
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        token: {
+          type: 'string',
+          description: 'Token which provided via hash field in URL query.',
+        },
+      },
+    },
+  })
   @ApiOkResponse({
     type: () => VerifyEmailResponse,
   })

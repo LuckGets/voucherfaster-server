@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { VoucherController } from './voucher.controller';
+import { VoucherController } from './controllers/voucher.controller';
 import { VoucherService } from './voucher.service';
 import { VoucherRelationalRepositoryModule } from 'src/infrastructure/persistence/voucher/voucher-relational.module';
 import { UUIDService } from '@utils/services/uuid.service';
@@ -7,6 +7,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MediaModule } from '@application/media/media.module';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
+import { VoucherCategoryController } from './controllers/voucher-category.controller';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interc
     }),
     MediaModule,
   ],
-  controllers: [VoucherController],
+  controllers: [VoucherController, VoucherCategoryController],
   providers: [VoucherService, UUIDService, UnlinkFileInterceptor],
 })
 export class VoucherModule {}

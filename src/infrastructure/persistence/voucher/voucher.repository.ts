@@ -1,4 +1,8 @@
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
+import { PackageVoucherDomain } from '@resources/voucher/domain/package-voucher.domain';
+import {
+  VoucherPromotionCreateInput,
+  VoucherPromotionDomain,
+} from '@resources/voucher/domain/voucher-promotion.domain';
 import {
   VoucherCategoryDomain,
   VoucherDomain,
@@ -6,10 +10,12 @@ import {
   VoucherImgCreateInput,
   VoucherImgDomain,
   VoucherImgUpdateInput,
+  VoucherStatusEnum,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
 } from '@resources/voucher/domain/voucher.domain';
 import { UpdateVoucherDto } from '@resources/voucher/dto/update-voucher.dto';
+import { VoucherAndPackageDataType } from '@resources/voucher/dto/voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 
@@ -29,16 +35,18 @@ export abstract class VoucherRepository {
    * so, I think we should make it as a transaction to make
    * creating voucher progress smoothly
    */
-  abstract createVoucherAndTermAndImgTransaction({
+  abstract createVoucherAndTermAndImgAndPromotionTransaction({
     voucherData,
     termAndCondThArr,
     termAndCondEnArr,
     image,
+    promotion,
   }: {
     voucherData: VoucherDomainCreateInput;
     termAndCondThArr: VoucherTermAndCondCreateInput[];
     termAndCondEnArr: VoucherTermAndCondCreateInput[];
     image: VoucherImgCreateInput[];
+    promotion?: VoucherPromotionCreateInput;
   }): Promise<VoucherDomain>;
   /**
    *
@@ -62,6 +70,20 @@ export abstract class VoucherRepository {
 
   /**
    *
+   * @param categoryName string
+   * @param tagName string
+   * @returns VoucherAndPackageDateType
+   * Due to voucher grouping into category or room
+   * this service provide a way to search for voucher
+   * via category name or tag name
+   */
+  abstract findByCategory(
+    categoryName: VoucherCategoryDomain['name'],
+    voucherStatus: VoucherStatusEnum,
+    tagName?: VoucherTagDomain['name'],
+  ): Promise<VoucherAndPackageDataType>;
+  /**
+   *
    * @param searchContent string
    * @returns VoucherDomain[] or null
    *
@@ -72,9 +94,13 @@ export abstract class VoucherRepository {
    */
   abstract findBySearchContent(searchContent: string): Promise<{
     voucher: NullAble<VoucherDomain[]>;
-    package: NullAble<VoucherPromotionDomain[]>;
+    package: NullAble<PackageVoucherDomain[]>;
   }>;
 
+  /**
+   *
+   * @param tag VoucherTagDomain
+   */
   abstract findMany({
     tag,
     category,
@@ -82,12 +108,12 @@ export abstract class VoucherRepository {
     paginationOption,
     sortOption,
   }: {
-    tag?: VoucherTagDomain['id'];
+    tag?: VoucherTagDomain['name'];
     category?: VoucherCategoryDomain['name'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
-  }): Promise<NullAble<VoucherDomain[]>>;
+  }): Promise<VoucherAndPackageDataType>;
 
   abstract update(data: UpdateVoucherDto): Promise<VoucherDomain>;
 }
@@ -108,6 +134,39 @@ export abstract class VoucherTagRepository {
   abstract findById(
     id: VoucherTagDomain['id'],
   ): Promise<NullAble<VoucherTagDomain>>;
+
+  /**
+   *
+   * @param param
+   * @returns List of Voucher tag
+   *
+   * Service for finding many voucher tag list.
+   *
+   * If none information provided, the returned
+   * voucher tag list
+   * will be sequential
+   */
+  abstract findMany({
+    category,
+    cursor,
+    paginationOption,
+    sortOption,
+  }: {
+    category?: VoucherCategoryDomain['name'] | VoucherCategoryDomain['id'];
+    paginationOption?: IPaginationOption;
+    cursor?: VoucherDomain['id'];
+    sortOption?: unknown;
+  }): Promise<NullAble<VoucherTagDomain[]>>;
+  abstract findManyByCategoryNameAndTagName(
+    categoryName: VoucherCategoryDomain['name'],
+    {
+      tagName,
+      cursor,
+    }: {
+      tagName?: VoucherTagDomain['name'];
+      cursor?: VoucherTagDomain['id'];
+    },
+  ): Promise<NullAble<VoucherTagDomain[]>>;
   abstract create(
     data: Omit<VoucherTagDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
   ): Promise<VoucherTagDomain>;

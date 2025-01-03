@@ -7,6 +7,7 @@ import {
   VoucherTermAndCondEN,
   VoucherTermAndCondTh,
 } from '@prisma/client';
+import { PackageVoucherDomain } from '@resources/voucher/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
   VoucherCategoryDomain,
@@ -76,14 +77,15 @@ export class VoucherMapper {
     })[],
   ): {
     voucher: NullAble<VoucherDomain[]>;
-    package: NullAble<VoucherPromotionDomain[]>;
+    package: NullAble<PackageVoucherDomain[]>;
   } {
-    if (voucherAndPackageEntity.length < 0) return { voucher: [], package: [] };
+    if (!voucherAndPackageEntity || voucherAndPackageEntity.length < 0)
+      return { voucher: [], package: [] };
     const { mappedVoucherList, packageVoucher } =
       voucherAndPackageEntity.reduce(
         (acc, curr) => {
           const { PackageVoucher, ...data } = curr;
-          if (PackageVoucher && packageVoucher.length > 0) {
+          if (PackageVoucher && PackageVoucher.length > 0) {
             acc.packageVoucher.push(PackageVoucher);
           }
           acc.mappedVoucherList.push(
