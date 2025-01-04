@@ -51,8 +51,10 @@ export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {
 };
 
 export class VoucherCategoryDomain {
+  @Expose()
   @ApiProperty({ type: String })
   id: string;
+  @Expose()
   @ApiProperty({ type: String })
   name: string;
   @Expose({
@@ -70,6 +72,8 @@ export class VoucherCategoryDomain {
   })
   @ApiProperty({ type: Date, nullable: true })
   deletedAt?: Date;
+  @Expose()
+  @ApiProperty({ type: () => [VoucherTagDomain], nullable: true })
   voucherTags?: VoucherTagDomain[];
 }
 

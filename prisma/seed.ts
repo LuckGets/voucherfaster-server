@@ -14,8 +14,8 @@ import {
   vouchersTermAndCondEn,
   vouchersTermAndCondTh,
 } from './seeds-data/voucher.seed';
-import { execSync } from 'child_process';
 import { config } from 'dotenv';
+import { execSync } from 'child_process';
 config({ path: '.env.development' });
 
 const prisma = new PrismaClient();
@@ -26,7 +26,6 @@ const accounts: Prisma.AccountCreateInput[] = [
     email: 'johndoe@mail.com',
     fullname: 'John doe',
     phone: '0812345678',
-    password: 'Qwerty',
     accountProvider: AccountProviderEnum.Local,
     role: RoleEnum.User,
   },
@@ -35,7 +34,6 @@ const accounts: Prisma.AccountCreateInput[] = [
     email: 'admin@admin.com',
     fullname: 'ADMIN1',
     phone: '0812345888',
-    password: 'Adminn',
     accountProvider: AccountProviderEnum.Local,
     role: RoleEnum.Admin,
   },
@@ -46,9 +44,13 @@ const seedingFunc = async (
   data: any,
   str: string,
 ): Promise<void> => {
-  console.log(`<==== START SEEDING ${str} ====>`);
-  await func({ data });
-  console.log(`...FINISH SEEDING ${str}...`);
+  try {
+    console.log(`<==== START SEEDING ${str} ====>`);
+    await func({ data, skipDuplicates: true });
+    console.log(`...FINISH SEEDING ${str}...`);
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 const seed = async (): Promise<void> => {
@@ -56,33 +58,32 @@ const seed = async (): Promise<void> => {
     console.log('-------- START SEEDING PROCESS --------');
     const password = bcrypt.hashSync('Qwerty', 10);
     accounts.forEach((item) => (item.password = password));
-    await prisma.$transaction(async (tx) => {
-      console.log('INTO THE SEEDING PROCESS... PLEASE WAIT.');
+    console.log('INTO THE SEEDING PROCESS... PLEASE WAIT.');
 
-      console.log('SEEDING ACCOUNT AND CATEGORIES');
-      await Promise.all([
-        tx.account.createMany({ data: accounts }),
-        tx.voucherCategory.createMany({ data: categories }),
-      ]);
-      seedingFunc(tx.voucherTag.createMany, tags, 'voucher-tag');
-      seedingFunc(tx.voucher.createMany, vouchers, 'vouchers');
-      seedingFunc(tx.voucherImg.createMany, voucherImg, 'voucher-img');
+    await Promise.all([
+      seedingFunc(prisma.account.createMany, accounts, 'accounts'),
+      seedingFunc(prisma.voucherCategory.createMany, categories, 'categories'),
+    ]);
+    await seedingFunc(prisma.voucherTag.createMany, tags, 'voucher-tag');
+    await seedingFunc(prisma.voucher.createMany, vouchers, 'vouchers');
+    await Promise.all([
+      seedingFunc(prisma.voucherImg.createMany, voucherImg, 'voucher-img'),
       seedingFunc(
-        tx.voucherTermAndCondEN.createMany,
+        prisma.voucherTermAndCondEN.createMany,
         vouchersTermAndCondEn,
         'voucher-term-and-condition-EN',
-      );
+      ),
       seedingFunc(
-        tx.voucherTermAndCondTh.createMany,
+        prisma.voucherTermAndCondTh.createMany,
         vouchersTermAndCondTh,
         'voucher-term-and-condition-TH',
-      );
+      ),
       seedingFunc(
-        tx.voucherPromotion.createMany,
+        prisma.voucherPromotion.createMany,
         voucherPromotions,
         'voucher-promotion',
-      );
-    });
+      ),
+    ]);
   } catch (err) {
     console.error(err);
   }
@@ -91,15 +92,12 @@ const seed = async (): Promise<void> => {
 async function main() {
   try {
     console.log('--- START --- \n--- RESET DB --- \n--- PROCESS ---');
-    // Disconnect Prisma Client to avoid open connections
-    await prisma.$disconnect();
 
-    await prisma.$executeRawUnsafe('DROP DATABASE IF EXISTS voucherfaster');
-    await prisma.$executeRawUnsafe('CREATE DATABASE voucherfaster');
+    await prisma.$connect();
 
-    execSync('pnpm prisma db push', { stdio: 'inherit' });
-
+    execSync('pnpx prisma migrate reset --force');
     await seed();
+    console.log('SEEDING COMPLETED SUCCESSFULLY');
   } catch (err) {
     console.log(err);
   }

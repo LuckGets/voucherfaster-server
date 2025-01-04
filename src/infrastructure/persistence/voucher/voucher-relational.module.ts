@@ -5,13 +5,11 @@ import {
   VoucherRepository,
   VoucherTagRepository,
 } from './voucher.repository';
-import {
-  VoucherCategoryRelationalPrismaORMRepository,
-  VoucherImgRelationalPrismaORMRepository,
-  VoucherRelationalPrismaORMRepository,
-  VoucherTagRelationalPrismaORMRepository,
-} from './prisma-relational/voucher.repository';
+import { VoucherRelationalPrismaORMRepository } from './prisma-relational/voucher.repository';
 import { PrismaModule } from '../config/prisma.module';
+import { VoucherCategoryRelationalPrismaORMRepository } from './prisma-relational/voucher-category.repository';
+import { VoucherTagRelationalPrismaORMRepository } from './prisma-relational/voucher-tag.repository';
+import { VoucherImgRelationalPrismaORMRepository } from './prisma-relational/voucher-img.repository';
 
 @Module({
   imports: [PrismaModule],

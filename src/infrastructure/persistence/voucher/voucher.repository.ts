@@ -15,7 +15,6 @@ import {
   VoucherTermAndCondCreateInput,
 } from '@resources/voucher/domain/voucher.domain';
 import { UpdateVoucherDto } from '@resources/voucher/dto/update-voucher.dto';
-import { VoucherAndPackageDataType } from '@resources/voucher/dto/voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 
@@ -81,7 +80,7 @@ export abstract class VoucherRepository {
     categoryName: VoucherCategoryDomain['name'],
     voucherStatus: VoucherStatusEnum,
     tagName?: VoucherTagDomain['name'],
-  ): Promise<VoucherAndPackageDataType>;
+  ): Promise<VoucherDomain[]>;
   /**
    *
    * @param searchContent string
@@ -92,10 +91,7 @@ export abstract class VoucherRepository {
    * which can be
    * the voucher domain list or null
    */
-  abstract findBySearchContent(searchContent: string): Promise<{
-    voucher: NullAble<VoucherDomain[]>;
-    package: NullAble<PackageVoucherDomain[]>;
-  }>;
+  abstract findBySearchContent(searchContent: string): Promise<VoucherDomain[]>;
 
   /**
    *
@@ -113,7 +109,7 @@ export abstract class VoucherRepository {
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
-  }): Promise<VoucherAndPackageDataType>;
+  }): Promise<VoucherDomain[]>;
 
   abstract update(data: UpdateVoucherDto): Promise<VoucherDomain>;
 }
@@ -125,9 +121,13 @@ export abstract class VoucherCategoryRepository {
   abstract create(
     data: Omit<VoucherCategoryDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
   ): Promise<VoucherCategoryDomain>;
-  abstract findManyWithPagination(
-    paginationOption?: IPaginationOption,
-  ): Promise<VoucherCategoryDomain[]>;
+  abstract findManyWithPagination({
+    paginationOption,
+    sortOption,
+  }: {
+    paginationOption?: IPaginationOption;
+    sortOption?: any;
+  }): Promise<VoucherCategoryDomain[]>;
 }
 
 export abstract class VoucherTagRepository {

@@ -26,7 +26,7 @@ type AllVoucherInformation = Voucher & {
 };
 
 type VoucherCategoryInformation = VoucherCategory & {
-  VoucherTag?: Pick<
+  VoucherTags?: Pick<
     VoucherTagDomain,
     'id' | 'name' | 'categoryId' | 'createdAt' | 'updatedAt'
   >[];
@@ -71,35 +71,35 @@ export class VoucherMapper {
     return voucherDomain;
   }
 
-  public static separateVoucherAndPackageToDomain(
-    voucherAndPackageEntity: (AllVoucherInformation & {
-      PackageVoucher: Partial<PackageVoucher>[];
-    })[],
-  ): {
-    voucher: NullAble<VoucherDomain[]>;
-    package: NullAble<PackageVoucherDomain[]>;
-  } {
-    if (!voucherAndPackageEntity || voucherAndPackageEntity.length < 0)
-      return { voucher: [], package: [] };
-    const { mappedVoucherList, packageVoucher } =
-      voucherAndPackageEntity.reduce(
-        (acc, curr) => {
-          const { PackageVoucher, ...data } = curr;
-          if (PackageVoucher && PackageVoucher.length > 0) {
-            acc.packageVoucher.push(PackageVoucher);
-          }
-          acc.mappedVoucherList.push(
-            VoucherMapper.toDomain(data as AllVoucherInformation),
-          );
-          return acc;
-        },
-        {
-          mappedVoucherList: [],
-          packageVoucher: [],
-        },
-      );
-    return { voucher: mappedVoucherList, package: packageVoucher };
-  }
+  // public static separateVoucherAndPackageToDomain(
+  //   voucherAndPackageEntity: (AllVoucherInformation & {
+  //     PackageVoucher: Partial<PackageVoucher>[];
+  //   })[],
+  // ): {
+  //   voucher: NullAble<VoucherDomain[]>;
+  //   package: NullAble<PackageVoucherDomain[]>;
+  // } {
+  //   if (!voucherAndPackageEntity || voucherAndPackageEntity.length < 0)
+  //     return { voucher: [], package: [] };
+  //   const { mappedVoucherList, packageVoucher } =
+  //     voucherAndPackageEntity.reduce(
+  //       (acc, curr) => {
+  //         const { PackageVoucher, ...data } = curr;
+  //         if (PackageVoucher && PackageVoucher.length > 0) {
+  //           acc.packageVoucher.push(PackageVoucher);
+  //         }
+  //         acc.mappedVoucherList.push(
+  //           VoucherMapper.toDomain(data as AllVoucherInformation),
+  //         );
+  //         return acc;
+  //       },
+  //       {
+  //         mappedVoucherList: [],
+  //         packageVoucher: [],
+  //       },
+  //     );
+  //   return { voucher: mappedVoucherList, package: packageVoucher };
+  // }
 }
 
 export class VoucherCategoryMapper {
@@ -109,9 +109,13 @@ export class VoucherCategoryMapper {
     const voucherCategoryDomain: VoucherCategoryDomain = plainToInstance(
       VoucherCategoryDomain,
       voucherCategoryEntity,
+      { excludeExtraneousValues: true },
     );
-    if (voucherCategoryEntity.VoucherTag) {
-      voucherCategoryDomain.voucherTags = voucherCategoryEntity.VoucherTag;
+
+    if (voucherCategoryEntity.VoucherTags) {
+      voucherCategoryDomain.voucherTags = [
+        ...voucherCategoryEntity.VoucherTags,
+      ];
     }
     return voucherCategoryDomain;
   }

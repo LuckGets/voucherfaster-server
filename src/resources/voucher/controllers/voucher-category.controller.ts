@@ -8,7 +8,7 @@ import {
   SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { VoucherCategoryPath } from 'src/config/api-path';
 import {
@@ -55,6 +55,18 @@ export class VoucherCategoryController {
     return this.voucherService.updateVoucherTag(body);
   }
 
+  @ApiQuery({
+    name: 'category',
+    description: 'Tag name of the voucher to filter by.',
+    required: false,
+    type: String, // Adjust to the correct type if needed
+  })
+  @ApiQuery({
+    name: 'cursor',
+    description: 'Category name of the voucher to filter by.',
+    required: false,
+    type: String, // Adjust to the correct type if needed
+  })
   @SerializeOptions({
     groups: [RoleEnum.Admin, RoleEnum.User],
   })

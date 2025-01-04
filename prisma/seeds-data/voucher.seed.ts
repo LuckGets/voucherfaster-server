@@ -16,375 +16,381 @@ export const categories: Prisma.VoucherCategoryCreateInput[] = [
   },
 ];
 
-export const tags: Prisma.VoucherTagCreateInput[] = [
+export const tags: Prisma.VoucherTagCreateManyInput[] = [
   {
     id: uuidv7(),
     name: 'Breakfast',
-    voucherCategory: { connect: { id: categories[0].id } },
+    categoryId: categories[0].id,
   },
   {
     id: uuidv7(),
     name: 'Lunch',
-    voucherCategory: { connect: { id: categories[0].id } },
+    categoryId: categories[0].id,
   },
   {
     id: uuidv7(),
     name: 'Dinner',
-    voucherCategory: { connect: { id: categories[0].id } },
+    categoryId: categories[0].id,
   },
   {
     id: uuidv7(),
     name: 'main courses',
-    voucherCategory: { connect: { id: categories[1].id } },
+    categoryId: categories[1].id,
   },
   {
     id: uuidv7(),
     name: 'Drinks',
-    voucherCategory: { connect: { id: categories[2].id } },
+    categoryId: categories[2].id,
   },
   {
     id: uuidv7(),
     name: 'Bakery',
-    voucherCategory: { connect: { id: categories[2].id } },
+    categoryId: categories[2].id,
   },
 ];
 
-export const vouchers: Prisma.VoucherCreateInput[] = [
+const vouchersId = Array(11)
+  .fill('')
+  .map(() => uuidv7());
+
+export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
-    id: uuidv7(),
+    id: vouchersId[0],
     code: 'AA-101',
     title: 'Burger with fries',
     description: 'Juicy burgers with crispy french fries.',
     price: 300,
-    voucherTag: { connect: { id: tags[1].id } },
+    tagId: tags[1].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[1],
     code: 'AA-102',
     title: 'Fried salmon steak',
     description: 'Juicy burgers with crips french fries',
     price: 450,
-    voucherTag: { connect: { id: tags[0].id } },
+    tagId: tags[0].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[2],
     code: 'AA-103',
     title: 'Vegetarian Salad',
     description: 'Fresh and healthy mixed vegetable salad',
     price: 200,
-    voucherTag: { connect: { id: tags[1].id } },
+    tagId: tags[1].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[3],
     code: 'AA-104',
     title: 'Spaghetti Carbonara',
     description: 'Creamy pasta with bacon and Parmesan cheese',
     price: 350,
-    voucherTag: { connect: { id: tags[2].id } },
+    tagId: tags[2].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[4],
     code: 'AA-105',
     title: 'Chicken Caesar Salad',
     description:
       'Grilled chicken with romaine lettuce, croutons, and Caesar dressing',
     price: 250,
-    voucherTag: { connect: { id: tags[1].id } },
+    tagId: tags[1].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[5],
     code: 'AA-106',
     title: 'Hong Kong grilled duck',
     description: 'Grilled duck served with special XO sauce',
     price: 600,
-    voucherTag: { connect: { id: tags[3].id } },
+    tagId: tags[3].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[6],
     code: 'AA-107',
     title: 'Berries Smoothie',
     description: 'A refreshing smoothie made with fresh berries.',
     price: 150,
-    voucherTag: { connect: { id: tags[4].id } },
+    tagId: tags[4].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[7],
     code: 'AA-108',
     title: 'Iced Americano',
     description: 'A special blend iced americano.',
     price: 80,
-    voucherTag: { connect: { id: tags[4].id } },
+    tagId: tags[4].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[8],
     code: 'AA-109',
     title: 'Chocolate Croissant',
     description: 'Flaky pastry filled with rich chocolate.',
     price: 180,
-    voucherTag: { connect: { id: tags[5].id } },
+    tagId: tags[5].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[9],
     code: 'AA-110',
     title: 'Braised Fish Maw in Red Gravy.',
     description: 'Braised fish maw in red gravy',
     price: 700,
-    voucherTag: { connect: { id: tags[3].id } },
+    tagId: tags[3].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
   {
-    id: uuidv7(),
+    id: vouchersId[10],
     code: 'AA-111',
     title: 'Mapo tofu',
     description: 'Spicy and hot tofu.',
     price: 210,
-    voucherTag: { connect: { id: tags[3].id } },
+    tagId: tags[3].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
     saleExpiredTime: '2025-12-25T17:00:00.000Z',
   },
 ];
 
-export const voucherImg: Prisma.VoucherImgCreateInput[] = [
+export const voucherImg: Prisma.VoucherImgCreateManyInput[] = [
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp',
     mainImg: true,
-    voucher: { connect: { id: vouchers[0].id } },
+    voucherId: vouchers[0].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/fried-salmon-steak-cooked-green-600nw-2489026949.webp',
     mainImg: true,
-    voucher: { connect: { id: vouchers[1].id } },
+    voucherId: vouchers[1].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/vegan-salad.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[2].id } },
+    voucherId: vouchers[2].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/spaghetti-cabonara.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[3].id } },
+    voucherId: vouchers[3].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/220905_DD_Chx-Caesar-Salad_051-500x500.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[4].id } },
+    voucherId: vouchers[4].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/Roast-Cantonese-Duck-2022.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[5].id } },
+    voucherId: vouchers[5].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/frozen-fruit-smoothie-3.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[6].id } },
+    voucherId: vouchers[6].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/Iced-Americano-008s.webp',
     mainImg: true,
-    voucher: { connect: { id: vouchers[7].id } },
+    voucherId: vouchers[7].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/SQ_210220_Chocolate-Croissants.webp',
     mainImg: true,
-    voucher: { connect: { id: vouchers[8].id } },
+    voucherId: vouchers[8].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/Roast-Cantonese-Duck-2022.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[9].id } },
+    voucherId: vouchers[9].id,
   },
   {
     id: uuidv7(),
     imgPath:
       'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/กะเพาะปลาน้ำแดง.jpg',
     mainImg: true,
-    voucher: { connect: { id: vouchers[10].id } },
+    voucherId: vouchers[10].id,
   },
 ];
 
-export const voucherPromotions: Prisma.VoucherPromotionCreateInput[] = [
+export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
   {
     name: 'ลดแรงต้อนรับปีใหม่',
     promotionPrice: 199,
-    voucher: { connect: { id: vouchers[0].id } },
-    sellStartedAt: '2024-12-31T17:00:00Z',
-    sellExpiredAt: '2025-02-14T17:00:00Z',
-    usableAt: '2025-01-10T00:00:00Z',
-    usableExpiredAt: '2025-01-31T17:00:00Z',
+    voucherId: vouchers[0].id,
+    sellStartedAt: '2024-12-31T17:00:00.000Z',
+    sellExpiredAt: '2025-02-14T17:00:00.000Z',
+    usableAt: '2025-01-10T17:00:00.000Z',
+    usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
   {
     name: 'โปรคุ้มก่อนสิ้นปี',
     promotionPrice: 299,
-    voucher: { connect: { id: vouchers[1].id } },
-    sellStartedAt: '2024-12-24T17:00:00Z',
-    sellExpiredAt: '2025-01-10T17:00:00Z',
-    usableAt: '2025-01-10T00:00:00Z',
-    usableExpiredAt: '2025-01-31T17:00:00Z',
+    voucherId: vouchers[1].id,
+    sellStartedAt: '2024-12-24T17:00:00.000Z',
+    sellExpiredAt: '2025-01-10T17:00:00.000Z',
+    usableAt: '2025-01-10T17:00:00.000Z',
+    usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
   {
     name: 'ต้อนรับปีใหม่',
     promotionPrice: 120,
-    voucher: { connect: { id: vouchers[10].id } },
-    sellStartedAt: '2025-12-31T17:00:00Z',
-    sellExpiredAt: '2025-01-31T17:00:00Z',
-    usableAt: '2025-01-10T00:00:00Z',
-    usableExpiredAt: '2025-02-31T17:00:00Z',
+    voucherId: vouchers[10].id,
+    sellStartedAt: '2025-12-31T17:00:00.000Z',
+    sellExpiredAt: '2025-01-31T17:00:00.000Z',
+    usableAt: '2025-01-10T17:00:00.000Z',
+    usableExpiredAt: '2025-02-28T17:00:00.000Z',
   },
 ];
 
-export const vouchersTermAndCondEn: Prisma.VoucherTermAndCondENCreateInput[] = [
-  {
-    id: uuidv7(),
-    description: 'This voucher can only be used on Saturday.',
-    voucher: { connect: { id: vouchers[0].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher can be used for lunch or dinner.',
-    voucher: { connect: { id: vouchers[1].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for vegetarian meals only.',
-    voucher: { connect: { id: vouchers[2].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher can be redeemed for a pasta dish.',
-    voucher: { connect: { id: vouchers[3].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for chicken-based dishes only.',
-    voucher: { connect: { id: vouchers[4].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher can only be used on roasted duck dishes.',
-    voucher: { connect: { id: vouchers[5].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for smoothies only.',
-    voucher: { connect: { id: vouchers[6].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for any iced coffee-based drinks.',
-    voucher: { connect: { id: vouchers[7].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for pastries only.',
-    voucher: { connect: { id: vouchers[8].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for seafood-based dishes only.',
-    voucher: { connect: { id: vouchers[9].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'This voucher is valid for spicy dishes only.',
-    voucher: { connect: { id: vouchers[10].id } },
-  },
-];
+export const vouchersTermAndCondEn: Prisma.VoucherTermAndCondENCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      description: 'This voucher can only be used on Saturday.',
+      voucherId: vouchers[0].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher can be used for lunch or dinner.',
+      voucherId: vouchers[1].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for vegetarian meals only.',
+      voucherId: vouchers[2].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher can be redeemed for a pasta dish.',
+      voucherId: vouchers[3].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for chicken-based dishes only.',
+      voucherId: vouchers[4].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher can only be used on roasted duck dishes.',
+      voucherId: vouchers[5].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for smoothies only.',
+      voucherId: vouchers[6].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for any iced coffee-based drinks.',
+      voucherId: vouchers[7].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for pastries only.',
+      voucherId: vouchers[8].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for seafood-based dishes only.',
+      voucherId: vouchers[9].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher is valid for spicy dishes only.',
+      voucherId: vouchers[10].id,
+    },
+  ];
 
-export const vouchersTermAndCondTh: Prisma.VoucherTermAndCondThCreateInput[] = [
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น',
-    voucher: { connect: { id: vouchers[0].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้สามารถใช้ได้สำหรับมื้อกลางวันหรือมื้อเย็นเท่านั้น',
-    voucher: { connect: { id: vouchers[1].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้ใช้ได้เฉพาะสำหรับเมนูอาหารมังสวิรัติเท่านั้น',
-    voucher: { connect: { id: vouchers[2].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้สามารถใช้ได้กับจานพาสต้าเท่านั้น',
-    voucher: { connect: { id: vouchers[3].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้สามารถใช้ได้เฉพาะกับจานที่มีเนื้อไก่เท่านั้น',
-    voucher: { connect: { id: vouchers[4].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้สามารถใช้ได้เฉพาะกับจานเป็ดย่างเท่านั้น',
-    voucher: { connect: { id: vouchers[5].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้ใช้ได้เฉพาะกับเครื่องดื่มสมูทตี้เท่านั้น',
-    voucher: { connect: { id: vouchers[6].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้ใช้ได้เฉพาะกับเครื่องดื่มกาแฟเย็นเท่านั้น',
-    voucher: { connect: { id: vouchers[7].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้ใช้ได้เฉพาะกับขนมอบเท่านั้น',
-    voucher: { connect: { id: vouchers[8].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้ใช้ได้เฉพาะกับเมนูอาหารทะเลเท่านั้น',
-    voucher: { connect: { id: vouchers[9].id } },
-  },
-  {
-    id: uuidv7(),
-    description: 'คูปองนี้ใช้ได้เฉพาะกับเมนูอาหารรสจัดเท่านั้น',
-    voucher: { connect: { id: vouchers[10].id } },
-  },
-];
+export const vouchersTermAndCondTh: Prisma.VoucherTermAndCondThCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น',
+      voucherId: vouchers[0].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้สำหรับมื้อกลางวันหรือมื้อเย็นเท่านั้น',
+      voucherId: vouchers[1].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้ใช้ได้เฉพาะสำหรับเมนูอาหารมังสวิรัติเท่านั้น',
+      voucherId: vouchers[2].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้กับจานพาสต้าเท่านั้น',
+      voucherId: vouchers[3].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้เฉพาะกับจานที่มีเนื้อไก่เท่านั้น',
+      voucherId: vouchers[4].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้เฉพาะกับจานเป็ดย่างเท่านั้น',
+      voucherId: vouchers[5].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้ใช้ได้เฉพาะกับเครื่องดื่มสมูทตี้เท่านั้น',
+      voucherId: vouchers[6].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้ใช้ได้เฉพาะกับเครื่องดื่มกาแฟเย็นเท่านั้น',
+      voucherId: vouchers[7].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้ใช้ได้เฉพาะกับขนมอบเท่านั้น',
+      voucherId: vouchers[8].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้ใช้ได้เฉพาะกับเมนูอาหารทะเลเท่านั้น',
+      voucherId: vouchers[9].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้ใช้ได้เฉพาะกับเมนูอาหารรสจัดเท่านั้น',
+      voucherId: vouchers[10].id,
+    },
+  ];

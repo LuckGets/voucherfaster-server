@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   SerializeOptions,
   UploadedFile,
   UploadedFiles,
@@ -48,6 +49,7 @@ import {
   VOUCHER_FILE_FILED,
 } from '../dto/voucher-img.dto';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
+import { Request } from 'express';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -94,7 +96,7 @@ export class VoucherController {
     );
     return CreateVoucherResponse.success(
       voucher,
-      `Voucher code: ${voucher.id} have been created successfully.`,
+      `Voucher code: ${voucher.code} have been created successfully.`,
     );
   }
 
@@ -134,7 +136,6 @@ export class VoucherController {
     });
   }
 
-  @ApiParam({ name: 'search content', type: String })
   @Get(VoucherPath.SearchVoucher)
   async getSearchVoucher(
     @Param(VoucherPath.SearchVoucherParam) searchContent: string,
@@ -142,14 +143,13 @@ export class VoucherController {
     return this.voucherService.getSearchedVoucher(searchContent);
   }
 
+  @ApiParam({ name: 'voucherId' })
   @ApiOkResponse({
     description:
       'Get specific voucher information via ID provided in URL path parameter.',
   })
   @Get(VoucherPath.GetVoucherId)
-  getSpecificVoucherById(
-    @Param(VoucherPath.VoucherIdParm) voucherId: VoucherDomain['id'],
-  ) {
+  getSpecificVoucherById(@Param(VoucherPath.VoucherIdParm) voucherId: string) {
     return this.voucherService.getVoucherById(voucherId);
   }
 

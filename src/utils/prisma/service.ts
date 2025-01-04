@@ -55,26 +55,26 @@ export const utcToTimeZoneMiddleware: Prisma.Middleware = async (
  * Function for creating
  * prisma query
  */
-export function generatePaginationQueryOption<S extends Record<string, any>>({
+export function generatePaginationQueryOption<S extends object, T>({
   paginationOption,
   cursor,
   sortOption,
 }: {
   paginationOption?: NullAble<IPaginationOption>;
-  cursor?: NullAble<string>;
+  cursor?: NullAble<T>;
   sortOption?: NullAble<S>;
-}) {
-  let query: Record<string, number | string | Record<string, string>> = {};
+}): IPaginationQueryArgs<T> {
+  let query: IPaginationQueryArgs<T> = {};
   if (sortOption && Object.keys(sortOption).length > 0) {
     const [property, method] = Object.entries(sortOption)[0];
-    query.orderBy = {
+    query['orderBy'] = {
       [property]: method,
     };
   }
   if (cursor) {
     query = {
       ...query,
-      cursor,
+      cursor: { id: cursor },
       skip: 1,
       take: paginationOption.limit || defaultPaginationOption.limit,
     };

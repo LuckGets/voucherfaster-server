@@ -29,7 +29,6 @@ import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
 import { UpdateVoucherDto } from './dto/update-voucher.dto';
 import { AddVoucherImgDto, UpdateVoucherImgDto } from './dto/voucher-img.dto';
-import { VoucherAndPackageDataType } from './dto/voucher.dto';
 import { VoucherPromotionCreateInput } from './domain/voucher-promotion.domain';
 
 @Injectable()
@@ -173,7 +172,7 @@ export class VoucherService {
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
-  }) {
+  }): Promise<VoucherDomain[]> {
     return this.voucherRepository.findMany({
       tag,
       category,
@@ -196,7 +195,7 @@ export class VoucherService {
 
   public async getSearchedVoucher(
     searchContent: string,
-  ): Promise<NullAble<VoucherAndPackageDataType>> {
+  ): Promise<NullAble<VoucherDomain[]>> {
     return this.voucherRepository.findBySearchContent(searchContent);
   }
   /**
@@ -337,8 +336,7 @@ export class VoucherService {
   public getPaginationVoucherCategory(): Promise<
     NullAble<VoucherCategoryDomain[]>
   > {
-    console.log('Hello');
-    return this.voucherCategoryRepository.findManyWithPagination();
+    return this.voucherCategoryRepository.findManyWithPagination({});
   }
 
   // -------------------------------------------------------------------- //

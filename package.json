@@ -11,7 +11,7 @@
     "dev": "nest start",
     "spawn:db": "docker compose --file docker-compose.db.yaml up",
     "stop:db": "docker-compose --file docker-compose.db.yaml down",
-    "db:seed": "pnpm exec tsc prisma/seed.ts && node prisma/seed.js && rm prisma/seed.js",
+    "db:seed": "pnpm exec ts-node prisma/seed.ts",
     "migrate:dev": "dotenv -e .env.development -- npx prisma migrate dev && pnpm run db:seed",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",

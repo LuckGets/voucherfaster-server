@@ -73,13 +73,15 @@ export class VoucherCategoryResponse<T> extends CoreApiResponse {
     const responseMessage = message ?? 'Get voucher category Successfully';
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseDataWithLinks = data.map((item) => {
-      item.voucherTags.forEach(
-        (voucherTag) =>
-          (voucherTag['links'] = generateVoucherTagResponseHATEOASLink(
-            item.id,
-            voucherTag.id,
-          )),
-      );
+      if (item.voucherTags) {
+        item.voucherTags.forEach(
+          (voucherTag) =>
+            (voucherTag['links'] = generateVoucherTagResponseHATEOASLink(
+              item.id,
+              voucherTag.id,
+            )),
+        );
+      }
       item['links'] = generateVoucherCategoryResponseHATEOASLink(item.id);
       return item;
     });
