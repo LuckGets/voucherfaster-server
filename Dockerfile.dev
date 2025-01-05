@@ -1,12 +1,27 @@
-FROM node:22.12.0-alpine
+FROM node:22.12.0-slim
+
 WORKDIR /app
 
-COPY package*.json ./
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN npm install
+COPY package.json pnpm-lock.yaml ./
+
+RUN npm install -g pnpm
+RUN pnpm install
 
 COPY . .
 
-RUN npm run build
+# # Build the Nest.js app
+# RUN pnpm run build
 
-CMD [ "npm", "run", "start:dev" ]
+# Copy the entrypoint script
+COPY ./scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Expose the port
+EXPOSE 8080
+
+# Set custom scripts to run migration and seeding
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
