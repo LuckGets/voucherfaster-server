@@ -18,7 +18,7 @@ import { HTTPMethod } from './common/http.type';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: 'http://localhost:3000',
+      origin: ['http://localhost:3000', 'http://localhost:5173'],
       methods: [HTTPMethod.Get, HTTPMethod.Post, HTTPMethod.Patch],
       credentials: true,
     },
