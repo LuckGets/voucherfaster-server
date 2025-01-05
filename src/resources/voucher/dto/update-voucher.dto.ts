@@ -6,7 +6,6 @@ import { AuthPath } from 'src/config/api-path';
 import { VoucherDomain, VoucherStatusEnum } from '../domain/voucher.domain';
 import {
   IsArray,
-  IsDate,
   IsNumber,
   IsOptional,
   IsString,
@@ -15,6 +14,46 @@ import {
 import { Transform } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
+import { RequiredWith } from '@utils/validators/RequiredWith';
+import { NotPresentWith } from '@utils/validators/NotPresentWith';
+
+export class TermAndCondUpdateDto {
+  @ApiProperty({ type: String, required: false })
+  @IsUUID(7)
+  @IsOptional()
+  @RequiredWith(['updatedDescription', 'inactive'], { any: true })
+  @NotPresentWith(['description'])
+  id?: string;
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      'Provide this property value with id property for updating the description of provided term and condition id.',
+  })
+  @IsOptional()
+  @RequiredWith('id')
+  @NotPresentWith(['description', 'inactive'])
+  updatedDescription?: string;
+  @IsOptional()
+  @ApiProperty({
+    type: String,
+    required: false,
+    description:
+      'Provide this property value for creating new term and condition.',
+  })
+  @NotPresentWith(['id', 'updatedDescription'])
+  description?: string;
+  @ApiProperty({
+    type: Boolean,
+    required: false,
+    description:
+      'Set the term and condition id which provided together to inactive.',
+  })
+  @IsOptional()
+  @RequiredWith('id')
+  @NotPresentWith(['description', 'updatedDescription'])
+  inactive?: boolean;
+}
 
 export class UpdateVoucherDto {
   @ApiProperty({ type: String })
@@ -51,20 +90,14 @@ export class UpdateVoucherDto {
   @IsUUID(7)
   @IsOptional()
   tagId?: string;
-  @ApiProperty({ type: Array<string> })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
+  @ApiProperty({ type: () => [TermAndCondUpdateDto] })
   @IsArray()
   @IsOptional()
-  termAndCondTh?: string[];
-  @ApiProperty({ type: Array<string> })
+  termAndCondTh?: TermAndCondUpdateDto[];
+  @ApiProperty({ type: () => [TermAndCondUpdateDto] })
   @IsArray()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
   @IsOptional()
-  termAndCondEn?: string[];
+  termAndCondEn?: TermAndCondUpdateDto[];
   @ApiProperty({ type: String, enum: VoucherStatusEnum })
   @IsEnumValue(VoucherStatusEnum)
   @IsOptional()
@@ -102,7 +135,7 @@ export class UpdateVoucherResponse extends CoreApiResponse {
     const responseMessage = message ?? 'Update voucher Successfully';
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
-    // generateVoucherReponseHATEOASLink(data.id);
+    // generateVoucherReponseHATEOASl(data.id);
     return new UpdateVoucherResponse(
       responseCode,
       responseMessage,

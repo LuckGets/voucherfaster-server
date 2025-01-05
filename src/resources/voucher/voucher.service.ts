@@ -213,7 +213,7 @@ export class VoucherService {
         `The voucher ID: ${data.id} could not be found on this server`,
       );
     // If updated data contain
-    // changing the voucher code
+    // the new updated voucher code,
     // have to check first
     // does the new code already exist?
     if (data.code) {
