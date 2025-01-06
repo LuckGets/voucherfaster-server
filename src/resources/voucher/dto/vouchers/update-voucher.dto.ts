@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
-import { VoucherDomain, VoucherStatusEnum } from '../domain/voucher.domain';
+import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
 import {
   IsArray,
   IsNumber,

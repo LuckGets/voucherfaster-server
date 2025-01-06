@@ -125,6 +125,7 @@ export class VoucherPromotionMapper {
   public static toDomain(
     voucherPromotionEntity: VoucherPromotion,
   ): VoucherPromotionDomain {
+    if (!voucherPromotionEntity) return null;
     const voucherPromotionDomain = new VoucherPromotionDomain();
     voucherPromotionDomain.id = voucherPromotionEntity.id;
     voucherPromotionDomain.name = voucherPromotionEntity.name;

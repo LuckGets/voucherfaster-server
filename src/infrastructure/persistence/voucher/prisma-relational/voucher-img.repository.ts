@@ -62,9 +62,9 @@ export class VoucherImgRelationalPrismaORMRepository
   }
   updateVoucherImg(
     id: VoucherImgDomain['id'],
-    payload: VoucherImgUpdateInput,
+    data: VoucherImgUpdateInput,
   ): Promise<NullAble<VoucherImgDomain>> {
-    return;
+    return this.prismaService.voucherImg.update({ data, where: { id } });
   }
   async createMany(dataList: VoucherImgCreateInput[]): Promise<void> {
     await this.prismaService.voucherImg.createMany({ data: dataList });

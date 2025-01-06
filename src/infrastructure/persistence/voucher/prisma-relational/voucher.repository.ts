@@ -10,13 +10,7 @@ import {
 import { NullAble } from '@utils/types/common.type';
 import { PrismaService } from '../../config/prisma.service';
 import { VoucherRepository, VoucherTagRepository } from '../voucher.repository';
-import {
-  Prisma,
-  PrismaPromise,
-  Voucher,
-  VoucherStatus,
-  VoucherTermAndCondTh,
-} from '@prisma/client';
+import { Prisma, Voucher, VoucherStatus } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -24,7 +18,7 @@ import { VoucherMapper } from './voucher.mapper';
 import {
   TermAndCondUpdateDto,
   UpdateVoucherDto,
-} from '@resources/voucher/dto/update-voucher.dto';
+} from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { VoucherPromotionCreateInput } from '@resources/voucher/domain/voucher-promotion.domain';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {

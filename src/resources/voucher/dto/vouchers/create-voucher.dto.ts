@@ -3,7 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsArray,
-  IsDate,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -11,9 +10,9 @@ import {
 } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
-import { VoucherDomain } from '../domain/voucher.domain';
+import { VoucherDomain } from '../../domain/voucher.domain';
 import { AuthPath } from 'src/config/api-path';
-import { VoucherPromotionCreateInput } from '../domain/voucher-promotion.domain';
+import { VoucherPromotionCreateInput } from '../../domain/voucher-promotion.domain';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { IsInstanceOfClass } from '@utils/validators/IsInstaceOfClass';
 
@@ -188,7 +187,8 @@ export class CreateVoucherResponse extends CoreApiResponse {
     links?: HATEOSLink,
     statusCode?: number,
   ): CreateVoucherResponse {
-    const responseMessage = message ?? 'Login Successfully';
+    const responseMessage =
+      message ?? `Voucher code: ${data.code} have been created successfully.`;
     const responseCode = statusCode ?? HttpStatus.CREATED;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);

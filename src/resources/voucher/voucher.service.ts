@@ -17,19 +17,28 @@ import {
 import {
   VoucherCategoryRepository,
   VoucherImgRepository,
+  VoucherPromotionRepository,
   VoucherRepository,
   VoucherTagRepository,
 } from 'src/infrastructure/persistence/voucher/voucher.repository';
 import { UUIDService } from '@utils/services/uuid.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { CreateVoucherDto } from './dto/create-voucher.dto';
+import { CreateVoucherDto } from './dto/vouchers/create-voucher.dto';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
-import { UpdateVoucherDto } from './dto/update-voucher.dto';
-import { AddVoucherImgDto, UpdateVoucherImgDto } from './dto/voucher-img.dto';
-import { VoucherPromotionCreateInput } from './domain/voucher-promotion.domain';
+import { UpdateVoucherDto } from './dto/vouchers/update-voucher.dto';
+import {
+  AddVoucherImgDto,
+  UpdateVoucherImgDto,
+} from './dto/voucher-img/voucher-img.dto';
+import {
+  VoucherPromotionCreateInput,
+  VoucherPromotionDomain,
+} from './domain/voucher-promotion.domain';
+import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promotion.dto';
+import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
 
 @Injectable()
 export class VoucherService {
@@ -38,6 +47,7 @@ export class VoucherService {
     private voucherTagRepository: VoucherTagRepository,
     private voucherCategoryRepository: VoucherCategoryRepository,
     private voucherImgRepository: VoucherImgRepository,
+    private voucherPromotionRepository: VoucherPromotionRepository,
     private uuidService: UUIDService,
     private mediaService: MediaService,
   ) {}
@@ -419,6 +429,7 @@ export class VoucherService {
       data.voucherImgId,
       { imgPath: imageLink },
     );
+    await this.mediaService.deleteFile(voucherImg.imgPath);
     return updatedVoucherImg;
   }
 
@@ -492,5 +503,158 @@ export class VoucherService {
     });
 
     return this.voucherImgRepository.createMany(voucherImgToUpdate);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER PROMOTION PART ----------------------------- //
+  // -------------------------------------------------------------------- //
+  async createVoucherPromotion(
+    data: CreateVoucherPromotionDto,
+  ): Promise<VoucherPromotionDomain> {
+    const isVoucherExist = await this.voucherRepository.findById(
+      data.voucherId,
+    );
+    if (!isVoucherExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
+      );
+    if (isVoucherExist.price < data.promotionPrice) {
+      throw ErrorApiResponse.conflictRequest(
+        `The promotion price: ${data.promotionPrice} should not be more expensive than the original price: ${isVoucherExist.price}`,
+      );
+    }
+    data['id'] = this.uuidService.make();
+    return this.voucherPromotionRepository.createPromotion(data);
+  }
+
+  async getPaginationVoucherPromotion({
+    cursor,
+    name,
+  }: {
+    cursor?: VoucherPromotionDomain['id'];
+    name?: VoucherPromotionDomain['name'];
+  }): Promise<NullAble<VoucherPromotionDomain>[]> {
+    return this.voucherPromotionRepository.findMany({ cursor, name });
+  }
+
+  async getVoucherPromotionById(
+    promotionId: VoucherPromotionDomain['id'],
+  ): Promise<NullAble<VoucherPromotionDomain>> {
+    return this.voucherPromotionRepository.findById(promotionId);
+  }
+
+  async updateVoucherPromotion(
+    data: UpdateVoucherPromotionDto,
+  ): Promise<VoucherPromotionDomain> {
+    // Finding voucher via ID
+    const isVoucherExist = await this.voucherRepository.findById(
+      data.voucherId,
+    );
+
+    // If voucher ID provided in the request
+    // could not be found on the server.
+    if (!isVoucherExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
+      );
+
+    const isVoucherPromotionExist =
+      await this.voucherPromotionRepository.findById(data.promotionId);
+
+    // If promotion ID provided in the request
+    // could not be found on the server.
+    if (!isVoucherPromotionExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Promotion ID: ${isVoucherPromotionExist.id} does not exist on this server.`,
+      );
+
+    // If the new promotion price is more expensive than original price
+    // it should not be updatable.
+    if (data.promotionPrice) {
+      if (isVoucherExist.price < data.promotionPrice) {
+        throw ErrorApiResponse.conflictRequest(
+          `The promotion price: ${data.promotionPrice} should not be more expensive than the original price: ${isVoucherExist.price}`,
+        );
+      }
+    }
+
+    // If the request data want to change the promotion start selling Date
+    // should check with the existing promotion date first.
+    // if greater, than it could not proceed any further.
+    if (data.sellStartedAt) {
+      if (data.sellStartedAt > isVoucherPromotionExist.sellExpiredAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The updated promotion start-selling date :: ${data.sellStartedAt} should not be greater than the existing stop-selling date: ${isVoucherPromotionExist.sellExpiredAt}`,
+        );
+      }
+    }
+
+    // If the request data want to change the promotion start selling date and stop selling date
+    // should check together if start-selling is greater or not.
+    // if greater, than it could not proceed any further.
+    if (data.sellStartedAt && data.sellExpiredAt) {
+      if (data.sellStartedAt > data.sellExpiredAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The updated promotion start-selling date :: ${data.sellStartedAt} should not be greater than the update promotion stop-selling date: ${data.sellExpiredAt}`,
+        );
+      }
+    }
+
+    if (data.sellExpiredAt) {
+      if (data.sellExpiredAt < isVoucherPromotionExist.sellStartedAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The updated promotion stop-selling date :: ${data.sellExpiredAt} should not be earlier than the existing start date: ${isVoucherPromotionExist.sellStartedAt}`,
+        );
+      }
+    }
+
+    if (data.usableAt) {
+      if (data.usableAt < isVoucherPromotionExist.sellStartedAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The updated voucher usable date :: ${data.usableAt} should not be earlier than the start selling date: ${isVoucherPromotionExist.sellStartedAt}`,
+        );
+      }
+    }
+
+    if (data.usableAt && data.usableExpiredAt) {
+      if (data.usableAt > data.usableExpiredAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The voucher usable date :: ${data.usableAt} should not be greater than the usable expired date: ${data.usableExpiredAt}`,
+        );
+      }
+    }
+
+    if (data.usableExpiredAt) {
+      if (data.usableExpiredAt < isVoucherPromotionExist.usableAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The new voucher usable expired date :: ${data.usableExpiredAt} should not be earlier than the existing usable date: ${isVoucherPromotionExist.usableAt}`,
+        );
+      }
+    }
+    return this.voucherPromotionRepository.updatePromotion(data);
+  }
+
+  async deleteVoucherPromotion(
+    voucherPromotionId: VoucherPromotionDomain['id'],
+  ): Promise<void> {
+    const isVoucherPromotionExist =
+      await this.voucherPromotionRepository.findById(voucherPromotionId);
+
+    // If promotion ID provided in the request
+    // could not be found on the server.
+    if (!isVoucherPromotionExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Promotion ID: ${isVoucherPromotionExist.id} does not exist on this server.`,
+      );
+
+    // If promotion ID provided in the request
+    // has already been deleted.
+    if (isVoucherPromotionExist.deletedAt) {
+      throw ErrorApiResponse.conflictRequest(
+        `Promotion ID: ${isVoucherPromotionExist.id} has already been deleted since ${isVoucherPromotionExist.deletedAt.toLocaleString()}`,
+      );
+    }
+    await this.voucherPromotionRepository.deletePromotion(voucherPromotionId);
+    return;
   }
 }

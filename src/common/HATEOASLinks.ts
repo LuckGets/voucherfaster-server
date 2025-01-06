@@ -2,7 +2,6 @@ import {
   AccountPath,
   AuthPath,
   VoucherCategoryPath,
-  VoucherPath,
 } from 'src/config/api-path';
 import { HTTPMethod } from './http.type';
 import { UUIDTypes } from 'uuid';
