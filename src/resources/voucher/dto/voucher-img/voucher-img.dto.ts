@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VoucherDomain, VoucherImgDomain } from '../domain/voucher.domain';
+import { VoucherDomain, VoucherImgDomain } from '../../domain/voucher.domain';
 import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { CoreApiResponse } from 'src/common/core-api-response';
@@ -8,8 +8,8 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 
 export const VOUCHER_FILE_FILED = {
-  VoucherImg: 'voucherImg',
-  MainImg: 'mainImg',
+  VOUCHER_IMG: 'voucherImg',
+  MAIN_IMG: 'mainImg',
 } as const;
 
 export class AddVoucherImgDto {
@@ -81,4 +81,49 @@ export class UpdateVoucherImgDto {
   @ApiProperty({ type: String })
   @IsUUID(7)
   voucherImgId: VoucherImgDomain['id'];
+}
+
+export class UpdateVoucherImgResponse extends CoreApiResponse {
+  @ApiProperty({
+    type: Number,
+    example: HttpStatus.OK,
+  })
+  public HTTPStatusCode: number;
+  @ApiProperty({
+    type: String,
+    example: 'Update image ID: 123 successful.',
+  })
+  public message: string;
+  @ApiProperty({
+    type: Object,
+    example: `{"logout": ${AuthPath.Logout}}`,
+  })
+  public links: HATEOSLink;
+  @ApiProperty({
+    type: () => Object,
+    example: '',
+  })
+  public data: VoucherImgDomain;
+
+  public static success(
+    data: unknown,
+    imageId: string,
+    links?: HATEOSLink,
+    statusCode?: number,
+  ): UpdateVoucherImgResponse {
+    const responseMessage = `Update image ID: ${imageId} successful.`;
+    const responseCode = statusCode ?? HttpStatus.CREATED;
+    const responseLink = links;
+    // links ??
+    // GenerateAccountResponseHATEOASLink(
+    //   data.id as UUIDTypes,
+    //   !!data.verifiedAt,
+    // );
+    return new UpdateVoucherImgResponse(
+      responseCode,
+      responseMessage,
+      responseLink,
+      data,
+    );
+  }
 }

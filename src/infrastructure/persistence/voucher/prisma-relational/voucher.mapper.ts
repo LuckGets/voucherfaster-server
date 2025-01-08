@@ -1,5 +1,4 @@
 import {
-  PackageVoucher,
   Voucher,
   VoucherCategory,
   VoucherImg,
@@ -7,7 +6,6 @@ import {
   VoucherTermAndCondEN,
   VoucherTermAndCondTh,
 } from '@prisma/client';
-import { PackageVoucherDomain } from '@resources/voucher/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
   VoucherCategoryDomain,
@@ -15,7 +13,6 @@ import {
   VoucherStatusEnum,
   VoucherTagDomain,
 } from '@resources/voucher/domain/voucher.domain';
-import { NullAble } from '@utils/types/common.type';
 import { plainToInstance } from 'class-transformer';
 
 type AllVoucherInformation = Voucher & {
@@ -125,6 +122,7 @@ export class VoucherPromotionMapper {
   public static toDomain(
     voucherPromotionEntity: VoucherPromotion,
   ): VoucherPromotionDomain {
+    if (!voucherPromotionEntity) return null;
     const voucherPromotionDomain = new VoucherPromotionDomain();
     voucherPromotionDomain.id = voucherPromotionEntity.id;
     voucherPromotionDomain.name = voucherPromotionEntity.name;

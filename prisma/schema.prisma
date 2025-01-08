@@ -213,12 +213,11 @@ model PackageImg {
 }
 
 model PackageRewardVoucher {
-  id               String         @id @default(uuid(7)) @db.Uuid
-  rewardVoucherId  String         @map("reward_voucher_id") @db.Uuid
-  voucher          Voucher        @relation(fields: [rewardVoucherId], references: [id])
-  packageId        String         @map("package_id") @db.Uuid
-  package          PackageVoucher @relation(fields: [packageVoucherId], references: [id])
-  packageVoucherId String         @map("package_voucher_id") @db.Uuid
+  id              String         @id @default(uuid(7)) @db.Uuid
+  rewardVoucherId String         @map("reward_voucher_id") @db.Uuid
+  voucher         Voucher        @relation(fields: [rewardVoucherId], references: [id])
+  packageId       String         @map("package_id") @db.Uuid
+  package         PackageVoucher @relation(fields: [packageId], references: [id])
 
   @@map("package_reward_voucher")
 }

@@ -10,12 +10,15 @@ import {
 import { NullAble } from '@utils/types/common.type';
 import { PrismaService } from '../../config/prisma.service';
 import { VoucherRepository, VoucherTagRepository } from '../voucher.repository';
-import { VoucherStatus } from '@prisma/client';
+import { Prisma, Voucher, VoucherStatus } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { VoucherMapper } from './voucher.mapper';
-import { UpdateVoucherDto } from '@resources/voucher/dto/update-voucher.dto';
+import {
+  TermAndCondUpdateDto,
+  UpdateVoucherDto,
+} from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { VoucherPromotionCreateInput } from '@resources/voucher/domain/voucher-promotion.domain';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
@@ -161,7 +164,6 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   }
 
   async findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
-    console.log(id);
     const voucherJoinQuery = this.voucherAllDetailJoinQuery;
     const voucher = await this.prismaService.voucher.findUnique({
       where: {
@@ -170,6 +172,17 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       ...voucherJoinQuery,
     });
     return voucher ? VoucherMapper.toDomain(voucher) : null;
+  }
+
+  async findByIds(idList: VoucherDomain['id'][]): Promise<VoucherDomain[]> {
+    const voucherJoinQuery = this.voucherAllDetailJoinQuery;
+    const voucherList = await this.prismaService.voucher.findMany({
+      where: {
+        id: { in: idList },
+      },
+      ...voucherJoinQuery,
+    });
+    return voucherList.map(VoucherMapper.toDomain);
   }
 
   async findByVoucherCode(
@@ -336,13 +349,92 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
    * Service for updating voucher information in database
    */
   async update(payload: UpdateVoucherDto): Promise<VoucherDomain> {
-    const { id, ...data } = payload;
-    const voucher = await this.prismaService.voucher.update({
-      data: data,
-      where: {
-        id: id,
-      },
+    // Extract term and condition which need to
+    // update in another table
+    const { id, termAndCondEn, termAndCondTh, ...data } = payload;
+
+    // Everything is wrapped in one transaction
+    const voucher = await this.prismaService.$transaction(async (tx) => {
+      // 1. Update Thai terms & conditions
+      if (termAndCondTh && termAndCondTh.length > 0) {
+        await this.upsertManyTermAndCond(tx, termAndCondTh, id, 'TH');
+      }
+      // 2. Update English terms & conditions
+      if (termAndCondEn && termAndCondEn.length > 0) {
+        await this.upsertManyTermAndCond(tx, termAndCondEn, id, 'EN');
+      }
+      // 3. Update the voucher record
+      const voucher = await tx.voucher.update({
+        data: data,
+        where: { id: id },
+      });
+
+      return voucher; // Return the updated voucher
     });
     return VoucherMapper.toDomain(voucher);
+  }
+
+  async upsertManyTermAndCond(
+    tx: Prisma.TransactionClient,
+    data: TermAndCondUpdateDto[],
+    voucherId: Voucher['id'],
+    lang: 'TH' | 'EN',
+  ): Promise<unknown> {
+    const termAndCondInsertArr: Prisma.VoucherTermAndCondThCreateManyInput[] =
+      [];
+    const termAndCondUpdateArr: Array<{
+      id: string; // primary key in your table, presumably
+      data: Prisma.VoucherTermAndCondThUpdateInput;
+    }> = [];
+
+    // Process the data which can also be
+    // the update or insert
+    data.forEach((item) => {
+      if (item.id && !item.description) {
+        const { id, inactive, updatedDescription } = item;
+        const data: Prisma.VoucherTermAndCondThUpdateInput = { id };
+        if (inactive) {
+          data.inactiveAt = new Date(Date.now());
+        } else if (updatedDescription) {
+          data.description = updatedDescription;
+        }
+        termAndCondUpdateArr.push({ id, data });
+      } else {
+        termAndCondInsertArr.push({ description: item.description, voucherId });
+      }
+    });
+
+    if (lang === 'TH') {
+      if (termAndCondInsertArr.length > 0) {
+        await tx.voucherTermAndCondTh.createMany({
+          data: termAndCondInsertArr,
+        });
+      }
+      // 1. multiple updates if
+      // there is the data for update
+      if (termAndCondUpdateArr.length > 0) {
+        for (const item of termAndCondUpdateArr) {
+          await tx.voucherTermAndCondTh.update({
+            where: { id: item.id },
+            data: item.data,
+          });
+        }
+      }
+    } else if (lang === 'EN') {
+      if (termAndCondInsertArr.length > 0) {
+        await tx.voucherTermAndCondEN.createMany({
+          data: termAndCondInsertArr,
+        });
+      }
+      if (termAndCondUpdateArr.length > 0) {
+        for (const item of termAndCondUpdateArr) {
+          await tx.voucherTermAndCondEN.update({
+            where: { id: item.id },
+            data: item.data,
+          });
+        }
+      }
+    }
+    return;
   }
 }

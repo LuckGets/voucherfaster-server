@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import {
   VoucherCategoryRepository,
   VoucherImgRepository,
+  VoucherPromotionRepository,
   VoucherRepository,
   VoucherTagRepository,
 } from './voucher.repository';
@@ -10,6 +11,7 @@ import { PrismaModule } from '../config/prisma.module';
 import { VoucherCategoryRelationalPrismaORMRepository } from './prisma-relational/voucher-category.repository';
 import { VoucherTagRelationalPrismaORMRepository } from './prisma-relational/voucher-tag.repository';
 import { VoucherImgRelationalPrismaORMRepository } from './prisma-relational/voucher-img.repository';
+import { VoucherPromotionRelationalOPrismaORMRepository } from './prisma-relational/voucher-promotion.repository';
 
 @Module({
   imports: [PrismaModule],
@@ -30,12 +32,17 @@ import { VoucherImgRelationalPrismaORMRepository } from './prisma-relational/vou
       provide: VoucherImgRepository,
       useClass: VoucherImgRelationalPrismaORMRepository,
     },
+    {
+      provide: VoucherPromotionRepository,
+      useClass: VoucherPromotionRelationalOPrismaORMRepository,
+    },
   ],
   exports: [
     VoucherRepository,
     VoucherCategoryRepository,
     VoucherTagRepository,
     VoucherImgRepository,
+    VoucherPromotionRepository,
   ],
 })
 export class VoucherRelationalRepositoryModule {}

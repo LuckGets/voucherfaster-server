@@ -1,4 +1,4 @@
-import { PackageVoucherDomain } from '@resources/voucher/domain/package-voucher.domain';
+import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import {
   VoucherPromotionCreateInput,
   VoucherPromotionDomain,
@@ -14,7 +14,9 @@ import {
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
 } from '@resources/voucher/domain/voucher.domain';
-import { UpdateVoucherDto } from '@resources/voucher/dto/update-voucher.dto';
+import { CreateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/create-promotion.dto';
+import { UpdateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/update-promotion.dto';
+import { UpdateVoucherDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 
@@ -56,6 +58,18 @@ export abstract class VoucherRepository {
    * the voucher domain or null
    */
   abstract findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>>;
+
+  /**
+   *
+   * @param id Array of VoucherDomain["id"]
+   * @returns VoucherDomain[]
+   *
+   * Find the vouchers in database with this list of ID which can
+   * match or not match the existing records.
+   * return only matching records.
+   */
+  abstract findByIds(idList: VoucherDomain['id'][]): Promise<VoucherDomain[]>;
+
   /**
    *
    * @param code
@@ -199,4 +213,28 @@ export abstract class VoucherImgRepository {
     id: VoucherImgDomain['id'],
     data: VoucherImgUpdateInput,
   ): Promise<VoucherImgDomain>;
+}
+
+export abstract class VoucherPromotionRepository {
+  abstract createPromotion(
+    data: CreateVoucherPromotionDto,
+  ): Promise<VoucherPromotionDomain>;
+  abstract findById(
+    id: VoucherPromotionDomain['id'],
+  ): Promise<NullAble<VoucherPromotionDomain>>;
+  abstract findMany({
+    paginationOption,
+    sortOptions,
+    cursor,
+    name,
+  }: {
+    paginationOption?: IPaginationOption;
+    sortOptions?: unknown;
+    cursor?: VoucherPromotionDomain['id'];
+    name?: VoucherPromotionDomain['name'];
+  }): Promise<VoucherPromotionDomain[]>;
+  abstract updatePromotion(
+    data: UpdateVoucherPromotionDto,
+  ): Promise<VoucherPromotionDomain>;
+  abstract deletePromotion(id: VoucherPromotionDomain['id']): Promise<void>;
 }

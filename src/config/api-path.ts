@@ -45,3 +45,22 @@ export const VoucherCategoryPath = {
   UpdateTag: ':categoryId/tags/:tagId',
   CategoryQuery: 'category',
 } as const;
+
+export const VoucherPromotionPath = {
+  Name: 'promotions',
+  Base: '/promotions',
+  GetManyPromotion: `/promotions`,
+  PromotionParmId: 'promotionId',
+  PromotionNameQuery: 'name',
+  GetPromotionById: `:${VoucherPath.VoucherIdParm}/promotions/:promotionId`,
+  DeletePromotion: `:${VoucherPath.VoucherIdParm}/promotions/:promotionId`,
+  CreatePromotion: `:${VoucherPath.VoucherIdParm}/promotions`,
+  UpdatePromotion: `:${VoucherPath.VoucherIdParm}/promotions/:promotionId`,
+} as const;
+
+export const PackageVoucherPath = {
+  Name: 'packages',
+  Base: '/packages',
+  PackageParamId: 'packageId',
+  DeletePackage: ':packageId',
+} as const;

@@ -8,13 +8,15 @@ import { diskStorage } from 'multer';
 import { MediaModule } from '@application/media/media.module';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 import { VoucherCategoryController } from './controllers/voucher-category.controller';
+import { VoucherPromotionController } from './controllers/voucher-promotion.controller';
+import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
 
 @Module({
   imports: [
     VoucherRelationalRepositoryModule,
     MulterModule.register({
       storage: diskStorage({
-        destination: './upload',
+        destination: MULTER_UPLOAD_CONSTANT.DIRECTORY,
         filename(req, file, callback) {
           const filename = `${Date.now()}_${file.originalname}`;
           callback(null, filename);
@@ -23,7 +25,12 @@ import { VoucherCategoryController } from './controllers/voucher-category.contro
     }),
     MediaModule,
   ],
-  controllers: [VoucherController, VoucherCategoryController],
+  controllers: [
+    VoucherController,
+    VoucherCategoryController,
+    VoucherPromotionController,
+  ],
   providers: [VoucherService, UUIDService, UnlinkFileInterceptor],
+  exports: [VoucherService],
 })
 export class VoucherModule {}
