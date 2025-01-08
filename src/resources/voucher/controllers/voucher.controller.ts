@@ -74,7 +74,6 @@ import {
   GetManyVoucherPromotionResponse,
   GetVoucherPromotionByIdResponse,
 } from '../dto/voucher-promotion/get-promotion.dto';
-import { VoucherPromotionMapper } from 'src/infrastructure/persistence/voucher/prisma-relational/voucher.mapper';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -86,7 +85,7 @@ export class VoucherController {
 
   @ApiBearerAuth()
   @SerializeOptions({
-    groups: [RoleEnum.Admin, RoleEnum.Me],
+    groups: [RoleEnum.Admin],
   })
   @ApiConsumes('multipart/formdata')
   @ApiBody({
@@ -95,11 +94,11 @@ export class VoucherController {
   @UseInterceptors(
     FileFieldsInterceptor([
       {
-        name: VOUCHER_FILE_FILED.MainImg,
+        name: VOUCHER_FILE_FILED.MAIN_IMG,
         maxCount: 1,
       },
       {
-        name: VOUCHER_FILE_FILED.VoucherImg,
+        name: VOUCHER_FILE_FILED.VOUCHER_IMG,
       },
     ]),
     UnlinkFileInterceptor,
@@ -109,15 +108,15 @@ export class VoucherController {
   async createVoucher(
     @UploadedFiles()
     files: {
-      mainImg: Express.Multer.File[];
-      voucherImg?: Express.Multer.File[];
+      [VOUCHER_FILE_FILED.MAIN_IMG]: Express.Multer.File[];
+      [VOUCHER_FILE_FILED.VOUCHER_IMG]?: Express.Multer.File[];
     },
     @Body() body: CreateVoucherDto,
   ) {
     const voucher = await this.voucherService.createVoucher(
       body,
-      files.mainImg,
-      files.voucherImg,
+      files[VOUCHER_FILE_FILED.MAIN_IMG],
+      files[VOUCHER_FILE_FILED.VOUCHER_IMG],
     );
     return CreateVoucherResponse.success(
       voucher,
@@ -260,11 +259,11 @@ export class VoucherController {
   @UseInterceptors(
     FileFieldsInterceptor([
       {
-        name: VOUCHER_FILE_FILED.MainImg,
+        name: VOUCHER_FILE_FILED.MAIN_IMG,
         maxCount: 1,
       },
       {
-        name: VOUCHER_FILE_FILED.VoucherImg,
+        name: VOUCHER_FILE_FILED.VOUCHER_IMG,
       },
     ]),
     UnlinkFileInterceptor,
@@ -273,15 +272,15 @@ export class VoucherController {
   async addVoucherImg(
     @UploadedFiles()
     files: {
-      mainImg?: Express.Multer.File[];
-      voucherImg?: Express.Multer.File[];
+      [VOUCHER_FILE_FILED.MAIN_IMG]?: Express.Multer.File[];
+      [VOUCHER_FILE_FILED.VOUCHER_IMG]?: Express.Multer.File[];
     },
     @Body() body: AddVoucherImgDto,
   ): Promise<AddVoucherImgResponse> {
     await this.voucherService.addVoucherImg({
       data: body,
-      mainImg: files.mainImg[0],
-      voucherImg: files.voucherImg,
+      mainImg: files[VOUCHER_FILE_FILED.MAIN_IMG][0],
+      voucherImg: files[VOUCHER_FILE_FILED.VOUCHER_IMG],
     });
     return AddVoucherImgResponse.success(null);
   }
@@ -295,7 +294,7 @@ export class VoucherController {
   })
   @UseGuards(AdminGuard)
   @UseInterceptors(
-    FileInterceptor(VOUCHER_FILE_FILED.VoucherImg),
+    FileInterceptor(VOUCHER_FILE_FILED.VOUCHER_IMG),
     UnlinkFileInterceptor,
   )
   @Patch(VoucherPath.UpdateVoucherImg)
@@ -331,32 +330,6 @@ export class VoucherController {
       createdVoucherPromotion,
       body.voucherId,
     );
-  }
-
-  @ApiQuery({
-    name: 'cursor',
-    description: 'Cursor ID for pagination.',
-    required: false,
-    type: String, // Adjust to the correct type if needed
-  })
-  @ApiQuery({
-    name: 'name',
-    description: 'Name of the promotion to filter by.',
-    required: false,
-    type: String, // Adjust to the correct type if needed
-  })
-  @ApiOkResponse({
-    type: () => GetManyVoucherResponse,
-  })
-  @Get(VoucherPromotionPath.GetManyPromotion)
-  async getPaginationVoucherPromotion(
-    @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherPromotionDomain['id'],
-    @Query(VoucherPromotionPath.PromotionNameQuery)
-    name: VoucherPromotionDomain['name'],
-  ): Promise<GetManyVoucherPromotionResponse> {
-    const voucherPromotionQueryList =
-      await this.voucherService.getPaginationVoucherPromotion({ cursor, name });
-    return GetManyVoucherPromotionResponse.success(voucherPromotionQueryList);
   }
 
   @ApiParam({

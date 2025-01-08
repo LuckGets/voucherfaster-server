@@ -8,8 +8,8 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 
 export const VOUCHER_FILE_FILED = {
-  VoucherImg: 'voucherImg',
-  MainImg: 'mainImg',
+  VOUCHER_IMG: 'voucherImg',
+  MAIN_IMG: 'mainImg',
 } as const;
 
 export class AddVoucherImgDto {

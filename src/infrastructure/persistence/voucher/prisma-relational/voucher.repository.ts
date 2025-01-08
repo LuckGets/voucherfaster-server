@@ -164,7 +164,6 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   }
 
   async findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
-    console.log(id);
     const voucherJoinQuery = this.voucherAllDetailJoinQuery;
     const voucher = await this.prismaService.voucher.findUnique({
       where: {
@@ -173,6 +172,17 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       ...voucherJoinQuery,
     });
     return voucher ? VoucherMapper.toDomain(voucher) : null;
+  }
+
+  async findByIds(idList: VoucherDomain['id'][]): Promise<VoucherDomain[]> {
+    const voucherJoinQuery = this.voucherAllDetailJoinQuery;
+    const voucherList = await this.prismaService.voucher.findMany({
+      where: {
+        id: { in: idList },
+      },
+      ...voucherJoinQuery,
+    });
+    return voucherList.map(VoucherMapper.toDomain);
   }
 
   async findByVoucherCode(

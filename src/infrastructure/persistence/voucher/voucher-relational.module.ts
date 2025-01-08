@@ -42,6 +42,7 @@ import { VoucherPromotionRelationalOPrismaORMRepository } from './prisma-relatio
     VoucherCategoryRepository,
     VoucherTagRepository,
     VoucherImgRepository,
+    VoucherPromotionRepository,
   ],
 })
 export class VoucherRelationalRepositoryModule {}

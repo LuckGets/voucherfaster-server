@@ -76,11 +76,11 @@ export function generatePaginationQueryOption<S extends object, T>({
       ...query,
       cursor: { id: cursor },
       skip: 1,
-      take: paginationOption.limit || defaultPaginationOption.limit,
+      take: paginationOption?.limit || defaultPaginationOption.limit,
     };
   } else {
     const paginationPage = paginationOption?.page
-      ? (paginationOption.page - 1) * paginationOption?.limit
+      ? (paginationOption?.page - 1) * paginationOption?.limit
       : (defaultPaginationOption.page - 1) * defaultPaginationOption.limit;
     query = {
       ...query,

@@ -1,4 +1,4 @@
-import { PackageVoucherDomain } from '@resources/voucher/domain/package-voucher.domain';
+import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import {
   VoucherPromotionCreateInput,
   VoucherPromotionDomain,
@@ -58,6 +58,18 @@ export abstract class VoucherRepository {
    * the voucher domain or null
    */
   abstract findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>>;
+
+  /**
+   *
+   * @param id Array of VoucherDomain["id"]
+   * @returns VoucherDomain[]
+   *
+   * Find the vouchers in database with this list of ID which can
+   * match or not match the existing records.
+   * return only matching records.
+   */
+  abstract findByIds(idList: VoucherDomain['id'][]): Promise<VoucherDomain[]>;
+
   /**
    *
    * @param code

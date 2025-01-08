@@ -39,6 +39,7 @@ import {
 } from './domain/voucher-promotion.domain';
 import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promotion.dto';
 import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class VoucherService {
@@ -87,7 +88,7 @@ export class VoucherService {
     //---------------------------------------------------------
     const allImgBuffer = [];
     if (mainImg) allImgBuffer.push(...mainImg);
-    if (voucherImg) allImgBuffer.push(...voucherImg);
+    if (voucherImg && voucherImg.length > 0) allImgBuffer.push(...voucherImg);
     // Firstly we need to upload the img to s3 and get the link back.
     const allVoucherImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
@@ -183,6 +184,10 @@ export class VoucherService {
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
   }): Promise<VoucherDomain[]> {
+    if (cursor && !isUUID(cursor, 7))
+      throw ErrorApiResponse.conflictRequest(
+        `${cursor} is not valid data type for cursor.`,
+      );
     return this.voucherRepository.findMany({
       tag,
       category,
@@ -195,12 +200,21 @@ export class VoucherService {
   public async getVoucherById(
     id: VoucherDomain['id'],
   ): Promise<NullAble<VoucherDomain>> {
+    if (!id) return null;
+
     const voucher = await this.voucherRepository.findById(id);
     if (!voucher)
       throw ErrorApiResponse.notFoundRequest(
         `The voucher ID: ${id} could not be found on this server.`,
       );
     return voucher;
+  }
+
+  public async getVoucherByIds(
+    idList: VoucherDomain['id'][],
+  ): Promise<VoucherDomain[]> {
+    if (idList.length < 1) return [];
+    return this.voucherRepository.findByIds(idList);
   }
 
   public async getSearchedVoucher(

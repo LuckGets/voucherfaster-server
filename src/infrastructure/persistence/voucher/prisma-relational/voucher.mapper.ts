@@ -1,5 +1,4 @@
 import {
-  PackageVoucher,
   Voucher,
   VoucherCategory,
   VoucherImg,
@@ -7,7 +6,6 @@ import {
   VoucherTermAndCondEN,
   VoucherTermAndCondTh,
 } from '@prisma/client';
-import { PackageVoucherDomain } from '@resources/voucher/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
   VoucherCategoryDomain,
@@ -15,7 +13,6 @@ import {
   VoucherStatusEnum,
   VoucherTagDomain,
 } from '@resources/voucher/domain/voucher.domain';
-import { NullAble } from '@utils/types/common.type';
 import { plainToInstance } from 'class-transformer';
 
 type AllVoucherInformation = Voucher & {
