@@ -17,8 +17,6 @@ export class VoucherDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: String })
-  code: string;
-  @ApiProperty({ type: String })
   title: string;
   @Expose({
     toClassOnly: true,

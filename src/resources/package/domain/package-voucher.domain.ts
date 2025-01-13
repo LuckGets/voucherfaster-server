@@ -16,7 +16,7 @@ export class PackageVoucherDomain {
   @ApiProperty({ type: () => [PackageImgDomain] })
   images: Pick<PackageImgDomain, 'id' | 'mainImg' | 'path'>[];
   @ApiProperty({ type: String })
-  name: string;
+  title: string;
   @ApiProperty({ type: Date })
   startedAt: Date;
   @ApiProperty({ type: Date })
@@ -35,7 +35,7 @@ export type PackageVoucherCreateInput = {
   quotaVoucherId: string;
   quotaAmount: number;
   price: number;
-  name: string;
+  title: string;
   startedAt: Date;
   expiredAt: Date;
 };

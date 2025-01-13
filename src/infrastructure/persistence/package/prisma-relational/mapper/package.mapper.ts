@@ -14,7 +14,7 @@ export class PackageVoucherMapper {
   public static toDomain(
     packageVoucherEntity: AllPackageVoucherEntityInformation,
   ): PackageVoucherDomain {
-    console.log(packageVoucherEntity);
+    if (!packageVoucherEntity) return null;
     const packageVoucherDomain = new PackageVoucherDomain();
     packageVoucherDomain.id = packageVoucherEntity.id;
     packageVoucherDomain.name = packageVoucherEntity.name;

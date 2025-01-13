@@ -9,7 +9,7 @@ const packageVoucherId = Array(2)
 export const packages: Prisma.PackageVoucherCreateManyInput[] = [
   {
     id: packageVoucherId[0],
-    name: 'โปรโมชั่นแพ็คเกจ ซื้อ1แถม1',
+    title: 'โปรโมชั่นแพ็คเกจ ซื้อ1แถม1',
     quotaVoucherId: vouchers[0].id,
     quotaAmount: 1,
     packagePrice: 300,
@@ -18,7 +18,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
   },
   {
     id: packageVoucherId[1],
-    name: 'เป็ดฮ่องกงแซ่บๆ 2 แถม 1',
+    title: 'เป็ดฮ่องกงแซ่บๆ 2 แถม 1',
     quotaVoucherId: vouchers[5].id,
     quotaAmount: 2,
     packagePrice: 1200,
@@ -66,3 +66,31 @@ export const packageImgs: Prisma.PackageImgCreateManyInput[] = [
     packageId: packages[0].id,
   },
 ];
+
+export const packageTermAndCondTH: Prisma.PackageVoucherTermAndCondTHCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น',
+      packageVoucherId: packages[0].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'คูปองนี้สามารถใช้ได้เฉพาะกับจานเป็ดย่างเท่านั้น',
+      packageVoucherId: packages[1].id,
+    },
+  ];
+
+export const packageTermAndCondEN: Prisma.PackageVoucherTermAndCondENCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      description: 'This voucher can only be used on Saturday.',
+      packageVoucherId: packages[0].id,
+    },
+    {
+      id: uuidv7(),
+      description: 'This voucher can only be used on roasted duck dishes.',
+      packageVoucherId: packages[1].id,
+    },
+  ];

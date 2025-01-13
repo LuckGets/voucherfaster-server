@@ -74,14 +74,6 @@ export class VoucherService {
       throw ErrorApiResponse.notFoundRequest(
         'The tag ID provided could not be found on this server.',
       );
-
-    const isVoucherCodeExists = await this.voucherRepository.findByVoucherCode(
-      data.code,
-    );
-    if (isVoucherCodeExists)
-      throw ErrorApiResponse.conflictRequest(
-        `The voucher code ${data.code} has already exist. Please try again with new code.`,
-      );
     // ---------------------------------------------------------
     // ------------------ CREATE VOUCHER PART  ------------------
     //---------------------------------------------------------
@@ -240,15 +232,6 @@ export class VoucherService {
     // the new updated voucher code,
     // have to check first
     // does the new code already exist?
-    if (data.code) {
-      const isVoucherCodeExists =
-        await this.voucherRepository.findByVoucherCode(data.code);
-      if (isVoucherCodeExists) {
-        throw ErrorApiResponse.conflictRequest(
-          `The voucher code: ${isVoucherCodeExists.code} already exists in this server. Please try again.`,
-        );
-      }
-    }
     return this.voucherRepository.update(data);
   }
 

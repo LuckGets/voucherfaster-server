@@ -62,10 +62,6 @@ export class UpdateVoucherDto {
   @ApiProperty({ type: String })
   @IsString()
   @IsOptional()
-  code?: string;
-  @ApiProperty({ type: String })
-  @IsString()
-  @IsOptional()
   title?: string;
   @ApiProperty({ type: String })
   @IsString()
@@ -112,7 +108,7 @@ export class UpdateVoucherResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Voucher code 123 have been created successfully.',
+    example: 'Voucher ID: 123 have been updated successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -132,7 +128,8 @@ export class UpdateVoucherResponse extends CoreApiResponse {
     links?: HATEOSLink,
     statusCode?: number,
   ): UpdateVoucherResponse {
-    const responseMessage = message ?? 'Update voucher Successfully';
+    const responseMessage =
+      message ?? `Voucher ID: ${data.id} have been updated successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASl(data.id);

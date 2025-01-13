@@ -76,6 +76,14 @@ export class ErrorApiResponse {
     this.timestamp = new Date(Date.now()).toLocaleString();
     this.message = message;
   }
+
+  public static badRequest(message?: string) {
+    return new HttpException(
+      new ErrorApiResponse(message),
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+
   public static conflictRequest(message?: string) {
     return new HttpException(
       new ErrorApiResponse(message),

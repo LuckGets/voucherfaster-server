@@ -16,6 +16,12 @@ import {
 } from './seeds-data/voucher.seed';
 import { config } from 'dotenv';
 import { execSync } from 'child_process';
+import {
+  packages,
+  packageTermAndCondEN,
+  packageTermAndCondTH,
+} from './seeds-data/package.seed';
+import { ownerImg, ownerInfo } from './seeds-data/owner.seed';
 config({ path: '.env.development' });
 
 const prisma = new PrismaClient();
@@ -66,6 +72,12 @@ const seed = async (): Promise<void> => {
     ]);
     await seedingFunc(prisma.voucherTag.createMany, tags, 'voucher-tag');
     await seedingFunc(prisma.voucher.createMany, vouchers, 'vouchers');
+    await seedingFunc(
+      prisma.packageVoucher.createMany,
+      packages,
+      'package-vouchers',
+    );
+    await seedingFunc(prisma.owner.createMany, ownerInfo, 'owner-information');
     await Promise.all([
       seedingFunc(prisma.voucherImg.createMany, voucherImg, 'voucher-img'),
       seedingFunc(
@@ -83,6 +95,17 @@ const seed = async (): Promise<void> => {
         voucherPromotions,
         'voucher-promotion',
       ),
+      seedingFunc(
+        prisma.packageVoucherTermAndCondTH.createMany,
+        packageTermAndCondTH,
+        'package-voucher-term-and-condition-TH',
+      ),
+      seedingFunc(
+        prisma.packageVoucherTermAndCondEN.createMany,
+        packageTermAndCondEN,
+        'package-voucher-term-and-condition-EN',
+      ),
+      // seedingFunc(prisma.ownerImg.createMany, ownerImg, 'owner-images'),
     ]);
   } catch (err) {
     console.error(err);

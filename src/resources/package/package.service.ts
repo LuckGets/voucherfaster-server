@@ -3,6 +3,7 @@ import { PackageVoucherRepository } from 'src/infrastructure/persistence/package
 import { CreatePackageVoucherDto } from './dto/create-package.dto';
 import {
   PackageImgCreateInput,
+  PackageImgDomain,
   PackageRewardVoucherCreateInput,
   PackageVoucherCreateInput,
   PackageVoucherDomain,
@@ -13,6 +14,12 @@ import { VoucherService } from '@resources/voucher/voucher.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { isUUID } from 'class-validator';
+import { NullAble } from '@utils/types/common.type';
+import {
+  packageVoucherTermAndCondENCreateInput,
+  packageVoucherTermAndCondTHCreateInput,
+} from './domain/package-voucher-term-cond.domain';
+import { UpdatePackageVoucherDto } from './dto/update-package.dto';
 
 @Injectable()
 export class PackageVoucherService {
@@ -72,7 +79,7 @@ export class PackageVoucherService {
     // ------- SECOND PART : PREPARE INFORMATION -------
 
     // Extract reward voucher ID from package voucher data
-    const { rewardVoucherId, ...restData } = data;
+    const { rewardVoucherId, termAndCondTh, termAndCondEn, ...restData } = data;
 
     const packageData: PackageVoucherCreateInput = {
       id: String(this.uuidService.make()),
@@ -98,15 +105,63 @@ export class PackageVoucherService {
         };
       });
 
+    const packageTermAndCondTHData: packageVoucherTermAndCondTHCreateInput[] =
+      termAndCondTh.map((item) => {
+        return {
+          id: String(this.uuidService.make()),
+          description: item,
+          packageVoucherId: packageData.id,
+        };
+      });
+
+    const packageTermAndCondENData: packageVoucherTermAndCondENCreateInput[] =
+      termAndCondTh.map((item) => {
+        return {
+          id: String(this.uuidService.make()),
+          description: item,
+          packageVoucherId: packageData.id,
+        };
+      });
+
     return this.packageVoucherRepository.createPackageVoucher({
       packageVoucherCreateInput: packageData,
       packageImage: packageImgCreateData,
       packageRewardVoucher: rewardVoucherData,
+      packageVoucherTermAndCondTH: packageTermAndCondTHData,
+      packageVoucherTermAndCondEN: packageTermAndCondENData,
     });
   }
 
   async getAllPackageVoucher(): Promise<PackageVoucherDomain[]> {
     return this.packageVoucherRepository.findManyPackageVoucher();
+  }
+
+  async getPackageVoucherById(
+    packageId: PackageVoucherDomain['id'],
+  ): Promise<NullAble<PackageVoucherDomain>> {
+    if (!packageId || !isUUID(packageId))
+      throw ErrorApiResponse.badRequest(
+        `${packageId} is not valid data type for searching.`,
+      );
+    return this.packageVoucherRepository.findPackageVoucherById(packageId);
+  }
+
+  async updatePackageVoucher(
+    data: UpdatePackageVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    if (data && Object.keys(data).length === 1)
+      throw ErrorApiResponse.badRequest(
+        'Please provide information required for this request.',
+      );
+
+    const isPackageExist =
+      await this.packageVoucherRepository.findPackageVoucherById(data.id);
+    if (!isPackageExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Package ID: ${data.id} could not be found.`,
+      );
+
+    return this.packageVoucherRepository.updatePackageVoucher(data);
   }
 
   async deletePackageVoucherById(
@@ -118,5 +173,21 @@ export class PackageVoucherService {
       );
 
     return this.packageVoucherRepository.deletePackageVoucherById(packageId);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE IMAGE PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  async createPackageImg(
+    id: PackageVoucherDomain['id'],
+    files: Express.Multer.File[],
+  ): Promise<PackageImgDomain[]> {
+    const isPackageExist =
+      await this.packageVoucherRepository.findPackageVoucherById(id);
+    if (!isPackageExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Package ID: ${id} could not be found.`,
+      );
   }
 }

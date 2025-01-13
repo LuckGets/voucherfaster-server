@@ -118,10 +118,7 @@ export class VoucherController {
       files[VOUCHER_FILE_FILED.MAIN_IMG],
       files[VOUCHER_FILE_FILED.VOUCHER_IMG],
     );
-    return CreateVoucherResponse.success(
-      voucher,
-      `Voucher code: ${voucher.code} have been created successfully.`,
-    );
+    return CreateVoucherResponse.success(voucher);
   }
 
   // GET
@@ -203,8 +200,11 @@ export class VoucherController {
   })
   @UseGuards(AdminGuard)
   @Patch(VoucherPath.UpdateVoucher)
-  updateVoucher(@Body() body: UpdateVoucherDto) {
-    return this.voucherService.updateVoucher(body);
+  async updateVoucher(
+    @Body() body: UpdateVoucherDto,
+  ): Promise<UpdateVoucherResponse> {
+    const updatedVoucher = await this.voucherService.updateVoucher(body);
+    return UpdateVoucherResponse.success(updatedVoucher);
   }
 
   // -------------------------------------------------------------------- //

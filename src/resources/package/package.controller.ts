@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   SerializeOptions,
   UploadedFiles,
@@ -18,6 +19,7 @@ import {
 } from './dto/create-package.dto';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
   ApiNoContentResponse,
@@ -29,13 +31,28 @@ import { RoleEnum } from '@resources/account/types/account.type';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { PackageVoucherService } from './package.service';
-import { GetAllPackageVoucherResponse } from './dto/get-package.dto';
+import {
+  GetAllPackageVoucherResponse,
+  GetPackageVoucherByIdResponse,
+} from './dto/get-package.dto';
 import { PackageVoucherDomain } from './domain/package-voucher.domain';
 import { DeletePackageVoucherByIdResponse } from './dto/delete-package.dto';
+import {
+  UpdatePackageVoucherDto,
+  UpdatePackageVoucherResponse,
+} from './dto/update-package.dto';
+import {
+  CreatePackageVoucherImgDto,
+  CreatePackageVoucherImgResponse,
+} from './dto/images/create-package-image.dto';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
   constructor(private packageVoucherService: PackageVoucherService) {}
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE PART ----------------------------- //
+  // -------------------------------------------------------------------- //
 
   @ApiBearerAuth()
   @ApiConsumes('multipart/formdata')
@@ -78,6 +95,28 @@ export class PackageVoucherController {
     return GetAllPackageVoucherResponse.success(packageVoucherQueryList);
   }
 
+  @ApiParam({ name: PackageVoucherPath.PackageParamId })
+  @ApiOkResponse({ type: () => GetPackageVoucherByIdResponse })
+  @Get(PackageVoucherPath.GetPackageById)
+  async getPackageVoucherById(
+    @Param(PackageVoucherPath.PackageParamId)
+    packageId: PackageVoucherDomain['id'],
+  ) {
+    const packageVoucher =
+      await this.packageVoucherService.getPackageVoucherById(packageId);
+    return GetPackageVoucherByIdResponse.success(packageVoucher);
+  }
+
+  @ApiBody({ type: UpdatePackageVoucherDto })
+  @ApiParam({ name: PackageVoucherPath.PackageParamId })
+  @ApiOkResponse({ type: () => GetPackageVoucherByIdResponse })
+  @Patch(PackageVoucherPath.UpdatePackage)
+  async updatePackageVoucher(@Body() body: UpdatePackageVoucherDto) {
+    const updatedPackage =
+      await this.packageVoucherService.updatePackageVoucher(body);
+    return UpdatePackageVoucherResponse.success(updatedPackage);
+  }
+
   @ApiBearerAuth()
   @ApiParam({ name: PackageVoucherPath.PackageParamId })
   @ApiNoContentResponse({ type: () => DeletePackageVoucherByIdResponse })
@@ -89,5 +128,35 @@ export class PackageVoucherController {
   ): Promise<DeletePackageVoucherByIdResponse> {
     await this.packageVoucherService.deletePackageVoucherById(paramId);
     return DeletePackageVoucherByIdResponse.success(paramId);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE IMAGE PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  @ApiBearerAuth()
+  @ApiCreatedResponse({ type: () => DeletePackageVoucherByIdResponse })
+  @ApiConsumes('multipart/formdata')
+  @SerializeOptions({ groups: [RoleEnum.Admin] })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      {
+        name: PACKAGE_FILE_FIELD.PACKAGE_IMG,
+      },
+    ]),
+    UnlinkFileInterceptor,
+  )
+  @UseGuards(AdminGuard)
+  @Post(PackageVoucherPath.CreatePackageImage)
+  async createPackageVoucherImg(
+    @UploadedFiles()
+    files: { [PACKAGE_FILE_FIELD.PACKAGE_IMG]: Express.Multer.File[] },
+    @Body() body: CreatePackageVoucherImgDto,
+  ): Promise<CreatePackageVoucherImgResponse> {
+    const packageImg = await this.packageVoucherService.createPackageImg(
+      body.packageId,
+      files[PACKAGE_FILE_FIELD.PACKAGE_IMG],
+    );
+    return CreatePackageVoucherImgResponse.success(packageImg, body.packageId);
   }
 }

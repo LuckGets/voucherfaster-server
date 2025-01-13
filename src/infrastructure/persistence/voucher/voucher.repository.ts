@@ -72,17 +72,6 @@ export abstract class VoucherRepository {
 
   /**
    *
-   * @param code
-   * @returns {Promise<NullAble<VoucherDomain>>}
-   * Find the voucher in database by code which can be
-   * the voucher domain or null
-   */
-  abstract findByVoucherCode(
-    code: VoucherDomain['code'],
-  ): Promise<NullAble<VoucherDomain>>;
-
-  /**
-   *
    * @param categoryName string
    * @param tagName string
    * @returns VoucherAndPackageDateType

@@ -3,6 +3,7 @@ export type MailConfig = {
   host?: string;
   user?: string;
   password?: string;
+  encryptKey: string;
   defaultEmail?: string;
   defaultName?: string;
   secure: boolean;

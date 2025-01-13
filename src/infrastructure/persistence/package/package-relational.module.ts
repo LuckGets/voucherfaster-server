@@ -6,6 +6,7 @@ import { PackageRewardVoucherRepository } from './package-reward.repository';
 import { PackageRewardRelationalPrismaORMRepository } from './prisma-relational/package-reward.repository';
 import { PackageImgRepository } from './package-img.repository';
 import { PackageImgRelationalPrismaORMRepository } from './prisma-relational/package-img.repository';
+import { UUIDService } from '@utils/services/uuid.service';
 
 @Module({
   providers: [
@@ -22,6 +23,7 @@ import { PackageImgRelationalPrismaORMRepository } from './prisma-relational/pac
       useClass: PackageImgRelationalPrismaORMRepository,
     },
     PrismaService,
+    UUIDService,
   ],
   exports: [
     PackageVoucherRepository,

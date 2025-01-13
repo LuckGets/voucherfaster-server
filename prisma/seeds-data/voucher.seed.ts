@@ -56,7 +56,6 @@ const vouchersId = Array(11)
 export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[0],
-    code: 'AA-101',
     title: 'Burger with fries',
     description: 'Juicy burgers with crispy french fries.',
     price: 300,
@@ -66,7 +65,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[1],
-    code: 'AA-102',
     title: 'Fried salmon steak',
     description: 'Juicy burgers with crips french fries',
     price: 450,
@@ -76,7 +74,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[2],
-    code: 'AA-103',
     title: 'Vegetarian Salad',
     description: 'Fresh and healthy mixed vegetable salad',
     price: 200,
@@ -86,7 +83,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[3],
-    code: 'AA-104',
     title: 'Spaghetti Carbonara',
     description: 'Creamy pasta with bacon and Parmesan cheese',
     price: 350,
@@ -96,7 +92,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[4],
-    code: 'AA-105',
     title: 'Chicken Caesar Salad',
     description:
       'Grilled chicken with romaine lettuce, croutons, and Caesar dressing',
@@ -107,7 +102,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[5],
-    code: 'AA-106',
     title: 'Hong Kong grilled duck',
     description: 'Grilled duck served with special XO sauce',
     price: 600,
@@ -117,7 +111,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[6],
-    code: 'AA-107',
     title: 'Berries Smoothie',
     description: 'A refreshing smoothie made with fresh berries.',
     price: 150,
@@ -127,7 +120,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[7],
-    code: 'AA-108',
     title: 'Iced Americano',
     description: 'A special blend iced americano.',
     price: 80,
@@ -137,7 +129,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[8],
-    code: 'AA-109',
     title: 'Chocolate Croissant',
     description: 'Flaky pastry filled with rich chocolate.',
     price: 180,
@@ -147,7 +138,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[9],
-    code: 'AA-110',
     title: 'Braised Fish Maw in Red Gravy.',
     description: 'Braised fish maw in red gravy',
     price: 700,
@@ -157,7 +147,6 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   },
   {
     id: vouchersId[10],
-    code: 'AA-111',
     title: 'Mapo tofu',
     description: 'Spicy and hot tofu.',
     price: 210,

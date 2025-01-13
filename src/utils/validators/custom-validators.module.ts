@@ -6,6 +6,7 @@ import { IsEnumValueValidator } from './IsEnum';
 import { IsFutureDateValidator } from './IsFutureDate';
 import { IsInstanceOfClassValidator } from './IsInstaceOfClass';
 import { IsDateGreaterThanValidator } from './IsDateGreaterThan';
+import { IsArrayOfUUIDValidator } from './IsArrayOfUUID';
 
 @Module({
   providers: [
@@ -16,6 +17,7 @@ import { IsDateGreaterThanValidator } from './IsDateGreaterThan';
     IsFutureDateValidator,
     IsInstanceOfClassValidator,
     IsDateGreaterThanValidator,
+    IsArrayOfUUIDValidator,
   ],
   exports: [
     IsValidIdentifierValidator,
@@ -25,6 +27,7 @@ import { IsDateGreaterThanValidator } from './IsDateGreaterThan';
     IsFutureDateValidator,
     IsInstanceOfClassValidator,
     IsDateGreaterThanValidator,
+    IsArrayOfUUIDValidator,
   ],
 })
 export class CustomValidatorModule {}

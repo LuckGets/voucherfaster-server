@@ -72,6 +72,7 @@ export class AuthService {
       ...data,
       id: String(this.uuidService.make()),
       password: hashPassword,
+      email: data.email.toLowerCase(),
     });
 
     const token = await this.jwtService.signAsync(
@@ -95,7 +96,9 @@ export class AuthService {
     if (data.identifier.match(new RegExp(/^(\+66|0)[0-9]{9}$/))) {
       user = await this.accountService.findByPhoneNumber(data.identifier);
     } else {
-      user = await this.accountService.findByEmail(data.identifier);
+      user = await this.accountService.findByEmail(
+        data.identifier.toLowerCase(),
+      );
     }
     if (!user) {
       throw ErrorApiResponse.notFoundRequest(
@@ -132,7 +135,9 @@ export class AuthService {
     let account: NullAble<AccountDomain> = null;
     let accountByEmail: NullAble<AccountDomain> = null;
 
-    accountByEmail = await this.accountService.findByEmail(socialData.email);
+    accountByEmail = await this.accountService.findByEmail(
+      socialData.email.toLowerCase(),
+    );
 
     account = await this.accountService.findBySocialIdAndProvider(
       socialData.socialId,

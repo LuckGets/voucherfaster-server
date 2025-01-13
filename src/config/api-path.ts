@@ -61,6 +61,16 @@ export const VoucherPromotionPath = {
 export const PackageVoucherPath = {
   Name: 'packages',
   Base: '/packages',
+  GetPackageById: ':packageId',
+  UpdatePackage: ':packageId',
   PackageParamId: 'packageId',
   DeletePackage: ':packageId',
+  CreatePackageImage: '/images',
+} as const;
+
+export const OwnerPath = {
+  Name: 'owners',
+  Base: '/owners',
+  Image: '/images',
+  UpdateImage: '/images/:imageId',
 } as const;

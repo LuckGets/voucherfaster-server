@@ -2,7 +2,6 @@ import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
-import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Transform } from 'class-transformer';
 import { IsArray, IsDate, IsNumber, IsString, IsUUID } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
@@ -35,7 +34,17 @@ export class CreatePackageVoucherDto {
   rewardVoucherId: VoucherDomain['id'][];
   @ApiProperty({ type: String })
   @IsString()
-  name: string;
+  title: string;
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value,
+  )
+  @IsArray()
+  termAndCondTh: string[];
+  @IsArray()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value,
+  )
+  termAndCondEn: string[];
   @ApiProperty({ type: Date })
   @IsDate()
   @Transform(({ value }) => new Date(value))

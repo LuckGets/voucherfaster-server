@@ -15,17 +15,15 @@ import { AuthPath } from 'src/config/api-path';
 import { VoucherPromotionCreateInput } from '../../domain/voucher-promotion.domain';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { IsInstanceOfClass } from '@utils/validators/IsInstaceOfClass';
+import { CreateVoucherPromotionDto } from '../voucher-promotion/create-promotion.dto';
 
 type CreateVoucherDataType = Omit<VoucherDomain, 'img'>;
-
-type CreatePromotionDto = Omit<VoucherPromotionCreateInput, 'voucherId' | 'id'>;
 
 export const createVoucherFormDataDocumentation = {
   description: 'Create a voucher with its associated details and file uploads',
   schema: {
     type: 'object',
     properties: {
-      code: { type: 'string', example: 'VOUCHER2024' },
       title: { type: 'string', example: 'New Year Sale' },
       description: {
         type: 'string',
@@ -57,7 +55,7 @@ export const createVoucherFormDataDocumentation = {
         type: 'object',
         description: 'Details of the promotion associated with the voucher',
         properties: {
-          id: { type: 'string', example: 'promo1' },
+          voucherId: { type: 'string', example: '123' },
           name: { type: 'string', example: 'Holiday Promo' },
           promotionPrice: { type: 'number', example: 400 },
           sellStartedAt: {
@@ -82,7 +80,7 @@ export const createVoucherFormDataDocumentation = {
           },
         },
         required: [
-          'id',
+          'voucherId',
           'name',
           'promotionPrice',
           'sellStartedAt',
@@ -123,8 +121,6 @@ export const createVoucherFormDataDocumentation = {
 
 export class CreateVoucherDto {
   @IsString()
-  code: string;
-  @IsString()
   title: string;
   @IsString()
   description: string;
@@ -152,11 +148,11 @@ export class CreateVoucherDto {
   )
   termAndCondEn: string[];
   @IsOptional()
-  @IsInstanceOfClass(VoucherPromotionCreateInput)
+  @IsInstanceOfClass(CreateVoucherPromotionDto)
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value,
   )
-  promotion?: CreatePromotionDto;
+  promotion?: CreateVoucherPromotionDto;
 }
 
 export class CreateVoucherResponse extends CoreApiResponse {
@@ -188,7 +184,7 @@ export class CreateVoucherResponse extends CoreApiResponse {
     statusCode?: number,
   ): CreateVoucherResponse {
     const responseMessage =
-      message ?? `Voucher code: ${data.code} have been created successfully.`;
+      message ?? `Voucher ID: ${data.id} have been created successfully.`;
     const responseCode = statusCode ?? HttpStatus.CREATED;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);

@@ -185,19 +185,6 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     return voucherList.map(VoucherMapper.toDomain);
   }
 
-  async findByVoucherCode(
-    code: VoucherDomain['code'],
-  ): Promise<NullAble<VoucherDomain>> {
-    const voucherJoinQuery = this.voucherJoinQuery;
-    const voucher = await this.prismaService.voucher.findUnique({
-      where: {
-        code,
-      },
-      ...voucherJoinQuery,
-    });
-    return voucher ? VoucherMapper.toDomain(voucher) : null;
-  }
-
   async findMany({
     tag,
     category,
@@ -253,27 +240,17 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     return voucherList.map((item) => VoucherMapper.toDomain(item));
   }
 
-  async findByTitleOrCode(
-    titleOrCode: VoucherDomain['title'],
+  async findByTitle(
+    title: VoucherDomain['title'],
     status: VoucherStatus,
   ): Promise<NullAble<VoucherDomain[]>> {
     const voucherJoinQuery = this.voucherJoinQuery;
     const queryVoucherListResult = await this.prismaService.voucher.findMany({
       where: {
-        OR: [
-          {
-            code: {
-              contains: titleOrCode,
-              mode: 'insensitive',
-            },
-          },
-          {
-            title: {
-              contains: titleOrCode,
-              mode: 'insensitive',
-            },
-          },
-        ],
+        title: {
+          contains: title,
+          mode: 'insensitive',
+        },
         status,
       },
       ...voucherJoinQuery,
@@ -308,7 +285,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     // GRAB the JOIN query
     const voucherJoinQuery = this.voucherJoinQuery;
     // Find the voucher via voucher title name first
-    const queryVoucherListResult = await this.findByTitleOrCode(
+    const queryVoucherListResult = await this.findByTitle(
       searchContent,
       VoucherStatusEnum.ACTIVE,
     );

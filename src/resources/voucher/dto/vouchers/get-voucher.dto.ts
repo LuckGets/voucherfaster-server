@@ -10,12 +10,12 @@ import { NullAble } from '@utils/types/common.type';
 export class GetManyVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
-    example: HttpStatus.CREATED,
+    example: HttpStatus.OK,
   })
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'GET:: /vouchers/ข้าวเหนียว successfully.',
+    example: 'GET:: /vouchers/123 successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -87,12 +87,12 @@ export class GetManyVoucherResponse extends CoreApiResponse {
 export class GetVoucherBySearchContentResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
-    example: HttpStatus.CREATED,
+    example: HttpStatus.OK,
   })
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Voucher code 123 have been created successfully.',
+    example: 'GET:: /vouchers/search/ข้าวเหนียว successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -128,7 +128,7 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
 export class GetVoucherByIdResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
-    example: HttpStatus.CREATED,
+    example: HttpStatus.OK,
   })
   public HTTPStatusCode: number;
   @ApiProperty({
