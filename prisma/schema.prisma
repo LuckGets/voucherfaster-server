@@ -225,7 +225,6 @@ model PackageImg {
   mainImg   Boolean        @map("main_img")
   createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime       @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime?      @map("deleted_at") @db.Timestamptz(3)
 
   @@map("package_img")
 }
@@ -360,5 +359,4 @@ model OwnerImg {
   type      OwnerImgType @map("img_type")
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime     @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime?    @map("deleted_at") @db.Timestamptz(3)
 }

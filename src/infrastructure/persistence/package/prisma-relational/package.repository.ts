@@ -21,7 +21,6 @@ import {
 } from '@resources/package/dto/update-package.dto';
 import { TermAndCondUpdateDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { UUIDService } from '@utils/services/uuid.service';
-import { text } from 'stream/consumers';
 
 export class PackageVoucherRelationalPrismaORMRepository
   implements PackageVoucherRepository

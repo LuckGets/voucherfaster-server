@@ -65,7 +65,10 @@ export const PackageVoucherPath = {
   UpdatePackage: ':packageId',
   PackageParamId: 'packageId',
   DeletePackage: ':packageId',
+  ImageIdParam: 'imageId',
   CreatePackageImage: '/images',
+  UpdatePackageImage: '/images/:imageId',
+  DeletePackageImage: '/images/:imageId',
 } as const;
 
 export const OwnerPath = {

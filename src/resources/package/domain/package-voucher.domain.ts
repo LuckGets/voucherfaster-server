@@ -14,7 +14,7 @@ export class PackageVoucherDomain {
   @ApiProperty({ type: () => [PackageRewardVoucherDomain] })
   rewardVouchers: PackageRewardVoucherDomain[];
   @ApiProperty({ type: () => [PackageImgDomain] })
-  images: Pick<PackageImgDomain, 'id' | 'mainImg' | 'path'>[];
+  images: Pick<PackageImgDomain, 'id' | 'mainImg' | 'imgPath'>[];
   @ApiProperty({ type: String })
   title: string;
   @ApiProperty({ type: Date })
@@ -44,7 +44,7 @@ export class PackageImgDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: String })
-  path: string;
+  imgPath: string;
   @ApiProperty({ type: Boolean })
   mainImg: boolean;
   @ApiProperty({ type: Date })

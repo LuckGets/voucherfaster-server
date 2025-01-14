@@ -45,6 +45,11 @@ import {
   CreatePackageVoucherImgDto,
   CreatePackageVoucherImgResponse,
 } from './dto/images/create-package-image.dto';
+import {
+  UpdatePackageVoucherImgDto,
+  UpdatePackageVoucherImgResponse,
+} from './dto/images/update-package-image.dto';
+import { DeletePackageVoucherImgResponse } from './dto/images/delete-package-image.dto';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
@@ -109,9 +114,11 @@ export class PackageVoucherController {
 
   @ApiBody({ type: UpdatePackageVoucherDto })
   @ApiParam({ name: PackageVoucherPath.PackageParamId })
-  @ApiOkResponse({ type: () => GetPackageVoucherByIdResponse })
+  @ApiOkResponse({ type: () => UpdatePackageVoucherResponse })
   @Patch(PackageVoucherPath.UpdatePackage)
-  async updatePackageVoucher(@Body() body: UpdatePackageVoucherDto) {
+  async updatePackageVoucher(
+    @Body() body: UpdatePackageVoucherDto,
+  ): Promise<UpdatePackageVoucherResponse> {
     const updatedPackage =
       await this.packageVoucherService.updatePackageVoucher(body);
     return UpdatePackageVoucherResponse.success(updatedPackage);
@@ -158,5 +165,44 @@ export class PackageVoucherController {
       files[PACKAGE_FILE_FIELD.PACKAGE_IMG],
     );
     return CreatePackageVoucherImgResponse.success(packageImg, body.packageId);
+  }
+
+  @ApiBearerAuth()
+  @ApiCreatedResponse({ type: () => DeletePackageVoucherByIdResponse })
+  @ApiConsumes('multipart/formdata')
+  @SerializeOptions({ groups: [RoleEnum.Admin] })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      {
+        name: PACKAGE_FILE_FIELD.PACKAGE_IMG,
+      },
+    ]),
+    UnlinkFileInterceptor,
+  )
+  @UseGuards(AdminGuard)
+  @Patch(PackageVoucherPath.UpdatePackageImage)
+  async updatePackageVoucherImg(
+    @UploadedFiles()
+    files: {
+      [PACKAGE_FILE_FIELD.PACKAGE_IMG]: Express.Multer.File[];
+    },
+    @Body() body: UpdatePackageVoucherImgDto,
+  ): Promise<UpdatePackageVoucherImgResponse> {
+    const updatedPackageImg = await this.packageVoucherService.updatePackageImg(
+      body.packageImgId,
+      files[PACKAGE_FILE_FIELD.PACKAGE_IMG][0],
+    );
+    return UpdatePackageVoucherImgResponse.success(updatedPackageImg);
+  }
+  @ApiBearerAuth()
+  @ApiParam({ name: PackageVoucherPath.ImageIdParam })
+  @ApiNoContentResponse({ type: () => DeletePackageVoucherImgResponse })
+  @UseGuards(AdminGuard)
+  @Delete(PackageVoucherPath.DeletePackageImage)
+  async deletePackageVoucherImg(
+    @Param(PackageVoucherPath.ImageIdParam) imageId: PackageVoucherDomain['id'],
+  ): Promise<DeletePackageVoucherImgResponse> {
+    await this.packageVoucherService.deletePackageImg(imageId);
+    return DeletePackageVoucherImgResponse.success(imageId);
   }
 }

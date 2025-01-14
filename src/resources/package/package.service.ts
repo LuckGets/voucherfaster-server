@@ -20,12 +20,14 @@ import {
   packageVoucherTermAndCondTHCreateInput,
 } from './domain/package-voucher-term-cond.domain';
 import { UpdatePackageVoucherDto } from './dto/update-package.dto';
+import { PackageImgRepository } from 'src/infrastructure/persistence/package/package-img.repository';
 
 @Injectable()
 export class PackageVoucherService {
   constructor(
     private logger: Logger,
     private packageVoucherRepository: PackageVoucherRepository,
+    private packageImgRepository: PackageImgRepository,
     private voucherService: VoucherService,
     private uuidService: UUIDService,
     private mediaService: MediaService,
@@ -189,5 +191,53 @@ export class PackageVoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `Package ID: ${id} could not be found.`,
       );
+
+    const uploadedImgPath = await Promise.all(
+      files.map((item) =>
+        this.mediaService.uploadFile(item, s3BucketDirectory.packageImg),
+      ),
+    );
+
+    const createPackageImgData: PackageImgCreateInput[] = uploadedImgPath.map(
+      (item) => ({
+        id: String(this.uuidService.make()),
+        imgPath: item,
+        mainImg: false,
+        packageId: id,
+      }),
+    );
+
+    return this.packageImgRepository.createMany(createPackageImgData);
+  }
+
+  async updatePackageImg(
+    id: PackageImgDomain['id'],
+    file: Express.Multer.File,
+  ) {
+    const isPackageImgExist = await this.packageImgRepository.findById(id);
+    if (!isPackageImgExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Package ID: ${id} could not be found.`,
+      );
+    const uploadedImgPath = await this.mediaService.uploadFile(
+      file,
+      s3BucketDirectory.packageImg,
+    );
+    return this.packageImgRepository.update(id, uploadedImgPath);
+  }
+
+  async deletePackageImg(id: PackageImgDomain['id']): Promise<void> {
+    if (!id || !isUUID(id))
+      throw ErrorApiResponse.badRequest(
+        `${id} is not valid data type for this request.`,
+      );
+    const isPackageImgExist = await this.packageImgRepository.findById(id);
+    if (!isPackageImgExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Package ID: ${id} could not be found.`,
+      );
+
+    await this.mediaService.deleteFile(isPackageImgExist.imgPath);
+    return this.packageImgRepository.deleteById(id);
   }
 }

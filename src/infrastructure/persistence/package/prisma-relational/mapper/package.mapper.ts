@@ -17,7 +17,7 @@ export class PackageVoucherMapper {
     if (!packageVoucherEntity) return null;
     const packageVoucherDomain = new PackageVoucherDomain();
     packageVoucherDomain.id = packageVoucherEntity.id;
-    packageVoucherDomain.name = packageVoucherEntity.name;
+    packageVoucherDomain.title = packageVoucherEntity.title;
     packageVoucherDomain.price = packageVoucherEntity.packagePrice.toNumber();
     packageVoucherDomain.quotaVoucherId = packageVoucherEntity.quotaVoucherId;
     packageVoucherDomain.quotaAmount = packageVoucherEntity.quotaAmount;
@@ -31,7 +31,11 @@ export class PackageVoucherMapper {
       packageVoucherEntity.PackageImg.length > 0
     ) {
       packageVoucherDomain.images = packageVoucherEntity.PackageImg.map(
-        (item) => ({ id: item.id, mainImg: item.mainImg, path: item.imgPath }),
+        (item) => ({
+          id: item.id,
+          mainImg: item.mainImg,
+          imgPath: item.imgPath,
+        }),
       );
     }
 
