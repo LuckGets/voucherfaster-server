@@ -3,6 +3,7 @@ import {
   VoucherPromotionCreateInput,
   VoucherPromotionDomain,
 } from '@resources/voucher/domain/voucher-promotion.domain';
+import { VoucherUsageDaysDomain } from '@resources/voucher/domain/voucher-usage-day.domain';
 import {
   VoucherCategoryDomain,
   VoucherDomain,
@@ -16,6 +17,7 @@ import {
 } from '@resources/voucher/domain/voucher.domain';
 import { CreateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/create-promotion.dto';
 import { UpdateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/update-promotion.dto';
+import { UpdateVoucherUsageDayDto } from '@resources/voucher/dto/voucher-usage-day.dto';
 import { UpdateVoucherDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
@@ -226,4 +228,12 @@ export abstract class VoucherPromotionRepository {
     data: UpdateVoucherPromotionDto,
   ): Promise<VoucherPromotionDomain>;
   abstract deletePromotion(id: VoucherPromotionDomain['id']): Promise<void>;
+}
+
+export abstract class VoucherUsageDayRepository {
+  abstract findCurrent(): Promise<VoucherUsageDaysDomain>;
+
+  abstract update(
+    payload: UpdateVoucherUsageDayDto,
+  ): Promise<VoucherUsageDaysDomain>;
 }

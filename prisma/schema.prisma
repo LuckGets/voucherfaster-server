@@ -244,6 +244,7 @@ model Order {
   totalPrice        Decimal          @map("total_price") @db.Decimal(10, 2)
   voucherUsageDayId String           @map("voucher_usage_day_id") @db.Uuid
   voucherUsageDay   VoucherUsageDays @relation(references: [id], fields: [voucherUsageDayId])
+  accountId         String           @map("account_id") @db.Uuid
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime         @updatedAt() @map("updated_at") @db.Timestamptz(3)
   deletedAt         DateTime?        @map("deleted_at") @db.Timestamptz(3)

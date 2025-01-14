@@ -26,5 +26,6 @@ import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
   ],
   controllers: [PackageVoucherController],
   providers: [PackageVoucherService, Logger, UUIDService],
+  exports: [PackageVoucherService],
 })
 export class PackageVoucherModule {}

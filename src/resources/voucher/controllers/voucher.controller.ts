@@ -74,6 +74,10 @@ import {
   GetManyVoucherPromotionResponse,
   GetVoucherPromotionByIdResponse,
 } from '../dto/voucher-promotion/get-promotion.dto';
+import {
+  UpdateVoucherUsageDayDto,
+  UpdateVoucherUsageDayResponse,
+} from '../dto/voucher-usage-day.dto';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -384,5 +388,23 @@ export class VoucherController {
   ): Promise<DeleteVoucherPromotionResponse> {
     await this.voucherService.deleteVoucherPromotion(voucherPromotionId);
     return DeleteVoucherPromotionResponse.success(voucherPromotionId);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- VOUCHER USAGE DAY PART ------------------- //
+  // -------------------------------------------------------------------- //
+  @ApiBearerAuth()
+  @ApiBody({ type: () => UpdateVoucherUsageDayDto })
+  @ApiOkResponse({
+    type: () => DeleteVoucherPromotionResponse,
+  })
+  @UseGuards(AdminGuard)
+  @Patch(VoucherPath.UpdateVoucherUsageDay)
+  async updateVoucherUsageDay(
+    @Body() body: UpdateVoucherUsageDayDto,
+  ): Promise<UpdateVoucherUsageDayResponse> {
+    const updatedVoucherUsageDay =
+      await this.voucherService.updateVoucherUsageDay(body);
+    return UpdateVoucherUsageDayResponse.success(updatedVoucherUsageDay);
   }
 }

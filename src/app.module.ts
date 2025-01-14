@@ -10,6 +10,7 @@ import clientConfig from './config/client/client.config';
 import { JwtModule } from '@nestjs/jwt';
 import { VoucherModule } from './resources/voucher/voucher.module';
 import { PackageVoucherModule } from '@resources/package/package.module';
+import { OrderModule } from './resources/order/order.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PackageVoucherModule } from '@resources/package/package.module';
     SessionModule,
     VoucherModule,
     PackageVoucherModule,
+    OrderModule,
   ],
 })
 export class AppModule {}

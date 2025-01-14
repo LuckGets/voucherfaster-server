@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { UndefinAble } from '@utils/types/common.type';
 import { Request } from 'express';
 import { ErrorApiResponse } from '../core-api-response';
@@ -9,6 +14,7 @@ import { JwtPayloadType } from '../types/token-payload.type';
 
 @Injectable()
 export class AccessTokenAuthGuard implements CanActivate {
+  private readonly logger = new Logger(AccessTokenAuthGuard.name);
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService<AllConfigType>,
@@ -31,6 +37,9 @@ export class AccessTokenAuthGuard implements CanActivate {
       }
       request['user'] = { accountId: payload.sub, role: payload.role };
     } catch (err) {
+      this.logger.error(
+        `Request could not be proceed due to the Error : ${err.message}`,
+      );
       throw ErrorApiResponse.unauthorizedRequest(err.message);
     }
     return true;
