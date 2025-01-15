@@ -6,6 +6,7 @@ import { AccountModule } from '@resources/account/account.module';
 import { VerifiedAccountGuard } from './guards/verified-account.guard';
 import { VoucherModule } from '@resources/voucher/voucher.module';
 import { PackageVoucherModule } from '@resources/package/package.module';
+import { UUIDService } from '@utils/services/uuid.service';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { PackageVoucherModule } from '@resources/package/package.module';
     PackageVoucherModule,
   ],
   controllers: [OrderController],
-  providers: [OrderService, VerifiedAccountGuard],
+  providers: [OrderService, UUIDService, VerifiedAccountGuard],
 })
 export class OrderModule {}

@@ -662,6 +662,11 @@ export class VoucherService {
   // -------------------------------------------------------------------- //
   // ------------------------- VOUCHER USAGE DAY PART ------------------- //
   // -------------------------------------------------------------------- //
+
+  async getVoucherUsageDay(): Promise<VoucherUsageDaysDomain> {
+    return this.voucherUsageDayRepository.findCurrent();
+  }
+
   async updateVoucherUsageDay(
     data: UpdateVoucherUsageDayDto,
   ): Promise<VoucherUsageDaysDomain> {

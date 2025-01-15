@@ -8,6 +8,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
 } from 'class-validator';
@@ -28,9 +29,14 @@ export class UpdateVoucherPromotionDto {
   name?: string;
   @ApiProperty({ type: Number })
   @IsOptional()
-  @IsNumber()
+  @IsPositive()
   @Transform(({ value }) => Number(value))
   promotionPrice?: number;
+  @ApiProperty({ type: Number })
+  @IsOptional()
+  @IsPositive()
+  @Transform(({ value }) => Number(value))
+  stockAmount?: number;
   @ApiProperty({ type: Date })
   @IsOptional()
   @IsFutureDate()

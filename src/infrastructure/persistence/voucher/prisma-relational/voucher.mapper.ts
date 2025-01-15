@@ -35,7 +35,7 @@ export class VoucherMapper {
   public static toDomain(voucherEntity: AllVoucherInformation): VoucherDomain {
     const voucherDomain = new VoucherDomain();
     voucherDomain.id = voucherEntity.id;
-    voucherDomain.code = voucherEntity.code;
+    voucherDomain.stockAmount = voucherEntity.stockAmount;
     voucherDomain.description = voucherEntity.description;
     voucherDomain.price = voucherEntity.price.toNumber();
     voucherDomain.saleExpiredTime = voucherEntity.saleExpiredTime;
@@ -126,6 +126,7 @@ export class VoucherPromotionMapper {
     const voucherPromotionDomain = new VoucherPromotionDomain();
     voucherPromotionDomain.id = voucherPromotionEntity.id;
     voucherPromotionDomain.name = voucherPromotionEntity.name;
+    voucherPromotionDomain.stockAmount = voucherPromotionEntity.stockAmount;
     voucherPromotionDomain.sellStartedAt = voucherPromotionEntity.sellStartedAt;
     voucherPromotionDomain.sellExpiredAt = voucherPromotionEntity.sellExpiredAt;
     voucherPromotionDomain.usableAt = voucherPromotionEntity.usableAt;

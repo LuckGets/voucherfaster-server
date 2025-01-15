@@ -77,6 +77,11 @@ export const OrderPath = {
   Base: '/orders',
 } as const;
 
+export const TransactionPath = {
+  Name: 'transactions',
+  Base: '/transactions',
+} as const;
+
 export const OwnerPath = {
   Name: 'owners',
   Base: '/owners',

@@ -10,6 +10,8 @@ export class PackageVoucherDomain {
   @ApiProperty({ type: Number })
   quotaAmount: number;
   @ApiProperty({ type: Number })
+  stockAmount: number;
+  @ApiProperty({ type: Number })
   price: number;
   @ApiProperty({ type: () => [PackageRewardVoucherDomain] })
   rewardVouchers: PackageRewardVoucherDomain[];

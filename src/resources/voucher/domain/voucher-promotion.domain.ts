@@ -11,6 +11,8 @@ export class VoucherPromotionDomain {
   @ApiProperty({ type: String })
   name: string;
   @ApiProperty({ type: Number })
+  stockAmount: number;
+  @ApiProperty({ type: Number })
   promotionPrice: number;
   @ApiProperty({ type: Date })
   sellStartedAt: Date;

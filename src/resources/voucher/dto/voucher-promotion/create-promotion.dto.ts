@@ -21,6 +21,10 @@ export class CreateVoucherPromotionDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   promotionPrice: number;
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  @ApiProperty({ type: Number })
+  stockAmount: number;
   @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))

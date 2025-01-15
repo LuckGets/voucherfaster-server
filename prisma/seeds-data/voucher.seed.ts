@@ -58,6 +58,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
     id: vouchersId[0],
     title: 'Burger with fries',
     description: 'Juicy burgers with crispy french fries.',
+    stockAmount: 10000,
     price: 300,
     tagId: tags[1].id,
     usageExpiredTime: '2025-12-25T17:00:00.000Z',
@@ -66,6 +67,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[1],
     title: 'Fried salmon steak',
+    stockAmount: 10000,
     description: 'Juicy burgers with crips french fries',
     price: 450,
     tagId: tags[0].id,
@@ -75,6 +77,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[2],
     title: 'Vegetarian Salad',
+    stockAmount: 10000,
     description: 'Fresh and healthy mixed vegetable salad',
     price: 200,
     tagId: tags[1].id,
@@ -84,6 +87,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[3],
     title: 'Spaghetti Carbonara',
+    stockAmount: 10000,
     description: 'Creamy pasta with bacon and Parmesan cheese',
     price: 350,
     tagId: tags[2].id,
@@ -93,6 +97,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[4],
     title: 'Chicken Caesar Salad',
+    stockAmount: 10000,
     description:
       'Grilled chicken with romaine lettuce, croutons, and Caesar dressing',
     price: 250,
@@ -103,6 +108,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[5],
     title: 'Hong Kong grilled duck',
+    stockAmount: 10000,
     description: 'Grilled duck served with special XO sauce',
     price: 600,
     tagId: tags[3].id,
@@ -112,6 +118,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[6],
     title: 'Berries Smoothie',
+    stockAmount: 10000,
     description: 'A refreshing smoothie made with fresh berries.',
     price: 150,
     tagId: tags[4].id,
@@ -121,6 +128,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[7],
     title: 'Iced Americano',
+    stockAmount: 10000,
     description: 'A special blend iced americano.',
     price: 80,
     tagId: tags[4].id,
@@ -130,6 +138,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[8],
     title: 'Chocolate Croissant',
+    stockAmount: 10000,
     description: 'Flaky pastry filled with rich chocolate.',
     price: 180,
     tagId: tags[5].id,
@@ -139,6 +148,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[9],
     title: 'Braised Fish Maw in Red Gravy.',
+    stockAmount: 10000,
     description: 'Braised fish maw in red gravy',
     price: 700,
     tagId: tags[3].id,
@@ -148,6 +158,7 @@ export const vouchers: Prisma.VoucherCreateManyInput[] = [
   {
     id: vouchersId[10],
     title: 'Mapo tofu',
+    stockAmount: 10000,
     description: 'Spicy and hot tofu.',
     price: 210,
     tagId: tags[3].id,
@@ -240,6 +251,7 @@ export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
   {
     name: 'ลดแรงต้อนรับปีใหม่',
     promotionPrice: 199,
+    stockAmount: 150,
     voucherId: vouchers[0].id,
     sellStartedAt: '2024-12-31T17:00:00.000Z',
     sellExpiredAt: '2025-02-14T17:00:00.000Z',
@@ -249,6 +261,7 @@ export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
   {
     name: 'โปรคุ้มก่อนสิ้นปี',
     promotionPrice: 299,
+    stockAmount: 150,
     voucherId: vouchers[1].id,
     sellStartedAt: '2024-12-24T17:00:00.000Z',
     sellExpiredAt: '2025-01-10T17:00:00.000Z',
@@ -258,6 +271,7 @@ export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
   {
     name: 'ต้อนรับปีใหม่',
     promotionPrice: 120,
+    stockAmount: 150,
     voucherId: vouchers[10].id,
     sellStartedAt: '2025-12-31T17:00:00.000Z',
     sellExpiredAt: '2025-01-31T17:00:00.000Z',

@@ -19,6 +19,7 @@ export class PackageVoucherMapper {
     packageVoucherDomain.id = packageVoucherEntity.id;
     packageVoucherDomain.title = packageVoucherEntity.title;
     packageVoucherDomain.price = packageVoucherEntity.packagePrice.toNumber();
+    packageVoucherDomain.stockAmount = packageVoucherEntity.stockAmount;
     packageVoucherDomain.quotaVoucherId = packageVoucherEntity.quotaVoucherId;
     packageVoucherDomain.quotaAmount = packageVoucherEntity.quotaAmount;
     packageVoucherDomain.startedAt = packageVoucherEntity.startedAt;

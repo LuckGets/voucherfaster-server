@@ -12,6 +12,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     title: 'โปรโมชั่นแพ็คเกจ ซื้อ1แถม1',
     quotaVoucherId: vouchers[0].id,
     quotaAmount: 1,
+    stockAmount: 100,
     packagePrice: 300,
     startedAt: '2024-12-31T17:00:00.000Z',
     expiredAt: '2025-01-31T17:00:00.000Z',
@@ -19,6 +20,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
   {
     id: packageVoucherId[1],
     title: 'เป็ดฮ่องกงแซ่บๆ 2 แถม 1',
+    stockAmount: 100,
     quotaVoucherId: vouchers[5].id,
     quotaAmount: 2,
     packagePrice: 1200,

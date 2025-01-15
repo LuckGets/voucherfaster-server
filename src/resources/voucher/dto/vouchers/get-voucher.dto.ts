@@ -30,6 +30,7 @@ export class GetManyVoucherResponse extends CoreApiResponse {
       "code": "AA-101",
       "description": "Juicy burgers with crispy french fries.",
       "price": 300,
+      "stockAmount": 10000,
       "saleExpiredTime": "12/26/2025, 12:00:00 AM",
       "title": "Burger with fries",
       "usageExpiredTime": "12/26/2025, 12:00:00 AM",
@@ -44,6 +45,7 @@ export class GetManyVoucherResponse extends CoreApiResponse {
         {
           "id": "019446d1-a9e0-7b83-b87e-eb59cc44bb31",
           "name": "ลดแรงต้อนรับปีใหม่",
+          "stockAmount": 100,
           "sellStartedAt": "1/1/2025, 12:00:00 AM",
           "sellExpiredAt": "2/15/2025, 12:00:00 AM",
           "usableAt": "1/11/2025, 12:00:00 AM",

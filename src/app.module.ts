@@ -11,6 +11,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { VoucherModule } from './resources/voucher/voucher.module';
 import { PackageVoucherModule } from '@resources/package/package.module';
 import { OrderModule } from './resources/order/order.module';
+import { TransactionModule } from './resources/transaction/transaction.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { OrderModule } from './resources/order/order.module';
     VoucherModule,
     PackageVoucherModule,
     OrderModule,
+    TransactionModule,
   ],
 })
 export class AppModule {}

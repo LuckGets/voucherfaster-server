@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { OrderRepository } from 'src/infrastructure/persistence/order/order.repository';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  CreateOrderAndTransactionInput,
+  OrderRepository,
+} from 'src/infrastructure/persistence/order/order.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderDomain } from './domain/order.domain';
 import { AccountDomain } from '@resources/account/domain/account.domain';
@@ -9,8 +12,9 @@ import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { UUIDService } from '@utils/services/uuid.service';
 
-type OrderItemsInfo = {
+export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
   promotions: VoucherPromotionDomain[];
   packages: PackageVoucherDomain[];
@@ -22,18 +26,69 @@ export class OrderService {
     private orderRepository: OrderRepository,
     private voucherService: VoucherService,
     private packageVoucherService: PackageVoucherService,
+    private uuidService: UUIDService,
   ) {}
 
   async createOrder(
     data: CreateOrderDto,
     accountId: AccountDomain['id'],
   ): Promise<OrderDomain> {
-    const { items, totalPrice } = await this.findOrderItemInformation(data);
-    if (Number(data.totalPrice) !== totalPrice) {
+    const { paymentToken, ...restData } = data;
+    const { items, totalPrice } = await this.findOrderItemInformation(restData);
+    if (Number(data.totalPrice) !== totalPrice)
       throw ErrorApiResponse.conflictRequest(
         `The total price of all items: ${totalPrice} does not match with provided total price: ${data.totalPrice}`,
       );
+
+    const voucherUsageDayId = await this.voucherService.getVoucherUsageDay();
+    if (!voucherUsageDayId) {
+      throw ErrorApiResponse.conflictRequest(
+        `Could not find the usable days after making an order. Please recheck before try again.`,
+      );
     }
+
+    const createOrderData: CreateOrderAndTransactionInput = {
+      payload: { id: String(this.uuidService.make()), totalPrice },
+      accountId,
+      voucherUsageDayId: voucherUsageDayId.id,
+    };
+
+    if (items.vouchers && items.vouchers.length > 0) {
+      createOrderData.voucherIdList = items.vouchers.map((item) => ({
+        id: String(this.uuidService.make()),
+        voucherId: item.id,
+      }));
+    }
+
+    if (items.promotions && items.promotions.length > 0) {
+      createOrderData.promotionIdList = items.promotions.map((item) => ({
+        id: String(this.uuidService.make()),
+        promotionId: item.id,
+      }));
+    }
+
+    if (items.packages && items.packages.length > 0) {
+      createOrderData.packageIdList = items.packages.reduce(
+        (acc, curr) => {
+          acc.quotaList = new Array(curr.quotaAmount).fill({
+            id: String(this.uuidService.make()),
+            voucherId: curr.quotaVoucherId,
+            packageId: curr.id,
+          });
+
+          acc.rewardList = curr.rewardVouchers.map((rewardVoucher) => ({
+            id: String(this.uuidService.make()),
+            voucherId: rewardVoucher.id,
+            packageId: curr.id,
+          }));
+          return acc;
+        },
+        { quotaList: [], rewardList: [] },
+      );
+    }
+
+    const order =
+      await this.orderRepository.createOrderAndTransaction(createOrderData);
   }
 
   // Not promise.all but solid
@@ -90,12 +145,12 @@ export class OrderService {
   // or sequential
   // So, I guess it would be better if just using
   // power of worker
-  async findOrderItemInformation(data: CreateOrderDto): Promise<
-    Promise<{
-      items: OrderItemsInfo;
-      totalPrice: number;
-    }>
-  > {
+  async findOrderItemInformation(
+    data: Omit<CreateOrderDto, 'paymentToken'>,
+  ): Promise<{
+    items: OrderItemsInfo;
+    totalPrice: number;
+  }> {
     const allItemsInfo: OrderItemsInfo = {
       vouchers: [],
       promotions: [],
@@ -108,9 +163,12 @@ export class OrderService {
       switch (item.voucherType) {
         case 'voucher': {
           const voucher = await this.voucherService.getVoucherById(item.id);
-          if (!voucher) {
+          if (!voucher)
             throw new Error(`Voucher with ID ${item.id} not found.`);
-          }
+          if (voucher.stockAmount === 0)
+            throw ErrorApiResponse.conflictRequest(
+              `The voucher ID:${voucher.id} is now out of stock.`,
+            );
           itemPrice += voucher.price;
           allItemsInfo.vouchers.push(voucher);
           break;
@@ -119,9 +177,12 @@ export class OrderService {
           const promotion = await this.voucherService.getVoucherPromotionById(
             item.id,
           );
-          if (!promotion) {
+          if (!promotion)
             throw new Error(`Promotion with ID ${item.id} not found.`);
-          }
+          if (promotion.stockAmount === 0)
+            throw ErrorApiResponse.conflictRequest(
+              `The promotion ID:${promotion.id} is now out of stock.`,
+            );
           itemPrice += promotion.promotionPrice;
           allItemsInfo.promotions.push(promotion);
           break;
@@ -129,9 +190,12 @@ export class OrderService {
         case 'package': {
           const packageVoucher =
             await this.packageVoucherService.getPackageVoucherById(item.id);
-          if (!packageVoucher) {
+          if (!packageVoucher)
             throw new Error(`Package Voucher with ID ${item.id} not found.`);
-          }
+          if (packageVoucher.stockAmount === 0)
+            throw ErrorApiResponse.conflictRequest(
+              `The package ID:${packageVoucher.id} is now out of stock.`,
+            );
           itemPrice += packageVoucher.price;
           allItemsInfo.packages.push(packageVoucher);
           break;

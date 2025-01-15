@@ -23,6 +23,8 @@ export class VoucherDomain {
   })
   @ApiProperty({ type: () => VoucherStatusEnum })
   status: VoucherStatusEnum;
+  @ApiProperty({ type: Number })
+  stockAmount: number;
   @ApiProperty({ type: () => String })
   description: string;
   @Transform(({ value }) =>

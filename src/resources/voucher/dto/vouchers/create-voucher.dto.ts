@@ -127,6 +127,10 @@ export class CreateVoucherDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   price: number;
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  @ApiProperty({ type: Number })
+  stockAmount: number;
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()

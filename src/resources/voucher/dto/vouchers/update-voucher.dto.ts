@@ -6,8 +6,8 @@ import { AuthPath } from 'src/config/api-path';
 import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
 import {
   IsArray,
-  IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
 } from 'class-validator';
@@ -68,10 +68,15 @@ export class UpdateVoucherDto {
   @IsOptional()
   description?: string;
   @ApiProperty({ type: Number })
-  @IsNumber()
+  @IsPositive()
   @Transform(({ value }) => Number(value))
   @IsOptional()
   price?: number;
+  @ApiProperty({ type: Number })
+  @IsPositive()
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  stockAmount?: number;
   @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
@@ -118,7 +123,23 @@ export class UpdateVoucherResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: `{
+      "id": "019446d1-6d43-760d-9a0b-489e626e2f8d",
+      "code": "AA-101",
+      "description": "Juicy burgers with crispy french fries.",
+      "price": 300,
+      "stockAmount": 10000,
+      "saleExpiredTime": "12/26/2025, 12:00:00 AM",
+      "title": "Burger with fries",
+      "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+      "status": "ACTIVE",
+      "img": [
+        {
+          "id": "019446d1-6d44-73cf-bcdf-8b1bbd6b070f",
+          "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
+        }
+      ]
+    }`,
   })
   public data: VoucherDomain;
 

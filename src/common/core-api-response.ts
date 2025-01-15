@@ -107,4 +107,13 @@ export class ErrorApiResponse {
       HttpStatus.UNAUTHORIZED,
     );
   }
+
+  public static internalServerError(message?: string) {
+    const responseMessage =
+      message || 'Sorry. There is an internal server error issues.';
+    return new HttpException(
+      new ErrorApiResponse(responseMessage),
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
+  }
 }

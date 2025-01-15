@@ -21,7 +21,7 @@ import {
   packageTermAndCondEN,
   packageTermAndCondTH,
 } from './seeds-data/package.seed';
-import { ownerImg, ownerInfo } from './seeds-data/owner.seed';
+import { ownerInfo } from './seeds-data/owner.seed';
 config({ path: '.env.development' });
 
 const prisma = new PrismaClient();

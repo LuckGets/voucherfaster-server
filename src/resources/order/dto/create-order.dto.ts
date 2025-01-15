@@ -39,13 +39,14 @@ class CreateOrderItem {
 }
 
 export class CreateOrderDto {
+  id?: string;
   @ApiProperty({
-    type: String,
+    type: Number,
     description:
       'Calculated total price of all purchased item. Provided in string.',
   })
   @IsString()
-  totalPrice: string;
+  totalPrice: number;
   @ApiProperty({
     type: String,
     description:
@@ -53,6 +54,11 @@ export class CreateOrderDto {
   })
   @IsArray()
   items: CreateOrderItem[];
+  @ApiProperty({
+    type: String,
+    description: 'Card token from payment gateway.',
+  })
+  paymentToken: string;
 }
 
 export class CreateOrderResponse extends CoreApiResponse {
