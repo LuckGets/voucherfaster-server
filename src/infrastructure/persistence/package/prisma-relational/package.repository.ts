@@ -34,13 +34,7 @@ export class PackageVoucherRelationalPrismaORMRepository
     | Prisma.PackageVoucherFindManyArgs
     | Prisma.PackageVoucherFindFirstArgs = {
     include: {
-      PackageImg: {
-        where: {
-          deletedAt: {
-            equals: null,
-          },
-        },
-      },
+      PackageImg: { where: { mainImg: true } },
       PackageRewardVoucher: true,
     },
   };
@@ -50,13 +44,7 @@ export class PackageVoucherRelationalPrismaORMRepository
   ): Prisma.PackageVoucherFindUniqueArgs {
     return {
       include: {
-        PackageImg: {
-          where: {
-            deletedAt: {
-              equals: null,
-            },
-          },
-        },
+        PackageImg: true,
         PackageRewardVoucher: true,
         PackageVoucherTermAndCondEN: {
           where: {

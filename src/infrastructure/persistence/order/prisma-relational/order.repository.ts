@@ -5,37 +5,115 @@ import {
   CreateOrderPackageIdList,
   CreateOrderPromotionIdList,
   CreateOrderVoucherIdList,
-  OrderAndTransactionType,
   OrderRepository,
+  UpdateStockAmountEachInfo,
+  UpdateStockAmountInfo,
 } from '../order.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { Prisma } from '@prisma/client';
-import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
-import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
+import { OrderMapper } from './order.mapper';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
-  private defaultQrcodeImgPathToWaitForUpload: string = 'WAITFORUPLOAD';
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
+  private defaultQrcodeImgPathToWaitForUpload: string = 'WAITFORUPLOAD';
 
-  async createOrderAndTransaction({
+  private generateFindUniqueOrderQuery(
+    id: OrderDomain['id'],
+  ): Prisma.OrderFindUniqueArgs {
+    return {
+      where: {
+        id,
+      },
+      include: {
+        usableDaysAfterPurchased: {
+          select: {
+            id: true,
+            usableDays: true,
+          },
+        },
+        OrderItem: {
+          include: {
+            OrderItemVoucher: {
+              include: {
+                voucher: {
+                  include: {
+                    VoucherImg: {
+                      where: {
+                        mainImg: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            OrderItemPromotion: {
+              include: {
+                voucherPromotion: {
+                  include: {
+                    voucher: {
+                      include: {
+                        VoucherImg: {
+                          where: {
+                            mainImg: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            OrderItemPackage: {
+              include: {
+                package: {
+                  include: {
+                    PackageImg: {
+                      where: {
+                        mainImg: true,
+                      },
+                    },
+                    PackageRewardVoucher: {
+                      include: {
+                        voucher: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  /**
+   * This method will create an order and related transaction,
+   * and also update the stock amount of vouchers and packages,
+   * and promotions.
+   * @param {CreateOrderAndTransactionInput} createOrderAndTransactionInput
+   * @returns {Promise<OrderAndTransactionType>}
+   */
+  public async createOrderAndTransaction({
     payload,
     accountId,
-    voucherUsageDayId,
+    usableDaysAfterPurchasedId,
+    updateStockAmountInfo,
     voucherIdList,
     promotionIdList,
     packageIdList,
-  }: CreateOrderAndTransactionInput): Promise<OrderAndTransactionType> {
+  }: CreateOrderAndTransactionInput): Promise<OrderDomain> {
     // Initialize the create order items
     // promise to provide in transaction
     try {
-      const { createManyOrderItemQuery } = this.generateOrderItemsQuery({
+      const createManyOrderItemQuery = this.generateOrderItemsQuery({
         voucherIdList,
         promotionIdList,
         packageIdList,
       });
 
+      // Find the transaction system
       const transactionSystem =
         await this.prismaService.transactionSystem.findFirst({
           where: {
@@ -45,12 +123,25 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           },
         });
 
-      const { order, transaction } = await this.prismaService.$transaction(
+      if (!transactionSystem)
+        throw ErrorApiResponse.conflictRequest('Transaction system not found.');
+
+      // Create order and transaction,
+      // and update the stock amount
+      const orderAndTransaction = await this.prismaService.$transaction(
         async (tx) => {
-          const order = await this.prismaService.order.create({
+          // Generate the update stock transaction promise
+          const updateStockTransactionPromise =
+            this.generateUpdateStockAmountTransactionPromise(
+              tx,
+              updateStockAmountInfo,
+            );
+
+          // Create order and transaction
+          const createOrderPromise = this.prismaService.order.create({
             data: {
               ...payload,
-              voucherUsageDayId,
+              usableDaysAfterPurchasedId,
               accountId,
               OrderItem: createManyOrderItemQuery,
               Transaction: {
@@ -60,9 +151,45 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
                 },
               },
             },
+            include: {
+              Transaction: {
+                include: {
+                  transactionSystem: {
+                    select: {
+                      id: true,
+                      system: true,
+                    },
+                  },
+                },
+              },
+              usableDaysAfterPurchased: {
+                select: {
+                  id: true,
+                  usableDays: true,
+                },
+              },
+            },
           });
+
+          // Wait for all promises to be resolved
+          const [orderAndTransaction] = await Promise.all([
+            createOrderPromise,
+            ...updateStockTransactionPromise,
+          ]);
+
+          return orderAndTransaction;
         },
       );
+
+      if (
+        !orderAndTransaction.Transaction ||
+        Object.keys(orderAndTransaction.Transaction).length < 1
+      ) {
+        throw ErrorApiResponse.internalServerError(
+          'Transaction could not be found after creating an order. Contact developer to fix this issue.',
+        );
+      }
+      return OrderMapper.toDomain(orderAndTransaction);
     } catch (err) {
       throw ErrorApiResponse.internalServerError(err.message);
     }
@@ -76,9 +203,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     voucherIdList?: CreateOrderVoucherIdList;
     promotionIdList?: CreateOrderPromotionIdList;
     packageIdList?: CreateOrderPackageIdList;
-  }): {
-    createManyOrderItemQuery: Prisma.OrderItemCreateNestedManyWithoutOrderInput;
-  } => {
+  }): Prisma.OrderItemCreateNestedManyWithoutOrderInput => {
     const createManyOrderItemQuery: Prisma.OrderItemCreateNestedManyWithoutOrderInput =
       {
         create: [],
@@ -153,6 +278,89 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     }
 
     createManyOrderItemQuery.create = queryForCreateArr;
-    return { createManyOrderItemQuery };
+    return createManyOrderItemQuery;
   };
+
+  private generateUpdateStockAmountTransactionPromise(
+    tx: Prisma.TransactionClient,
+    updateStockAmountInfo: UpdateStockAmountInfo,
+  ): Promise<unknown>[] {
+    const transactionForUpdateStockAmountPromiseArr = [];
+    if (
+      updateStockAmountInfo.vouchers &&
+      updateStockAmountInfo.vouchers.length > 0
+    ) {
+      transactionForUpdateStockAmountPromiseArr.push(
+        this.transactionForUpdateVoucherStockAmount(
+          tx,
+          updateStockAmountInfo.vouchers,
+          'voucher',
+        ),
+      );
+    }
+
+    if (
+      updateStockAmountInfo.promotions &&
+      updateStockAmountInfo.promotions.length > 0
+    ) {
+      transactionForUpdateStockAmountPromiseArr.push(
+        this.transactionForUpdateVoucherStockAmount(
+          tx,
+          updateStockAmountInfo.promotions,
+          'promotion',
+        ),
+      );
+    }
+
+    if (
+      updateStockAmountInfo.packages &&
+      updateStockAmountInfo.packages.length > 0
+    ) {
+      transactionForUpdateStockAmountPromiseArr.push(
+        this.transactionForUpdateVoucherStockAmount(
+          tx,
+          updateStockAmountInfo.packages,
+          'package',
+        ),
+      );
+    }
+
+    return transactionForUpdateStockAmountPromiseArr;
+  }
+
+  private transactionForUpdateVoucherStockAmount(
+    tx: Prisma.TransactionClient,
+    data: UpdateStockAmountEachInfo[],
+    type: 'voucher' | 'promotion' | 'package',
+  ): Promise<unknown>[] {
+    switch (type) {
+      case 'voucher':
+        return data.map(async (item) => {
+          return tx.voucher.update({
+            where: { id: item.id },
+            data: {
+              stockAmount: item.updatedStockAmount,
+            },
+          });
+        });
+      case 'promotion':
+        return data.map(async (item) => {
+          return tx.voucherPromotion.update({
+            where: { id: item.id },
+            data: { stockAmount: item.updatedStockAmount },
+          });
+        });
+      case 'package':
+        return data.map(async (item) => {
+          return tx.packageVoucher.update({
+            where: { id: item.id },
+            data: { stockAmount: item.updatedStockAmount },
+          });
+        });
+      default:
+        throw ErrorApiResponse.conflictRequest();
+    }
+  }
+
+  public async findOrderById(id: OrderDomain['id']) {}
 }

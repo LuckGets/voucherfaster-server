@@ -12,14 +12,6 @@ export class UpdateOwnerInformationDto {
   @IsString()
   @IsOptional()
   name?: string;
-  // @ApiProperty({ type: String })
-  // @IsOptional()
-  // @IsString()
-  // email?: string;
-  // @ApiProperty({ type: String })
-  // @IsOptional()
-  // @IsString()
-  // emailPassword?: string;
   @ApiProperty({ type: String })
   @IsOptional()
   @IsString()

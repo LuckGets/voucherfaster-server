@@ -35,7 +35,6 @@ export const VoucherPath = {
   UpdateVoucherImg: ':voucherId/images/:imageId',
   TagQuery: 'tag',
   CategoryQuery: 'category',
-  UpdateVoucherUsageDay: '/usabledays',
 } as const;
 
 export const VoucherCategoryPath = {
@@ -71,6 +70,11 @@ export const PackageVoucherPath = {
   UpdatePackageImage: '/images/:imageId',
   DeletePackageImage: '/images/:imageId',
 } as const;
+
+export const UsableDaysPath = {
+  Name: 'usabledays',
+  Base: '/usabledays',
+};
 
 export const OrderPath = {
   Name: 'orders',

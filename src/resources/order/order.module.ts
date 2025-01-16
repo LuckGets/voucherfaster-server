@@ -7,6 +7,7 @@ import { VerifiedAccountGuard } from './guards/verified-account.guard';
 import { VoucherModule } from '@resources/voucher/voucher.module';
 import { PackageVoucherModule } from '@resources/package/package.module';
 import { UUIDService } from '@utils/services/uuid.service';
+import { UsableDaysModule } from '@resources/usable-days/usable-days.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UUIDService } from '@utils/services/uuid.service';
     AccountModule,
     VoucherModule,
     PackageVoucherModule,
+    UsableDaysModule,
   ],
   controllers: [OrderController],
   providers: [OrderService, UUIDService, VerifiedAccountGuard],

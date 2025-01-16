@@ -3,20 +3,21 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsNumber } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
-import { VoucherUsageDaysDomain } from '../domain/voucher-usage-day.domain';
-import { AuthPath, VoucherPath } from 'src/config/api-path';
+import { AuthPath, UsableDaysPath, VoucherPath } from 'src/config/api-path';
 import { HATEOSLink } from 'src/common/hateos.type';
+import { UsableDaysAfterPurchasedDomain } from '../domain/usable-day.domain';
+import { HTTPMethod } from 'src/common/http.type';
 
-export class UpdateVoucherUsageDayDto {
+export class UpdateUsableDaysAfterPurchasedDayDto {
   @ApiProperty({ type: String })
   id?: string;
   @ApiProperty({ type: Number })
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  usageDays: number;
+  usableDays: number;
 }
 
-export class UpdateVoucherUsageDayResponse extends CoreApiResponse {
+export class UpdateUsableDaysAfterPurchasedResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -24,7 +25,7 @@ export class UpdateVoucherUsageDayResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'PATCH:: /vouchers/usabledays successfully.',
+    example: 'PATCH:: /usabledays successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -36,21 +37,20 @@ export class UpdateVoucherUsageDayResponse extends CoreApiResponse {
     type: Object,
     example: 'sdfsdf',
   })
-  public data: VoucherUsageDaysDomain;
+  public data: UsableDaysAfterPurchasedDomain;
 
   public static success(
-    data: VoucherUsageDaysDomain,
+    data: UsableDaysAfterPurchasedDomain,
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): UpdateVoucherUsageDayResponse {
+  ): UpdateUsableDaysAfterPurchasedResponse {
     const responseMessage =
-      message ??
-      `PATCH:: ${VoucherPath.Base}/${VoucherPath.UpdateVoucherUsageDay} successfully.`;
+      message ?? `${HTTPMethod.Patch}:: ${UsableDaysPath.Base} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    return new UpdateVoucherUsageDayResponse(
+    return new UpdateUsableDaysAfterPurchasedResponse(
       responseCode,
       responseMessage,
       responseLink,

@@ -20,7 +20,6 @@ import {
   VoucherPromotionRepository,
   VoucherRepository,
   VoucherTagRepository,
-  VoucherUsageDayRepository,
 } from 'src/infrastructure/persistence/voucher/voucher.repository';
 import { UUIDService } from '@utils/services/uuid.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
@@ -41,8 +40,6 @@ import {
 import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promotion.dto';
 import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
 import { isUUID } from 'class-validator';
-import { UpdateVoucherUsageDayDto } from './dto/voucher-usage-day.dto';
-import { VoucherUsageDaysDomain } from './domain/voucher-usage-day.domain';
 
 @Injectable()
 export class VoucherService {
@@ -52,7 +49,6 @@ export class VoucherService {
     private voucherCategoryRepository: VoucherCategoryRepository,
     private voucherImgRepository: VoucherImgRepository,
     private voucherPromotionRepository: VoucherPromotionRepository,
-    private voucherUsageDayRepository: VoucherUsageDayRepository,
     private uuidService: UUIDService,
     private mediaService: MediaService,
   ) {}
@@ -657,22 +653,5 @@ export class VoucherService {
     }
     await this.voucherPromotionRepository.deletePromotion(voucherPromotionId);
     return;
-  }
-
-  // -------------------------------------------------------------------- //
-  // ------------------------- VOUCHER USAGE DAY PART ------------------- //
-  // -------------------------------------------------------------------- //
-
-  async getVoucherUsageDay(): Promise<VoucherUsageDaysDomain> {
-    return this.voucherUsageDayRepository.findCurrent();
-  }
-
-  async updateVoucherUsageDay(
-    data: UpdateVoucherUsageDayDto,
-  ): Promise<VoucherUsageDaysDomain> {
-    return this.voucherUsageDayRepository.update({
-      ...data,
-      id: String(this.uuidService.make()),
-    });
   }
 }

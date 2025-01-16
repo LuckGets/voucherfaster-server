@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class VoucherUsageDaysDomain {
+export class UsableDaysAfterPurchasedDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: String })
-  usageDays: number;
+  usableDays: number;
   @ApiProperty({ type: Date })
   createdAt?: Date;
   @ApiProperty({ type: Date })

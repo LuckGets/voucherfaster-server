@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { VoucherController } from './controllers/voucher.controller';
 import { VoucherService } from './voucher.service';
-import { VoucherRelationalRepositoryModule } from 'src/infrastructure/persistence/voucher/voucher-relational.module';
+import { VoucherRelationalPersistenceModule } from 'src/infrastructure/persistence/voucher/voucher-relational.module';
 import { UUIDService } from '@utils/services/uuid.service';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -13,7 +13,7 @@ import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
 
 @Module({
   imports: [
-    VoucherRelationalRepositoryModule,
+    VoucherRelationalPersistenceModule,
     MulterModule.register({
       storage: diskStorage({
         destination: MULTER_UPLOAD_CONSTANT.DIRECTORY,

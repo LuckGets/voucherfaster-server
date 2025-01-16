@@ -13,7 +13,7 @@ import { Transform } from 'class-transformer';
 
 type VoucherType = 'voucher' | 'promotion' | 'package';
 
-class CreateOrderItem {
+export class CreateOrderItem {
   @ApiProperty({
     type: String,
     description: 'ID of the purchased item.',

@@ -3,7 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 import { Transform } from 'class-transformer';
-import { IsArray, IsDate, IsNumber, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsDate,
+  IsNumber,
+  IsPositive,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { HATEOSLink } from 'src/common/hateos.type';
@@ -19,9 +26,13 @@ export class CreatePackageVoucherDto {
   @ApiProperty({ type: () => String, description: 'ID of the quota voucher' })
   quotaVoucherId: VoucherDomain['id'];
   @ApiProperty({ type: Number })
-  @IsNumber()
+  @IsPositive()
   @Transform(({ value }) => Number(value))
   quotaAmount: number;
+  @ApiProperty({ type: Number })
+  @IsPositive()
+  @Transform(({ value }) => Number(value))
+  stockAmount: number;
   @ApiProperty({ type: Number })
   @IsNumber()
   @Transform(({ value }) => Number(value))

@@ -5,15 +5,13 @@ import {
   VoucherPromotionRepository,
   VoucherRepository,
   VoucherTagRepository,
-  VoucherUsageDayRepository,
 } from './voucher.repository';
 import { VoucherRelationalPrismaORMRepository } from './prisma-relational/voucher.repository';
 import { PrismaModule } from '../config/prisma.module';
 import { VoucherCategoryRelationalPrismaORMRepository } from './prisma-relational/voucher-category.repository';
 import { VoucherTagRelationalPrismaORMRepository } from './prisma-relational/voucher-tag.repository';
 import { VoucherImgRelationalPrismaORMRepository } from './prisma-relational/voucher-img.repository';
-import { VoucherPromotionRelationalOPrismaORMRepository } from './prisma-relational/voucher-promotion.repository';
-import { VoucherUsageDayRelationalPrismaORMRepository } from './prisma-relational/voucher-usage-day.repository';
+import { VoucherPromotionRelationalPrismaORMRepository } from './prisma-relational/voucher-promotion.repository';
 
 @Module({
   imports: [PrismaModule],
@@ -36,11 +34,7 @@ import { VoucherUsageDayRelationalPrismaORMRepository } from './prisma-relationa
     },
     {
       provide: VoucherPromotionRepository,
-      useClass: VoucherPromotionRelationalOPrismaORMRepository,
-    },
-    {
-      provide: VoucherUsageDayRepository,
-      useClass: VoucherUsageDayRelationalPrismaORMRepository,
+      useClass: VoucherPromotionRelationalPrismaORMRepository,
     },
   ],
   exports: [
@@ -49,7 +43,6 @@ import { VoucherUsageDayRelationalPrismaORMRepository } from './prisma-relationa
     VoucherTagRepository,
     VoucherImgRepository,
     VoucherPromotionRepository,
-    VoucherUsageDayRepository,
   ],
 })
-export class VoucherRelationalRepositoryModule {}
+export class VoucherRelationalPersistenceModule {}

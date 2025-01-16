@@ -144,15 +144,15 @@ model VoucherTermAndCondEN {
   @@map("voucher_term_condition_en")
 }
 
-model VoucherUsageDays {
-  id        String    @id @default(uuid(7)) @db.Uuid
-  usageDays Int       @map("usage_days")
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
-  Order     Order[]
+model UsableDaysAfterPurchased {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  usableDays Int       @map("usable_days")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+  Order      Order[]
 
-  @@map("voucher_usage_days")
+  @@map("usable_days_after_purchased")
 }
 
 model VoucherPromotion {
@@ -243,16 +243,16 @@ model PackageRewardVoucher {
 }
 
 model Order {
-  id                String           @id @default(uuid(7)) @db.Uuid
-  totalPrice        Decimal          @map("total_price") @db.Decimal(10, 2)
-  voucherUsageDayId String           @map("voucher_usage_day_id") @db.Uuid
-  voucherUsageDay   VoucherUsageDays @relation(references: [id], fields: [voucherUsageDayId])
-  accountId         String           @map("account_id") @db.Uuid
-  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime         @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt         DateTime?        @map("deleted_at") @db.Timestamptz(3)
-  Transaction       Transaction[]
-  OrderItem         OrderItem[]
+  id                         String                   @id @default(uuid(7)) @db.Uuid
+  totalPrice                 Decimal                  @map("total_price") @db.Decimal(10, 2)
+  usableDaysAfterPurchasedId String                   @map("usable_days_after_purchased_id") @db.Uuid
+  usableDaysAfterPurchased   UsableDaysAfterPurchased @relation(references: [id], fields: [usableDaysAfterPurchasedId])
+  accountId                  String                   @map("account_id") @db.Uuid
+  createdAt                  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                  DateTime                 @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt                  DateTime?                @map("deleted_at") @db.Timestamptz(3)
+  Transaction                Transaction?
+  OrderItem                  OrderItem[]
 
   @@map("order")
 }
@@ -323,8 +323,9 @@ model TransactionSystem {
 
 model Transaction {
   id                  String            @id @default(uuid(7)) @db.Uuid
-  orderId             String            @map("order_id") @db.Uuid
+  orderId             String            @unique @map("order_id") @db.Uuid
   order               Order             @relation(fields: [orderId], references: [id])
+  paymentId           String?           @map("payment_id") @db.Uuid
   transactionSystem   TransactionSystem @relation(fields: [transactionSystemId], references: [id])
   status              TransactionStatus @default(PENDING)
   createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)

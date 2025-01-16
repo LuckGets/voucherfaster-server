@@ -12,6 +12,7 @@ import { VoucherModule } from './resources/voucher/voucher.module';
 import { PackageVoucherModule } from '@resources/package/package.module';
 import { OrderModule } from './resources/order/order.module';
 import { TransactionModule } from './resources/transaction/transaction.module';
+import { UsableDaysModule } from './resources/usable-days/usable-days.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TransactionModule } from './resources/transaction/transaction.module';
     PackageVoucherModule,
     OrderModule,
     TransactionModule,
+    UsableDaysModule,
   ],
 })
 export class AppModule {}

@@ -6,6 +6,6 @@ export class UUIDService {
   constructor() {}
 
   public make(): UUIDTypes {
-    return String(uuid());
+    return uuid();
   }
 }

@@ -13,9 +13,9 @@ export class OrderItemDomain {
   @ApiProperty({ type: Date })
   updatedAt?: Date;
   item:
-    | OrderItemVoucherDomain[]
-    | OrderItemPromotionDomain[]
-    | OrderItemPackageDomain[];
+    | OrderItemVoucherDomain
+    | OrderItemPromotionDomain
+    | OrderItemPackageDomain;
 }
 
 export class OrderItemVoucherDomain {
@@ -36,5 +36,5 @@ export class OrderItemPackageDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: () => PackageVoucherDomain })
-  promotionVoucher: Partial<PackageVoucherDomain>;
+  package: Partial<PackageVoucherDomain>;
 }

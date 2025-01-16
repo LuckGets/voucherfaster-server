@@ -36,6 +36,7 @@ export type PackageVoucherCreateInput = {
   id: string;
   quotaVoucherId: string;
   quotaAmount: number;
+  stockAmount: number;
   price: number;
   title: string;
   startedAt: Date;

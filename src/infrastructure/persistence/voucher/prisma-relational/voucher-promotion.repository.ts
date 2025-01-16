@@ -9,7 +9,7 @@ import { UpdateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promot
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 
-export class VoucherPromotionRelationalOPrismaORMRepository
+export class VoucherPromotionRelationalPrismaORMRepository
   implements VoucherPromotionRepository
 {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
