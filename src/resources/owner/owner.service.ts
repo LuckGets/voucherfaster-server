@@ -56,7 +56,9 @@ export class OwnerService {
         `Owner image ID: ${imageId} could not be found.`,
       );
     const uploadedImgPath = await this.mediaService.uploadFile(
-      image,
+      image.buffer,
+      image.filename,
+      image.mimetype,
       s3BucketDirectory.ownerImg,
     );
     return this.ownerRepository.updateOwnerImgById(imageId, uploadedImgPath);

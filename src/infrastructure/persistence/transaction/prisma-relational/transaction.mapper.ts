@@ -2,13 +2,15 @@ import { Transaction, TransactionSystem } from '@prisma/client';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 
 export type TransactionAndSystem = Transaction & {
-  transactionSystem: Partial<TransactionSystem>;
+  transactionSystem?: Partial<TransactionSystem>;
 };
 
 export class TransactionMapper {
   public static toDomain(
     transactionEntity: TransactionAndSystem,
   ): TransactionDomain {
+    if (!transactionEntity || Object.keys(transactionEntity).length === 0)
+      return null;
     const transaction: TransactionDomain = new TransactionDomain();
     transaction.id = transactionEntity.id;
     transaction.status = transactionEntity.status;

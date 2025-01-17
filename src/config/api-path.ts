@@ -79,7 +79,15 @@ export const UsableDaysPath = {
 export const OrderPath = {
   Name: 'orders',
   Base: '/orders',
+  OrderIdParam: 'orderId',
+  GetOrderById: `:orderId`,
+  GetOrdersQueryCursor: 'cursor',
 } as const;
+
+export const OrderItemPath = {
+  Name: 'order-items',
+  Base: '/order-items',
+};
 
 export const TransactionPath = {
   Name: 'transactions',
@@ -92,3 +100,8 @@ export const OwnerPath = {
   Image: '/images',
   UpdateImage: '/images/:imageId',
 } as const;
+
+export const FRONTEND_PATH = {
+  VERIFIY: 'confirm-email',
+  RETRIEVE_ORDER_ITEM: 'order-item',
+};

@@ -66,7 +66,7 @@ export class PackageVoucherService {
 
     // Upload the image and retrieve the image url path
     // to store in database.
-    const allImgBuffer = [];
+    const allImgBuffer: Express.Multer.File[] = [];
 
     if (mainImg) allImgBuffer.push(mainImg);
     if (packageImg && packageImg.length > 0) allImgBuffer.push(...packageImg);
@@ -74,7 +74,12 @@ export class PackageVoucherService {
     if (allImgBuffer.length < 1) throw ErrorApiResponse.conflictRequest();
     const allPackageImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
-        this.mediaService.uploadFile(item, s3BucketDirectory.packageImg),
+        this.mediaService.uploadFile(
+          item.buffer,
+          item.filename,
+          item.mimetype,
+          s3BucketDirectory.packageImg,
+        ),
       ),
     );
 
@@ -194,7 +199,12 @@ export class PackageVoucherService {
 
     const uploadedImgPath = await Promise.all(
       files.map((item) =>
-        this.mediaService.uploadFile(item, s3BucketDirectory.packageImg),
+        this.mediaService.uploadFile(
+          item.buffer,
+          item.filename,
+          item.mimetype,
+          s3BucketDirectory.packageImg,
+        ),
       ),
     );
 
@@ -220,7 +230,9 @@ export class PackageVoucherService {
         `Package ID: ${id} could not be found.`,
       );
     const uploadedImgPath = await this.mediaService.uploadFile(
-      file,
+      file.buffer,
+      file.filename,
+      file.mimetype,
       s3BucketDirectory.packageImg,
     );
     return this.packageImgRepository.update(id, uploadedImgPath);

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   CreateOrderAndTransactionInput,
   OrderRepository,
+  UpdateStockAmountEachInfo,
   UpdateStockAmountInfo,
 } from 'src/infrastructure/persistence/order/order.repository';
 import { CreateOrderDto, CreateOrderItem } from './dto/create-order.dto';
@@ -17,12 +18,22 @@ import { UUIDService } from '@utils/services/uuid.service';
 import { OrderItemDomain } from './domain/order-item.domain';
 import { UsableDaysService } from '@resources/usable-days/usable-days.service';
 import { TransactionService } from '@resources/transaction/transaction.service';
+import { CalculatorService } from '@utils/services/calculator.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ORDER_EVENT_CONSTANT, OrderCreatedEvent } from './events/order.events';
+import { NullAble } from '@utils/types/common.type';
+import { isUUID } from 'class-validator';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
   promotions: VoucherPromotionDomain[];
   packages: PackageVoucherDomain[];
 };
+
+type AnyItemDomain =
+  | VoucherDomain
+  | VoucherPromotionDomain
+  | PackageVoucherDomain;
 
 @Injectable()
 export class OrderService {
@@ -33,6 +44,7 @@ export class OrderService {
     private usableDaysService: UsableDaysService,
     private transactionService: TransactionService,
     private uuidService: UUIDService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   // --------------------------------------------------------------------------//
@@ -47,7 +59,7 @@ export class OrderService {
   ): Promise<OrderDomain> {
     const { paymentToken, ...restData } = data;
     const { items, totalPrice, updateStockAmountInfo } =
-      await this.findOrderItemInfoAndTotalPriceAndCheckingStock(restData);
+      await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(restData);
 
     const { createOrderData, allOrderItemsId } =
       await this.prepareCreateOrderData({
@@ -60,12 +72,18 @@ export class OrderService {
     const order =
       await this.orderRepository.createOrderAndTransaction(createOrderData);
 
-    const transaction = await this.transactionService.processPayment({
+    await this.transactionService.processPayment({
       token: paymentToken,
       amount: totalPrice,
       description: `OrderId:${order.id} | TransactionId:${order.transaction.id}`,
       transactionId: order.transaction.id,
     });
+
+    this.eventEmitter.emit(
+      ORDER_EVENT_CONSTANT.CREATED,
+      new OrderCreatedEvent(allOrderItemsId),
+    );
+    return order;
   }
 
   // Not promise.all but solid
@@ -122,7 +140,7 @@ export class OrderService {
   // or sequential
   // So, I guess it would be better if just using
   // power of worker
-  private async findOrderItemInfoAndTotalPriceAndCheckingStock(
+  private async findAllOrderItemInfoAndTotalPriceAndCheckingStock(
     data: Omit<CreateOrderDto, 'paymentToken'>,
   ): Promise<{
     items: OrderItemsInfo;
@@ -142,36 +160,56 @@ export class OrderService {
     };
 
     const allItemsInfoPromisesArr = data.items.map(async (item) => {
-      let itemPrice = 0;
+      const itemPrice = 0;
 
       switch (item.voucherType) {
         case 'voucher': {
-          const voucher = await this.checkVoucherOrderItemInfo(item);
-          itemPrice += voucher.price;
-          allItemsInfo.vouchers.push(voucher);
-          updateStockAmountInfo.vouchers.push({
-            id: voucher.id,
-            updatedStockAmount: voucher.stockAmount - item.amount,
+          const voucher = await this.checkOrderItemInfo({
+            orderItem: item,
+            dbQueryFunc: this.voucherService.getVoucherById,
+            typeOfOrderItem: 'Voucher',
+          });
+          this.findEachItemDataAndMutateTotalSumAndData<VoucherDomain>({
+            currentSum: itemPrice,
+            itemInfoArr: allItemsInfo.vouchers,
+            updateStockAmountInfo: updateStockAmountInfo.vouchers,
+            itemInfo: voucher,
+            itemAmount: item.amount,
+            itemPrice: voucher.price,
           });
           break;
         }
         case 'promotion': {
-          const promotion = await this.checkVoucherPromotionOrderItemInfo(item);
-          itemPrice += promotion.promotionPrice;
-          allItemsInfo.promotions.push(promotion);
-          updateStockAmountInfo.promotions.push({
-            id: promotion.id,
-            updatedStockAmount: promotion.stockAmount - item.amount,
+          const promotion = await this.checkOrderItemInfo({
+            orderItem: item,
+            dbQueryFunc: this.voucherService.getVoucherPromotionById,
+            typeOfOrderItem: 'Promotion',
           });
+          this.findEachItemDataAndMutateTotalSumAndData<VoucherPromotionDomain>(
+            {
+              currentSum: itemPrice,
+              itemInfoArr: allItemsInfo.promotions,
+              updateStockAmountInfo: updateStockAmountInfo.promotions,
+              itemInfo: promotion,
+              itemAmount: item.amount,
+              itemPrice: promotion.promotionPrice,
+            },
+          );
           break;
         }
         case 'package': {
-          const packageVoucher = await this.checkPackageOrderItemInfo(item);
-          itemPrice += packageVoucher.price;
-          allItemsInfo.packages.push(packageVoucher);
-          updateStockAmountInfo.packages.push({
-            id: packageVoucher.id,
-            updatedStockAmount: packageVoucher.stockAmount - item.amount,
+          const packageVoucher = await this.checkOrderItemInfo({
+            orderItem: item,
+            dbQueryFunc: this.packageVoucherService.getPackageVoucherById,
+            typeOfOrderItem: 'Package voucher',
+          });
+          this.findEachItemDataAndMutateTotalSumAndData<PackageVoucherDomain>({
+            currentSum: itemPrice,
+            itemInfoArr: allItemsInfo.packages,
+            updateStockAmountInfo: updateStockAmountInfo.packages,
+            itemInfo: packageVoucher,
+            itemAmount: item.amount,
+            itemPrice: packageVoucher.price,
           });
           break;
         }
@@ -185,7 +223,7 @@ export class OrderService {
     try {
       const allItemPricesArr = await Promise.all(allItemsInfoPromisesArr);
       const totalPrice = allItemPricesArr.reduce(
-        (sum, price) => sum + price,
+        (sum, price) => CalculatorService.add(sum, price),
         0,
       );
       if (data.totalPrice !== totalPrice)
@@ -198,58 +236,79 @@ export class OrderService {
     }
   }
 
-  private async checkVoucherOrderItemInfo(
-    orderItem: CreateOrderItem,
-  ): Promise<VoucherDomain> {
-    const voucher = await this.voucherService.getVoucherById(orderItem.id);
-    if (!voucher) throw new Error(`Voucher with ID ${orderItem.id} not found.`);
-    if (voucher.stockAmount === 0)
-      throw ErrorApiResponse.conflictRequest(
-        `The voucher ID:${voucher.id} is now out of stock.`,
-      );
-
-    if (voucher.stockAmount < orderItem.amount)
-      throw ErrorApiResponse.conflictRequest(
-        `The voucher ID:${voucher.id} only have ${voucher.stockAmount} which not enough for making order.`,
-      );
-    return voucher;
+  private findEachItemDataAndMutateTotalSumAndData<T extends AnyItemDomain>({
+    itemPrice,
+    itemAmount,
+    currentSum,
+    itemInfoArr,
+    updateStockAmountInfo,
+    itemInfo,
+  }: {
+    itemPrice: number;
+    itemAmount: number;
+    currentSum: number;
+    itemInfoArr: T[];
+    updateStockAmountInfo: UpdateStockAmountEachInfo[];
+    itemInfo: T;
+  }) {
+    const totalPriceOfItmes = CalculatorService.multiply(itemPrice, itemAmount);
+    currentSum = CalculatorService.add(currentSum, totalPriceOfItmes);
+    itemInfoArr.push(itemInfo);
+    updateStockAmountInfo.push({
+      id: itemInfo.id,
+      updatedStockAmount: CalculatorService.minus(
+        itemInfo.stockAmount,
+        itemAmount,
+      ),
+    });
   }
 
-  private async checkVoucherPromotionOrderItemInfo(
-    orderItem: CreateOrderItem,
-  ): Promise<VoucherPromotionDomain> {
-    const promotion = await this.voucherService.getVoucherPromotionById(
-      orderItem.id,
-    );
-    if (!promotion)
-      throw new Error(`Promotion with ID ${orderItem.id} not found.`);
-    if (promotion.stockAmount === 0)
-      throw ErrorApiResponse.conflictRequest(
-        `The promotion ID:${promotion.id} is now out of stock.`,
-      );
-    if (promotion.stockAmount < orderItem.amount)
-      throw ErrorApiResponse.conflictRequest(
-        `The promotion ID:${promotion.id} only have ${promotion.stockAmount} which not enough for making order.`,
-      );
-    return promotion;
-  }
+  /**
+   * Checks the information of the order item by querying the database using the provided function.
+   * Throws an error if the item is not found or if there is insufficient stock.
+   *
+   * @param {object} params - The parameters for checking the order item.
+   * @param {CreateOrderItem} params.orderItem - The order item to check.
+   * @param {Function} params.dbQueryFunc - The database query function to retrieve the item.
+   * @param {string} params.typeOfOrderItem - The type of order item being checked (e.g., voucher, promotion, package).
+   *
+   * @returns {Promise<any>} The retrieved item from the database.
+   *
+   * @throws Will throw an error if the item is not found or if stock is insufficient.
+   */
+  private async checkOrderItemInfo({
+    orderItem,
+    dbQueryFunc,
+    typeOfOrderItem,
+  }: {
+    orderItem: CreateOrderItem;
+    dbQueryFunc: Function;
+    typeOfOrderItem: string;
+  }): Promise<any> {
+    // Query the database to check if the order item exists
+    const item = await dbQueryFunc(orderItem.id);
 
-  private async checkPackageOrderItemInfo(
-    orderItem: CreateOrderItem,
-  ): Promise<PackageVoucherDomain> {
-    const packageVoucher =
-      await this.packageVoucherService.getPackageVoucherById(orderItem.id);
-    if (!packageVoucher)
-      throw new Error(`Package Voucher with ID ${orderItem.id} not found.`);
-    if (packageVoucher.stockAmount === 0)
+    // Throw an error if the item is not found
+    if (!item) {
+      throw new Error(`${typeOfOrderItem} with ID ${orderItem.id} not found.`);
+    }
+
+    // Check if the item is out of stock
+    if (item.stockAmount === 0) {
       throw ErrorApiResponse.conflictRequest(
-        `The package ID:${packageVoucher.id} is now out of stock.`,
+        `The ${typeOfOrderItem} ID:${item.id} is now out of stock.`,
       );
-    if (packageVoucher.stockAmount < orderItem.amount)
+    }
+
+    // Check if the available stock is less than the required amount
+    if (item.stockAmount < orderItem.amount) {
       throw ErrorApiResponse.conflictRequest(
-        `The package ID:${packageVoucher.id} only have ${packageVoucher.stockAmount} which not enough for making order.`,
+        `The ${typeOfOrderItem} ID:${item.id} only have ${item.stockAmount} which not enough for making order.`,
       );
-    return packageVoucher;
+    }
+
+    // Return the item if everything is in order
+    return item;
   }
 
   /**
@@ -344,11 +403,38 @@ export class OrderService {
 
     return { createOrderData, allOrderItemsId };
   }
-  /******  96c98f06-09c0-4f22-9049-b9bc6c9784ed  *******/
 
   // --------------------------------------------------------------------------//
   // --------------------------------------------------------------------------//
   // ---------------------- FINISHED CREATING ORDER PART ----------------------//
   // --------------------------------------------------------------------------//
   // --------------------------------------------------------------------------//
+
+  // ---------------------- FIND ORDER PART -----------------------------------//
+  // --------------------------------------------------------------------------//
+
+  public async getOrderById(
+    id: OrderDomain['id'],
+  ): Promise<NullAble<OrderDomain>> {
+    if (!id || !isUUID(id))
+      throw ErrorApiResponse.badRequest(
+        'Provided parameter for order id is invaid.',
+      );
+
+    const order = await this.orderRepository.findById(id);
+    if (!order)
+      throw ErrorApiResponse.notFoundRequest(
+        `Order ID: ${id} could not be found.`,
+      );
+
+    return order;
+  }
+
+  public async getPaginationOrders({
+    cursor,
+  }: {
+    cursor?: OrderDomain['id'];
+  }): Promise<OrderDomain[]> {
+    return this.orderRepository.findMany({ cursor });
+  }
 }

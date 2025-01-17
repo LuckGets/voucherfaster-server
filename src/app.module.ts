@@ -13,6 +13,8 @@ import { PackageVoucherModule } from '@resources/package/package.module';
 import { OrderModule } from './resources/order/order.module';
 import { TransactionModule } from './resources/transaction/transaction.module';
 import { UsableDaysModule } from './resources/usable-days/usable-days.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { OrderItemModule } from './resources/order-item/order-item.module';
 
 @Module({
   imports: [
@@ -20,6 +22,11 @@ import { UsableDaysModule } from './resources/usable-days/usable-days.module';
       isGlobal: true,
       envFilePath: ['./.env.development'],
       load: [appConfig, clientConfig],
+    }),
+    EventEmitterModule.forRoot({
+      global: true,
+      maxListeners: 1000,
+      verboseMemoryLeak: true,
     }),
     JwtModule.register({ global: true }),
     AuthModule,
@@ -32,6 +39,7 @@ import { UsableDaysModule } from './resources/usable-days/usable-days.module';
     OrderModule,
     TransactionModule,
     UsableDaysModule,
+    OrderItemModule,
   ],
 })
 export class AppModule {}

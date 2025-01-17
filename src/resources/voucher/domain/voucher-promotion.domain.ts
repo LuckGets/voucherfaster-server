@@ -3,7 +3,7 @@ import { RoleEnum } from '@resources/account/types/account.type';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Expose, Transform } from 'class-transformer';
-import { IsNumber, IsString, IsUUID } from 'class-validator';
+import { IsNumber, IsPositive, IsString, IsUUID } from 'class-validator';
 
 export class VoucherPromotionDomain {
   @ApiProperty({ type: String })
@@ -43,10 +43,14 @@ export class VoucherPromotionCreateInput {
   @IsUUID(7)
   @ApiProperty({ type: String })
   voucherId: string;
-  @IsNumber()
+  @IsPositive()
   @Transform(({ value }) => Number(value))
   @ApiProperty({ type: Number })
   promotionPrice: number;
+  @IsPositive()
+  @Transform(({ value }) => Number(value))
+  @ApiProperty({ type: Number })
+  stockAmount: number;
   @IsFutureDate()
   @ApiProperty({ type: Date })
   sellStartedAt: Date;

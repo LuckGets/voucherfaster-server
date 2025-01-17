@@ -3,8 +3,6 @@ import { MediaService } from '../media.service';
 import { AllConfigType } from 'src/config/all-config.type';
 import * as AWS from '@aws-sdk/client-s3';
 import { Inject } from '@nestjs/common';
-import { readFile } from 'fs/promises';
-import * as path from 'path';
 
 export class MediaS3Service implements MediaService {
   private readonly s3Client: AWS.S3;
@@ -34,16 +32,14 @@ export class MediaS3Service implements MediaService {
   }
 
   async uploadFile(
-    file: Express.Multer.File,
+    file: Buffer,
+    fileName: string,
+    mimeType: string,
     bucketDir: string,
   ): Promise<string> {
-    const filePath = path.resolve(
-      process.cwd(),
-      `${file.destination}/${file.filename}`,
-    );
-    const fileKey = `${bucketDir}/${String(file.filename)}`;
+    const fileKey = `${bucketDir}/${String(fileName)}`;
     try {
-      await this.uploadFileToS3(filePath, fileKey, file.mimetype);
+      await this.uploadFileToS3(file, fileKey, mimeType);
       const linkUrl = `${this.CLOUDFRONT_DOMAIN_NAME}/${fileKey}`;
       return linkUrl;
     } catch (err) {
@@ -52,16 +48,15 @@ export class MediaS3Service implements MediaService {
   }
 
   async uploadFileToS3(
-    filePath: string,
+    file: Buffer,
     name: string,
     mimetype: string,
   ): Promise<AWS.CompleteMultipartUploadOutput> {
-    const buffer = await readFile(filePath);
     const params: AWS.PutObjectCommandInput = {
       Bucket: this.AWS_BUCKET_NAME,
       Key: name,
       ContentType: mimetype,
-      Body: buffer,
+      Body: file,
     };
     const command = new AWS.PutObjectCommand(params);
     return this.s3Client.send(command);

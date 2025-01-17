@@ -3,4 +3,5 @@ export const s3BucketDirectory = {
   voucherImg: 'voucher-img',
   packageImg: 'package-img',
   ownerImg: 'owner-img',
+  qrcodeImg: 'qrcode-img',
 } as const;

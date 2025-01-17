@@ -78,14 +78,16 @@ export class VoucherService {
     // ------------------ CREATE VOUCHER PART  ------------------
     //---------------------------------------------------------
     //---------------------------------------------------------
-    const allImgBuffer = [];
+    const allImgBuffer: Express.Multer.File[] = [];
     if (mainImg) allImgBuffer.push(...mainImg);
     if (voucherImg && voucherImg.length > 0) allImgBuffer.push(...voucherImg);
     // Firstly we need to upload the img to s3 and get the link back.
     const allVoucherImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
         this.mediaService.uploadFile(
-          item as Express.Multer.File,
+          item.buffer,
+          item.filename,
+          item.mimetype,
           s3BucketDirectory.voucherImg,
         ),
       ),
@@ -419,7 +421,9 @@ export class VoucherService {
         `Voucher image ID: ${data.voucherImgId} could not be found on this server.`,
       );
     const imageLink = await this.mediaService.uploadFile(
-      file,
+      file.buffer,
+      file.filename,
+      file.mimetype,
       s3BucketDirectory.voucherImg,
     );
     const updatedVoucherImg = await this.voucherImgRepository.updateVoucherImg(
@@ -453,7 +457,9 @@ export class VoucherService {
     deleteMainImg?: boolean;
   }): Promise<VoucherImgDomain> {
     const mainImageLink = await this.mediaService.uploadFile(
-      mainImg,
+      mainImg.buffer,
+      mainImg.filename,
+      mainImg.mimetype,
       s3BucketDirectory.voucherImg,
     );
     const mainImgToUpdate: VoucherImgCreateInput = {
@@ -487,7 +493,12 @@ export class VoucherService {
   ): Promise<void> {
     const voucherImgLink = await Promise.all(
       data.map((item) => {
-        return this.mediaService.uploadFile(item, s3BucketDirectory.voucherImg);
+        return this.mediaService.uploadFile(
+          item.buffer,
+          item.filename,
+          item.mimetype,
+          s3BucketDirectory.voucherImg,
+        );
       }),
     );
     const voucherImgToUpdate = voucherImgLink.map((item) => {

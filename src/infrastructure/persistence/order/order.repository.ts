@@ -1,12 +1,11 @@
 import { AccountDomain } from '@resources/account/domain/account.domain';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { CreateOrderDto } from '@resources/order/dto/create-order.dto';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/usable-day.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
-import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
+import { NullAble } from '@utils/types/common.type';
 
 export type CreateOrderVoucherIdList = {
   id: string;
@@ -63,4 +62,12 @@ export abstract class OrderRepository {
     promotionIdList,
     packageIdList,
   }: CreateOrderAndTransactionInput): Promise<OrderDomain>;
+
+  abstract findById(id: string): Promise<NullAble<OrderDomain>>;
+
+  abstract findMany({
+    cursor,
+  }: {
+    cursor?: OrderDomain['id'];
+  }): Promise<OrderDomain[]>;
 }

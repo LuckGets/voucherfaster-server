@@ -13,80 +13,79 @@ import { ErrorApiResponse } from 'src/common/core-api-response';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { Prisma } from '@prisma/client';
 import { OrderMapper } from './order.mapper';
+import { NullAble } from '@utils/types/common.type';
+import { generatePaginationQueryOption } from '@utils/prisma/service';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultQrcodeImgPathToWaitForUpload: string = 'WAITFORUPLOAD';
 
-  private generateFindUniqueOrderQuery(
-    id: OrderDomain['id'],
-  ): Prisma.OrderFindUniqueArgs {
-    return {
-      where: {
-        id,
-      },
+  private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
+    voucher: {
       include: {
-        usableDaysAfterPurchased: {
-          select: {
-            id: true,
-            usableDays: true,
+        VoucherImg: {
+          where: {
+            mainImg: true,
           },
         },
-        OrderItem: {
+      },
+    },
+  };
+
+  private orderItemPromotionIncludeQuery: Prisma.OrderItemPromotionInclude = {
+    voucherPromotion: {
+      include: {
+        voucher: {
           include: {
-            OrderItemVoucher: {
-              include: {
-                voucher: {
-                  include: {
-                    VoucherImg: {
-                      where: {
-                        mainImg: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            OrderItemPromotion: {
-              include: {
-                voucherPromotion: {
-                  include: {
-                    voucher: {
-                      include: {
-                        VoucherImg: {
-                          where: {
-                            mainImg: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            OrderItemPackage: {
-              include: {
-                package: {
-                  include: {
-                    PackageImg: {
-                      where: {
-                        mainImg: true,
-                      },
-                    },
-                    PackageRewardVoucher: {
-                      include: {
-                        voucher: true,
-                      },
-                    },
-                  },
-                },
+            VoucherImg: {
+              where: {
+                mainImg: true,
               },
             },
           },
         },
       },
-    };
-  }
+    },
+  };
+
+  private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
+    package: {
+      include: {
+        PackageImg: {
+          where: {
+            mainImg: true,
+          },
+        },
+        PackageRewardVoucher: {
+          include: {
+            voucher: true,
+          },
+        },
+      },
+    },
+  };
+
+  private includeQuery: Prisma.OrderInclude = {
+    OrderItem: {
+      include: {
+        OrderItemVoucher: {
+          include: {
+            ...this.orderItemVoucherIncludeQuery,
+          },
+        },
+        OrderItemPromotion: {
+          include: {
+            ...this.orderItemPromotionIncludeQuery,
+          },
+        },
+        OrderItemPackage: {
+          include: {
+            ...this.orderItemPackageIncludeQuery,
+          },
+        },
+      },
+    },
+  };
 
   /**
    * This method will create an order and related transaction,
@@ -195,7 +194,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     }
   }
 
-  generateOrderItemsQuery = ({
+  private generateOrderItemsQuery = ({
     voucherIdList,
     promotionIdList,
     packageIdList,
@@ -362,5 +361,30 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     }
   }
 
-  public async findOrderById(id: OrderDomain['id']) {}
+  async findById(id: string): Promise<NullAble<OrderDomain>> {
+    const order = await this.prismaService.order.findUnique({
+      where: { id },
+      include: {
+        ...this.includeQuery,
+      },
+    });
+    return OrderMapper.toDomain(order);
+  }
+
+  async findMany({
+    cursor,
+  }: {
+    cursor?: OrderDomain['id'];
+  }): Promise<OrderDomain[]> {
+    const paginationQuery = generatePaginationQueryOption({ cursor });
+
+    const ordersList = await this.prismaService.order.findMany({
+      ...paginationQuery,
+      include: {
+        ...this.includeQuery,
+      },
+    });
+
+    return ordersList.map(OrderMapper.toDomain);
+  }
 }

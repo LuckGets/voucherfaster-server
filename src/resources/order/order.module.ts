@@ -8,16 +8,24 @@ import { VoucherModule } from '@resources/voucher/voucher.module';
 import { PackageVoucherModule } from '@resources/package/package.module';
 import { UUIDService } from '@utils/services/uuid.service';
 import { UsableDaysModule } from '@resources/usable-days/usable-days.module';
+import { CalculatorService } from '@utils/services/calculator.service';
+import { OrderEventsModule } from './events/order-events.module';
 
 @Module({
   imports: [
     OrderRelationalRepositoryModule,
+    OrderEventsModule,
     AccountModule,
     VoucherModule,
     PackageVoucherModule,
     UsableDaysModule,
   ],
   controllers: [OrderController],
-  providers: [OrderService, UUIDService, VerifiedAccountGuard],
+  providers: [
+    OrderService,
+    UUIDService,
+    VerifiedAccountGuard,
+    CalculatorService,
+  ],
 })
 export class OrderModule {}
