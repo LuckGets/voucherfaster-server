@@ -8,6 +8,8 @@ export class OrderItemDomain {
   id: string;
   @ApiProperty({ type: String })
   qrcodeImagePath: string;
+  @ApiProperty({ type: String })
+  code: string;
   @ApiProperty({ type: Date })
   redeemedAt?: Date;
   @ApiProperty({ type: Date })

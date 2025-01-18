@@ -6,21 +6,25 @@ import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promot
 import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/usable-day.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
+import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
 
 export type CreateOrderVoucherIdList = {
   id: string;
   voucherId: VoucherDomain['id'];
+  code: OrderItemDomain['code'];
 }[];
 
 export type CreateOrderPromotionIdList = {
   id: string;
   promotionId: VoucherPromotionDomain['id'];
+  code: OrderItemDomain['code'];
 }[];
 
 type PackageList = {
   id: string;
   voucherId: VoucherDomain['id'];
   packageId: PackageVoucherDomain['id'];
+  code: OrderItemDomain['code'];
 };
 
 export type CreateOrderPackageIdList = {

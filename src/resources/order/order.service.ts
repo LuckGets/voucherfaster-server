@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
   CreateOrderAndTransactionInput,
+  CreateOrderPromotionIdList,
+  CreateOrderVoucherIdList,
   OrderRepository,
   UpdateStockAmountEachInfo,
   UpdateStockAmountInfo,
@@ -23,6 +25,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ORDER_EVENT_CONSTANT, OrderCreatedEvent } from './events/order.events';
 import { NullAble } from '@utils/types/common.type';
 import { isUUID } from 'class-validator';
+import { RandomCodeGeneratorService } from '@utils/services/random-code/random-code.service';
+import { OrderItemService } from '@resources/order-item/order-item.service';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
@@ -39,11 +43,13 @@ type AnyItemDomain =
 export class OrderService {
   constructor(
     private orderRepository: OrderRepository,
+    private orderItemService: OrderItemService,
     private voucherService: VoucherService,
     private packageVoucherService: PackageVoucherService,
     private usableDaysService: UsableDaysService,
     private transactionService: TransactionService,
     private uuidService: UUIDService,
+    private randomCodeGeneratorService: RandomCodeGeneratorService,
     private eventEmitter: EventEmitter2,
   ) {}
 
@@ -253,7 +259,7 @@ export class OrderService {
   }) {
     const totalPriceOfItmes = CalculatorService.multiply(itemPrice, itemAmount);
     currentSum = CalculatorService.add(currentSum, totalPriceOfItmes);
-    itemInfoArr.push(itemInfo);
+    itemInfoArr.push(...Array(itemAmount).fill(itemInfo));
     updateStockAmountInfo.push({
       id: itemInfo.id,
       updatedStockAmount: CalculatorService.minus(
@@ -355,9 +361,10 @@ export class OrderService {
 
     if (items.vouchers && items.vouchers.length > 0) {
       createOrderData.voucherIdList = items.vouchers.map((item) => {
-        const orderItem = {
+        const orderItem: CreateOrderVoucherIdList[number] = {
           id: String(this.uuidService.make()),
           voucherId: item.id,
+          code: null,
         };
         allOrderItemsId.push(orderItem.id);
         return orderItem;
@@ -366,9 +373,10 @@ export class OrderService {
 
     if (items.promotions && items.promotions.length > 0) {
       createOrderData.promotionIdList = items.promotions.map((item) => {
-        const orderItem = {
+        const orderItem: CreateOrderPromotionIdList[number] = {
           id: String(this.uuidService.make()),
           promotionId: item.id,
+          code: null,
         };
         allOrderItemsId.push(orderItem.id);
         return orderItem;
@@ -401,8 +409,45 @@ export class OrderService {
       );
     }
 
+    // Generated code part
+    const allUniqueGeneratedCode = await this.generateCodeForOrderItem(
+      allOrderItemsId.length,
+    );
+
+    // Add all of the generated code to the order items
+
     return { createOrderData, allOrderItemsId };
   }
+
+  private async generateCodeForOrderItem(
+    numsOfItems: number,
+  ): Promise<OrderItemDomain['code'][]> {
+    const unqiueCode = new Set<string>();
+
+    while (unqiueCode.size < numsOfItems) {
+      {
+        const needed = CalculatorService.minus(numsOfItems, unqiueCode.size);
+
+        const batch = this.randomCodeGeneratorService.generateMany(needed);
+
+        const exisitingCode =
+          await this.orderItemService.findExistingCode(batch);
+
+        const newUniqueFilteredBatch = batch.filter(
+          (code) => !exisitingCode.includes(code),
+        );
+
+        newUniqueFilteredBatch.forEach((code) => unqiueCode.add(code));
+      }
+
+      return Array.from(unqiueCode);
+    }
+  }
+
+  private assignCodeForData(
+    itemsList: CreateOrderAndTransactionInput,
+    uniqueCodeBatch: OrderItemDomain['code'][],
+  ) {}
 
   // --------------------------------------------------------------------------//
   // --------------------------------------------------------------------------//

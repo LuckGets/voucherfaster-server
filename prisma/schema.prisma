@@ -262,6 +262,7 @@ model OrderItem {
   orderId            String              @map("order_id") @db.Uuid
   order              Order               @relation(fields: [orderId], references: [id])
   qrcodeImgPath      String              @map("qrcode_img_path")
+  code               String              @unique @db.VarChar(40)
   redeemedAt         DateTime?           @map("redeemed_at") @db.Timestamptz(3)
   updatedAt          DateTime            @updatedAt() @map("updated_at") @db.Timestamptz(3)
   OrderItemVoucher   OrderItemVoucher?

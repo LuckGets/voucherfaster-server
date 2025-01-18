@@ -7,6 +7,10 @@ export abstract class OrderItemRepository {
     id: OrderItemDomain['id'],
   ): Promise<NullAble<OrderItemDomain>>;
 
+  abstract findManyExistingCode(
+    codeList: OrderItemDomain['code'][],
+  ): Promise<OrderItemDomain['code'][]>;
+
   abstract update(data: UpdateOrderItemDto): Promise<OrderItemDomain>;
 
   abstract transactionForUpdateMany(

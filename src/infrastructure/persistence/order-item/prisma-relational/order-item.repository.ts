@@ -88,6 +88,22 @@ export class OrderItemRelationPrismaORMRepository
     return OrderItemMapper.toDomain(orderItem);
   }
 
+  async findManyExistingCode(
+    codeList: OrderItemDomain['code'][],
+  ): Promise<OrderItemDomain['code'][]> {
+    const codeListObject = await this.prismaService.orderItem.findMany({
+      where: {
+        code: {
+          in: codeList,
+        },
+      },
+      select: {
+        code: true,
+      },
+    });
+    return codeListObject.map((item) => item.code);
+  }
+
   async transactionForUpdateMany(
     data: UpdateOrderItemDto[],
   ): Promise<OrderItemDomain[]> {

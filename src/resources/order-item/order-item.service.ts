@@ -3,10 +3,17 @@ import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
 import { OrderItemRepository } from 'src/infrastructure/persistence/order-item/order-item.repository';
 import { UpdateOrderItemDto } from './dto/update.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { OrderItem } from '@prisma/client';
 
 @Injectable()
 export class OrderItemService {
   constructor(private orderItemRepository: OrderItemRepository) {}
+
+  public async findExistingCode(
+    codeList: OrderItemDomain['code'][],
+  ): Promise<OrderItem['code'][]> {
+    return this.orderItemRepository.findManyExistingCode(codeList);
+  }
 
   public async updateOrderItem(
     data: UpdateOrderItemDto,
