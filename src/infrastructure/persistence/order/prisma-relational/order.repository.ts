@@ -111,7 +111,6 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         promotionIdList,
         packageIdList,
       });
-
       // Find the transaction system
       const transactionSystem =
         await this.prismaService.transactionSystem.findFirst({
@@ -142,7 +141,9 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
               ...payload,
               usableDaysAfterPurchasedId,
               accountId,
-              OrderItem: createManyOrderItemQuery,
+              OrderItem: {
+                ...createManyOrderItemQuery,
+              },
               Transaction: {
                 create: {
                   transactionSystemId: transactionSystem.id,
@@ -218,7 +219,9 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           code: item.code,
           OrderItemVoucher: {
             create: {
-              voucherId: item.voucherId,
+              voucher: {
+                connect: { id: item.voucherId },
+              },
             },
           },
         };
@@ -234,7 +237,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           code: item.code,
           OrderItemPromotion: {
             create: {
-              voucherPromotionId: item.promotionId,
+              voucherPromotion: {
+                connect: {
+                  id: item.promotionId,
+                },
+              },
             },
           },
         };
@@ -254,8 +261,16 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           code: item.code,
           OrderItemPackage: {
             create: {
-              packageId: item.packageId,
-              voucherId: item.voucherId,
+              package: {
+                connect: {
+                  id: item.packageId,
+                },
+              },
+              voucher: {
+                connect: {
+                  id: item.voucherId,
+                },
+              },
               rewardVoucher: false,
             },
           },
@@ -270,8 +285,16 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           code: item.code,
           OrderItemPackage: {
             create: {
-              packageId: item.packageId,
-              voucherId: item.voucherId,
+              package: {
+                connect: {
+                  id: item.packageId,
+                },
+              },
+              voucher: {
+                connect: {
+                  id: item.voucherId,
+                },
+              },
               rewardVoucher: true,
             },
           },
@@ -280,7 +303,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       });
     }
 
-    createManyOrderItemQuery.create = queryForCreateArr;
+    createManyOrderItemQuery.create = [...queryForCreateArr];
     return createManyOrderItemQuery;
   };
 

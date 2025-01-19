@@ -109,6 +109,7 @@ export class PackageVoucherController {
   ) {
     const packageVoucher =
       await this.packageVoucherService.getPackageVoucherById(packageId);
+    console.log(packageVoucher);
     return GetPackageVoucherByIdResponse.success(packageVoucher);
   }
 

@@ -123,7 +123,7 @@ export class GetPackageVoucherByIdResponse extends CoreApiResponse {
     statusCode?: number,
   ): GetPackageVoucherByIdResponse {
     const responseMessage =
-      message ?? `GET :: /packages${data.id} successfully.`;
+      message ?? `GET :: /packages${data?.id} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
