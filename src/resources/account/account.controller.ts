@@ -100,7 +100,12 @@ export class AccountController {
     @Body() body: UpdateAccountDto,
   ): Promise<UpdateAccountResponse> {
     if (file) {
-      body.photo = await this.mediaService.uploadFile(file, 'account-image');
+      body.photo = await this.mediaService.uploadFile(
+        file.buffer,
+        file.filename,
+        file.mimetype,
+        'account-image',
+      );
     }
     const account = await this.accountService.update(req.user.accountId, body);
     return UpdateAccountResponse.success(account);

@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 
 export class UsableDaysAfterPurchasedDomain {
   @ApiProperty({ type: String })
+  @Expose({ toClassOnly: true })
   id: string;
   @ApiProperty({ type: String })
   usableDays: number;
@@ -10,5 +12,6 @@ export class UsableDaysAfterPurchasedDomain {
   @ApiProperty({ type: Date })
   updatedAt?: Date;
   @ApiProperty({ type: Date })
+  @Expose({ toClassOnly: true })
   deletedAt?: Date;
 }

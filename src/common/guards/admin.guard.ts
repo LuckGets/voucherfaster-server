@@ -24,8 +24,9 @@ export class AdminGuard implements CanActivate {
           infer: true,
         }),
       });
+
       if (payload.role !== RoleEnum.Admin) {
-        ErrorApiResponse.unauthorizedRequest();
+        throw ErrorApiResponse.unauthorizedRequest();
       }
       request['user'] = payload;
     } catch (err) {

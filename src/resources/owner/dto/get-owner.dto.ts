@@ -25,31 +25,39 @@ export class GetAllOwnerInformationResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-      "id": "019446d1-6d43-760d-9a0b-489e626e2f8d",
-      "code": "AA-101",
-      "description": "Juicy burgers with crispy french fries.",
-      "price": 300,
-      "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-      "title": "Burger with fries",
-      "usageExpiredTime": "12/26/2025, 12:00:00 AM",
-      "status": "ACTIVE",
-      "img": [
-        {
-          "id": "019446d1-6d44-73cf-bcdf-8b1bbd6b070f",
-          "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
-        }
-      ],
-      "promotion": [
-        {
-          "id": "019446d1-a9e0-7b83-b87e-eb59cc44bb31",
-          "name": "ลดแรงต้อนรับปีใหม่",
-          "sellStartedAt": "1/1/2025, 12:00:00 AM",
-          "sellExpiredAt": "2/15/2025, 12:00:00 AM",
-          "usableAt": "1/11/2025, 12:00:00 AM",
-          "usableExpiredAt": "2/1/2025, 12:00:00 AM",
-          "promotionPrice": 199
-        }
-      ]
+        "email": "kasides12@gmail.com",
+        "colorCode": "006838",
+        "name": "The Emerald Hotel",
+        "img": [
+            {
+                "id": "01947d72-d747-7718-9cbc-373aface36fe",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/owner-img/logo.png",
+                "type": "LOGO",
+                "createdAt": "1/19/2025, 2:24:29 PM",
+                "updatedAt": "1/19/2025, 2:24:29 PM"
+            },
+            {
+                "id": "01947d72-d747-7718-9cbc-39288701b13a",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/owner-img/Seafood-on-ice-2.jpg",
+                "type": "BACKGROUND",
+                "createdAt": "1/19/2025, 2:24:29 PM",
+                "updatedAt": "1/19/2025, 2:24:29 PM"
+            },
+            {
+                "id": "01947d72-d747-7718-9cbc-3d2545b9898a",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/owner-img/pexels-jimbear-1458457.jpg",
+                "type": "BACKGROUND",
+                "createdAt": "1/19/2025, 2:24:29 PM",
+                "updatedAt": "1/19/2025, 2:24:29 PM"
+            },
+            {
+                "id": "01947d72-d747-7718-9cbc-4397737d4f26",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/owner-img/images.jpg",
+                "type": "BACKGROUND",
+                "createdAt": "1/19/2025, 2:24:29 PM",
+                "updatedAt": "1/19/2025, 2:24:29 PM"
+            }
+        ]
     }`,
   })
   public data: OwnerDomain;

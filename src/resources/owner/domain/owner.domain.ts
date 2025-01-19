@@ -7,16 +7,24 @@ export enum OwnerImgTypeEnum {
 }
 
 export class OwnerImgDomain {
+  @ApiProperty({ type: String })
   id: string;
+  @ApiProperty({ type: String })
   imgPath: string;
+  @ApiProperty({ type: () => OwnerImgTypeEnum })
   type: OwnerImgTypeEnum;
+  @ApiProperty({ type: () => Date })
+  createdAt: Date;
+  @ApiProperty({ type: () => Date })
+  updatedAt: Date;
 }
 
 export class OwnerDomain {
+  id?: string;
   @ApiProperty({ type: String })
   name: string;
   @ApiProperty({ type: String })
-  email: string;
+  emailForSendNotification: string;
   @Expose({ toClassOnly: true })
   passwordForEmail: string;
   @Expose({ toClassOnly: true })

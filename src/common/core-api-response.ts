@@ -78,8 +78,11 @@ export class ErrorApiResponse {
   }
 
   public static badRequest(message?: string) {
+    const responseMessage =
+      message ??
+      'Bad Request due to malsyntax request body or invalid request.';
     return new HttpException(
-      new ErrorApiResponse(message),
+      new ErrorApiResponse(responseMessage),
       HttpStatus.BAD_REQUEST,
     );
   }
@@ -101,7 +104,7 @@ export class ErrorApiResponse {
   }
 
   public static unauthorizedRequest(message?: string) {
-    const responseMessage = message || 'This request is unauthorized.';
+    const responseMessage = message || 'This request is not authorized.';
     return new HttpException(
       new ErrorApiResponse(responseMessage),
       HttpStatus.UNAUTHORIZED,

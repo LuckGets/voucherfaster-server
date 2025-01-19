@@ -33,7 +33,7 @@ export class MailerService {
         port: this.configService.get('mail.port', { infer: true }),
         secure: this.configService.get('mail.secure', { infer: true }),
         auth: {
-          user: ownerEmailInfo.email,
+          user: ownerEmailInfo.emailForSendNotification,
           pass: ownerEmailInfo.passwordForEmail,
         },
         debug: true,

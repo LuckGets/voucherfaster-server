@@ -215,6 +215,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         const query: Prisma.OrderItemCreateWithoutOrderInput = {
           id: item.id,
           qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          code: item.code,
           OrderItemVoucher: {
             create: {
               voucherId: item.voucherId,
@@ -230,6 +231,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         const query: Prisma.OrderItemCreateWithoutOrderInput = {
           id: item.id,
           qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          code: item.code,
           OrderItemPromotion: {
             create: {
               voucherPromotionId: item.promotionId,
@@ -249,6 +251,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         const query: Prisma.OrderItemCreateWithoutOrderInput = {
           id: item.id,
           qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          code: item.code,
           OrderItemPackage: {
             create: {
               packageId: item.packageId,
@@ -264,6 +267,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         const query: Prisma.OrderItemCreateWithoutOrderInput = {
           id: item.id,
           qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          code: item.code,
           OrderItemPackage: {
             create: {
               packageId: item.packageId,

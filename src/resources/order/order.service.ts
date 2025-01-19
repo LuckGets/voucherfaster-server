@@ -19,7 +19,6 @@ import { ErrorApiResponse } from 'src/common/core-api-response';
 import { UUIDService } from '@utils/services/uuid.service';
 import { OrderItemDomain } from './domain/order-item.domain';
 import { UsableDaysService } from '@resources/usable-days/usable-days.service';
-import { TransactionService } from '@resources/transaction/transaction.service';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ORDER_EVENT_CONSTANT, OrderCreatedEvent } from './events/order.events';
@@ -47,7 +46,7 @@ export class OrderService {
     private voucherService: VoucherService,
     private packageVoucherService: PackageVoucherService,
     private usableDaysService: UsableDaysService,
-    private transactionService: TransactionService,
+    // private transactionService: TransactionService,
     private uuidService: UUIDService,
     private randomCodeGeneratorService: RandomCodeGeneratorService,
     private eventEmitter: EventEmitter2,
@@ -63,9 +62,8 @@ export class OrderService {
     data: CreateOrderDto,
     accountId: AccountDomain['id'],
   ): Promise<OrderDomain> {
-    const { paymentToken, ...restData } = data;
     const { items, totalPrice, updateStockAmountInfo } =
-      await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(restData);
+      await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(data);
 
     const { createOrderData, allOrderItemsId } =
       await this.prepareCreateOrderData({
@@ -78,17 +76,19 @@ export class OrderService {
     const order =
       await this.orderRepository.createOrderAndTransaction(createOrderData);
 
-    await this.transactionService.processPayment({
-      token: paymentToken,
-      amount: totalPrice,
-      description: `OrderId:${order.id} | TransactionId:${order.transaction.id}`,
-      transactionId: order.transaction.id,
-    });
+    // const transaction = await this.transactionService.processPayment({
+    //   token: paymentToken,
+    //   amount: totalPrice,
+    //   description: `OrderId:${order.id} | TransactionId:${order.transaction.id}`,
+    //   transactionId: order.transaction.id,
+    // });
 
+    // if (transaction.status === 'SUCCESS') {
     this.eventEmitter.emit(
       ORDER_EVENT_CONSTANT.CREATED,
       new OrderCreatedEvent(allOrderItemsId),
     );
+    // }
     return order;
   }
 
@@ -166,80 +166,89 @@ export class OrderService {
     };
 
     const allItemsInfoPromisesArr = data.items.map(async (item) => {
-      const itemPrice = 0;
+      let itemPrice = 0;
 
-      switch (item.voucherType) {
+      switch (item.type) {
         case 'voucher': {
           const voucher = await this.checkOrderItemInfo({
             orderItem: item,
-            dbQueryFunc: this.voucherService.getVoucherById,
+            dbQueryFunc: this.voucherService.getVoucherById.bind(
+              this.voucherService,
+            ),
             typeOfOrderItem: 'Voucher',
           });
-          this.findEachItemDataAndMutateTotalSumAndData<VoucherDomain>({
-            currentSum: itemPrice,
-            itemInfoArr: allItemsInfo.vouchers,
-            updateStockAmountInfo: updateStockAmountInfo.vouchers,
-            itemInfo: voucher,
-            itemAmount: item.amount,
-            itemPrice: voucher.price,
-          });
+          itemPrice =
+            this.findEachItemDataAndMutateTotalSumAndData<VoucherDomain>({
+              currentSum: itemPrice,
+              itemInfoArr: allItemsInfo.vouchers,
+              updateStockAmountInfo: updateStockAmountInfo.vouchers,
+              itemInfo: voucher,
+              itemAmount: item.amount,
+              itemPrice: voucher.price,
+            });
           break;
         }
         case 'promotion': {
           const promotion = await this.checkOrderItemInfo({
             orderItem: item,
-            dbQueryFunc: this.voucherService.getVoucherPromotionById,
+            dbQueryFunc: this.voucherService.getVoucherPromotionById.bind(
+              this.voucherService,
+            ),
             typeOfOrderItem: 'Promotion',
           });
-          this.findEachItemDataAndMutateTotalSumAndData<VoucherPromotionDomain>(
-            {
-              currentSum: itemPrice,
-              itemInfoArr: allItemsInfo.promotions,
-              updateStockAmountInfo: updateStockAmountInfo.promotions,
-              itemInfo: promotion,
-              itemAmount: item.amount,
-              itemPrice: promotion.promotionPrice,
-            },
-          );
+          itemPrice =
+            this.findEachItemDataAndMutateTotalSumAndData<VoucherPromotionDomain>(
+              {
+                currentSum: itemPrice,
+                itemInfoArr: allItemsInfo.promotions,
+                updateStockAmountInfo: updateStockAmountInfo.promotions,
+                itemInfo: promotion,
+                itemAmount: item.amount,
+                itemPrice: promotion.promotionPrice,
+              },
+            );
           break;
         }
         case 'package': {
           const packageVoucher = await this.checkOrderItemInfo({
             orderItem: item,
-            dbQueryFunc: this.packageVoucherService.getPackageVoucherById,
+            dbQueryFunc: this.packageVoucherService.getPackageVoucherById.bind(
+              this.packageVoucherService,
+            ),
             typeOfOrderItem: 'Package voucher',
           });
-          this.findEachItemDataAndMutateTotalSumAndData<PackageVoucherDomain>({
-            currentSum: itemPrice,
-            itemInfoArr: allItemsInfo.packages,
-            updateStockAmountInfo: updateStockAmountInfo.packages,
-            itemInfo: packageVoucher,
-            itemAmount: item.amount,
-            itemPrice: packageVoucher.price,
-          });
+          itemPrice =
+            this.findEachItemDataAndMutateTotalSumAndData<PackageVoucherDomain>(
+              {
+                currentSum: itemPrice,
+                itemInfoArr: allItemsInfo.packages,
+                updateStockAmountInfo: updateStockAmountInfo.packages,
+                itemInfo: packageVoucher,
+                itemAmount: item.amount,
+                itemPrice: packageVoucher.price,
+              },
+            );
           break;
         }
         default:
-          throw new Error(`Unknown voucher type: ${item.voucherType}`);
+          throw ErrorApiResponse.conflictRequest(
+            `Unknown voucher type: ${item.type}`,
+          );
       }
 
       return itemPrice;
     });
 
-    try {
-      const allItemPricesArr = await Promise.all(allItemsInfoPromisesArr);
-      const totalPrice = allItemPricesArr.reduce(
-        (sum, price) => CalculatorService.add(sum, price),
-        0,
+    const allItemPricesArr = await Promise.all(allItemsInfoPromisesArr);
+    const totalPrice = allItemPricesArr.reduce(
+      (sum, price) => CalculatorService.add(sum, price),
+      0,
+    );
+    if (data.totalPrice !== totalPrice)
+      throw ErrorApiResponse.conflictRequest(
+        `The total price of all items: ${totalPrice} does not match with provided total price: ${data.totalPrice}`,
       );
-      if (data.totalPrice !== totalPrice)
-        throw ErrorApiResponse.conflictRequest(
-          `The total price of all items: ${totalPrice} does not match with provided total price: ${data.totalPrice}`,
-        );
-      return { items: allItemsInfo, totalPrice, updateStockAmountInfo };
-    } catch (error) {
-      throw new Error(`Error processing order items: ${error.message}`);
-    }
+    return { items: allItemsInfo, totalPrice, updateStockAmountInfo };
   }
 
   private findEachItemDataAndMutateTotalSumAndData<T extends AnyItemDomain>({
@@ -256,17 +265,31 @@ export class OrderService {
     itemInfoArr: T[];
     updateStockAmountInfo: UpdateStockAmountEachInfo[];
     itemInfo: T;
-  }) {
+  }): number {
     const totalPriceOfItmes = CalculatorService.multiply(itemPrice, itemAmount);
     currentSum = CalculatorService.add(currentSum, totalPriceOfItmes);
     itemInfoArr.push(...Array(itemAmount).fill(itemInfo));
-    updateStockAmountInfo.push({
-      id: itemInfo.id,
-      updatedStockAmount: CalculatorService.minus(
-        itemInfo.stockAmount,
-        itemAmount,
-      ),
-    });
+
+    // Finding if any items is duplicate
+    const isIndexItemExist = updateStockAmountInfo.findIndex(
+      (item) => item.id === itemInfo.id,
+    );
+    if (isIndexItemExist >= 0) {
+      const currStock =
+        updateStockAmountInfo[isIndexItemExist].updatedStockAmount;
+      updateStockAmountInfo[isIndexItemExist].updatedStockAmount =
+        CalculatorService.minus(currStock, itemAmount);
+    } else {
+      updateStockAmountInfo.push({
+        id: itemInfo.id,
+        updatedStockAmount: CalculatorService.minus(
+          itemInfo.stockAmount,
+          itemAmount,
+        ),
+      });
+    }
+
+    return currentSum;
   }
 
   /**
@@ -296,7 +319,9 @@ export class OrderService {
 
     // Throw an error if the item is not found
     if (!item) {
-      throw new Error(`${typeOfOrderItem} with ID ${orderItem.id} not found.`);
+      throw ErrorApiResponse.notFoundRequest(
+        `${typeOfOrderItem} with ID ${orderItem.id} not found.`,
+      );
     }
 
     // Check if the item is out of stock
@@ -409,14 +434,15 @@ export class OrderService {
       );
     }
 
-    // Generated code part
-    const allUniqueGeneratedCode = await this.generateCodeForOrderItem(
+    // Generate unique code for each data
+    const createOrderDataWithAssignCode = await this.assignCodeForData(
+      createOrderData,
       allOrderItemsId.length,
     );
 
     // Add all of the generated code to the order items
 
-    return { createOrderData, allOrderItemsId };
+    return { createOrderData: createOrderDataWithAssignCode, allOrderItemsId };
   }
 
   private async generateCodeForOrderItem(
@@ -444,10 +470,46 @@ export class OrderService {
     }
   }
 
-  private assignCodeForData(
-    itemsList: CreateOrderAndTransactionInput,
-    uniqueCodeBatch: OrderItemDomain['code'][],
-  ) {}
+  private async assignCodeForData(
+    createOrderData: CreateOrderAndTransactionInput,
+    numsOfItems: number,
+  ): Promise<CreateOrderAndTransactionInput> {
+    const allUniqueGeneratedCode =
+      await this.generateCodeForOrderItem(numsOfItems);
+    if (allUniqueGeneratedCode.length !== numsOfItems) {
+      throw ErrorApiResponse.internalServerError(
+        `Not enough generated code: ${allUniqueGeneratedCode.length} for ${numsOfItems} order items. Please contact developer to fix the issue.`,
+      );
+    }
+    const createOrderDataWithAssignCode: CreateOrderAndTransactionInput = {
+      ...createOrderData,
+    };
+
+    // 3) Attach these codes to each item (in the same order they were gathered)
+    let codeIndex: number = 0;
+    if (createOrderDataWithAssignCode.voucherIdList) {
+      createOrderDataWithAssignCode.voucherIdList.forEach((item) => {
+        item.code = allUniqueGeneratedCode[codeIndex++];
+      });
+    }
+
+    if (createOrderDataWithAssignCode.promotionIdList) {
+      createOrderDataWithAssignCode.promotionIdList.forEach((item) => {
+        item.code = allUniqueGeneratedCode[codeIndex++];
+      });
+    }
+
+    if (createOrderDataWithAssignCode.packageIdList) {
+      createOrderDataWithAssignCode.packageIdList.quotaList.forEach((item) => {
+        item.code = allUniqueGeneratedCode[codeIndex++];
+      });
+      createOrderDataWithAssignCode.packageIdList.rewardList.forEach((item) => {
+        item.code = allUniqueGeneratedCode[codeIndex++];
+      });
+    }
+
+    return createOrderDataWithAssignCode;
+  }
 
   // --------------------------------------------------------------------------//
   // --------------------------------------------------------------------------//

@@ -8,10 +8,15 @@ import { AccountDomain } from '@resources/account/domain/account.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
-import { IsArray, IsNumber, IsString, IsUUID } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsNumber, IsPositive, IsUUID, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsEnumValue } from '@utils/validators/IsEnum';
 
-type VoucherType = 'voucher' | 'promotion' | 'package';
+enum VoucherType {
+  Voucher = 'voucher',
+  Promotion = 'promotion',
+  Package = 'package',
+}
 
 export class CreateOrderItem {
   @ApiProperty({
@@ -28,9 +33,12 @@ export class CreateOrderItem {
     description:
       'There is three type of voucher. "voucher", "promotion", "package". Please provide only three of these enum.',
   })
-  voucherType: VoucherType;
+  @IsEnumValue(VoucherType, {
+    message: `Voucher type should be provided with only three of this options. 1).${VoucherType.Voucher} 2).${VoucherType.Promotion} 3).${VoucherType.Package}`,
+  })
+  type: VoucherType;
   @ApiProperty({
-    type: String,
+    type: Number,
     description: 'Quantity of the purchased item. Provided in string.',
   })
   @IsNumber()
@@ -39,26 +47,26 @@ export class CreateOrderItem {
 }
 
 export class CreateOrderDto {
-  id?: string;
   @ApiProperty({
     type: Number,
     description:
       'Calculated total price of all purchased item. Provided in string.',
   })
-  @IsString()
+  @IsPositive()
   totalPrice: number;
   @ApiProperty({
-    type: String,
+    type: () => [CreateOrderItem],
     description:
       'Calculated total price of all purchased item. Provided in string.',
   })
-  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItem)
   items: CreateOrderItem[];
-  @ApiProperty({
-    type: String,
-    description: 'Card token from payment gateway.',
-  })
-  paymentToken: string;
+  // @ApiProperty({
+  //   type: String,
+  //   description: 'Card token from payment gateway.',
+  // })
+  // paymentToken: string;
 }
 
 export class CreateOrderResponse extends CoreApiResponse {

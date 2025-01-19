@@ -9,6 +9,7 @@ import { MediaModule } from '@application/media/media.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
+import { UUIDService } from '@utils/services/uuid.service';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
     MediaModule,
     OwnerRelationalRepositoryModule,
   ],
-  controllers: [OwnerController, CryptoService],
-  providers: [OwnerService],
+  controllers: [OwnerController],
+  providers: [OwnerService, CryptoService, UUIDService],
+  exports: [OwnerService],
 })
 export class OwnerModule {}

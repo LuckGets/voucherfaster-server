@@ -11,7 +11,7 @@ import {
 import { OrderPath } from 'src/config/api-path';
 import { OrderService } from './order.service';
 import { AccessTokenAuthGuard } from 'src/common/guards/access-token.guard';
-import { VerifiedAccountGuard } from './guards/verified-account.guard';
+import { VerifiedAccountGuard } from '../../common/guards/verified-account.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -44,6 +44,7 @@ export class OrderController {
       body,
       req.user.accountId,
     );
+
     return CreateOrderResponse.success(createdOrder, req.user.accountId);
   }
 

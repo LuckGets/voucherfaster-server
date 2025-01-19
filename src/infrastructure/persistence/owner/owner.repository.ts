@@ -1,8 +1,16 @@
 import {
   OwnerDomain,
   OwnerImgDomain,
+  OwnerImgTypeEnum,
 } from '@resources/owner/domain/owner.domain';
 import { NullAble } from '@utils/types/common.type';
+
+export type CreateOwnerImgDataType = {
+  id: OwnerImgDomain['id'];
+  ownerId: OwnerDomain['id'];
+  imgPath: string;
+  type: OwnerImgTypeEnum;
+};
 
 export abstract class OwnerRepository {
   /**
@@ -20,7 +28,7 @@ export abstract class OwnerRepository {
    * Retrieve only owner email information
    */
   abstract findEmailInformation(): Promise<
-    Pick<OwnerDomain, 'email' | 'passwordForEmail'>
+    Pick<OwnerDomain, 'emailForSendNotification' | 'passwordForEmail'>
   >;
 
   abstract findImageById(
@@ -36,6 +44,10 @@ export abstract class OwnerRepository {
   abstract updateOwnerInformation(
     data: Partial<OwnerDomain>,
   ): Promise<OwnerDomain>;
+
+  abstract createManyOwnerImg(
+    payload: CreateOwnerImgDataType[],
+  ): Promise<number>;
 
   /**
    * @abstract

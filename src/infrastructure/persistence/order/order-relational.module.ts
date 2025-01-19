@@ -13,4 +13,4 @@ import { PrismaModule } from '../config/prisma.module';
   ],
   exports: [OrderRepository],
 })
-export class OrderRelationalRepositoryModule {}
+export class OrderRelationalPersistenceModule {}

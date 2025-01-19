@@ -12,6 +12,7 @@ export class AccountMapper {
     accountEntity: Account,
     exposedRole: NullAble<RoleEnum> = null,
   ): AccountDomain {
+    if (!accountEntity || Object.keys(accountEntity).length < 1) return null;
     const accountDomain = plainToInstance(AccountDomain, accountEntity, {
       groups: [exposedRole],
     });

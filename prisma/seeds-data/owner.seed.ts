@@ -20,8 +20,34 @@ export const ownerInfo: Prisma.OwnerCreateManyInput[] = [
 export const ownerImg: Prisma.OwnerImgCreateManyInput[] = [
   {
     id: uuidv7(),
-    imgPath: '',
+    imgPath: 'd22pq9rbvhh9yl.cloudfront.net/owner-img/logo-emerald-hotel.png',
     type: 'LOGO',
+    ownerId: ownerInfo[0].id,
+  },
+  {
+    id: uuidv7(),
+    imgPath: 'd22pq9rbvhh9yl.cloudfront.net/owner-img/Seafood-on-ice-2.jpg',
+    type: 'BACKGROUND',
+    ownerId: ownerInfo[0].id,
+  },
+  {
+    id: uuidv7(),
+    imgPath:
+      'd22pq9rbvhh9yl.cloudfront.net/owner-img/pexels-jimbear-1458457.jpg',
+    type: 'BACKGROUND',
+    ownerId: ownerInfo[0].id,
+  },
+  {
+    id: uuidv7(),
+    imgPath: 'd22pq9rbvhh9yl.cloudfront.net/owner-img/images.jpg',
+    type: 'BACKGROUND',
+    ownerId: ownerInfo[0].id,
+  },
+  {
+    id: uuidv7(),
+    imgPath:
+      'd22pq9rbvhh9yl.cloudfront.net/owner-img/465009127_566522269076587_1911697713460991320_n 2.png',
+    type: 'BACKGROUND',
     ownerId: ownerInfo[0].id,
   },
 ];

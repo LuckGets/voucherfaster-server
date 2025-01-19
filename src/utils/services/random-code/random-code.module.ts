@@ -11,6 +11,6 @@ import {
       useClass: RandomCodeGeneratorByShuffleArray,
     },
   ],
-  exports: [],
+  exports: [RandomCodeGeneratorService],
 })
 export class RandomCodeGeneratorModule {}

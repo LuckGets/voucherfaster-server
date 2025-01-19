@@ -5,11 +5,12 @@ import { UpdateOrderItemDto } from '@resources/order-item/dto/update.dto';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
 import { OrderItemMapper } from './order-item.mapper';
+import { Inject } from '@nestjs/common';
 
 export class OrderItemRelationPrismaORMRepository
   implements OrderItemRepository
 {
-  constructor(private prismaService: PrismaService) {}
+  constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
   private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AccountRepository } from '../../infrastructure/persistence/account/account.repository';
 import { AccountDomain } from './domain/account.domain';
 import { AccountProvider, AccountProviderEnum } from './types/account.type';
@@ -19,6 +19,7 @@ import { VerifyTokenPayloadType } from 'src/common/types/token-payload.type';
 export class AccountService {
   private readonly verifyEmailSecret: string;
   private readonly changePasswordSecret: string;
+  private readonly logger: Logger = new Logger(AccountService.name);
   constructor(
     private accountRepository: AccountRepository,
     private cryptoService: CryptoService,
@@ -35,6 +36,7 @@ export class AccountService {
     });
   }
   public create(createAccountDto: CreateAccountDto): Promise<AccountDomain> {
+    this.logger.log(`Create Account: ${JSON.stringify(createAccountDto)}`);
     return this.accountRepository.create(createAccountDto);
   }
   public async findById(

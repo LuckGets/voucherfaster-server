@@ -4,6 +4,7 @@ import {
   PackageImg,
 } from '@prisma/client';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
+import { ErrorApiResponse } from 'src/common/core-api-response';
 
 type AllPackageVoucherEntityInformation = PackageVoucher & {
   PackageRewardVoucher?: Partial<PackageRewardVoucher>[];
@@ -49,8 +50,11 @@ export class PackageVoucherMapper {
           id: item.id,
           voucherId: item.rewardVoucherId,
         }));
+    } else {
+      throw ErrorApiResponse.conflictRequest(
+        `Package voucher should have at least one reward voucher but package ID: ${packageVoucherEntity.id} does not have any reward voucher.`,
+      );
     }
-
     return packageVoucherDomain;
   }
 }

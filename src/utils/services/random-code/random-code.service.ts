@@ -97,7 +97,19 @@ export class RandomCodeGeneratorByShuffleArray
   }
 
   public generateMany(number: number): string[] {
-    return Array.from({ length: number }, () => this.generate());
+    const codeArr: string[] = [];
+    const codeSet: Set<string> = new Set<string>();
+    for (let i = 1; i <= number; i++) {
+      let newCode = this.generate();
+      if (!newCode || codeSet.has(newCode)) {
+        while (codeSet.has(newCode)) {
+          newCode = this.generate();
+        }
+      }
+      codeSet.add(newCode);
+      codeArr.push(newCode);
+    }
+    return codeArr;
   }
 
   private shuffleArray(array: string[]): string[] {

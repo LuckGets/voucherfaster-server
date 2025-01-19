@@ -98,7 +98,9 @@ export const OwnerPath = {
   Name: 'owners',
   Base: '/owners',
   Image: '/images',
+  ImageIdParam: 'imageId',
   UpdateImage: '/images/:imageId',
+  DeleteImage: '/images/:imageId',
 } as const;
 
 export const FRONTEND_PATH = {

@@ -1,26 +1,21 @@
 import { Inject } from '@nestjs/common';
-import { OwnerRepository } from '../owner.repository';
+import { CreateOwnerImgDataType, OwnerRepository } from '../owner.repository';
 import { PrismaService } from '../../config/prisma.service';
 import {
   OwnerDomain,
   OwnerImgDomain,
 } from '@resources/owner/domain/owner.domain';
 import { Prisma } from '@prisma/client';
-import { OwnerMapper } from './owner.mapper';
+import { OwnerImgMapper, OwnerMapper } from './owner.mapper';
 import { NullAble } from '@utils/types/common.type';
+import { ErrorApiResponse } from 'src/common/core-api-response';
 
 export class OwnerRelationalPrismaORMRepository implements OwnerRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
   private joinQuery: Prisma.OwnerFindFirstArgs = {
     include: {
-      OwnerImg: {
-        where: {
-          deletedAt: {
-            equals: null,
-          },
-        },
-      },
+      OwnerImg: true,
     },
   };
 
@@ -33,16 +28,26 @@ export class OwnerRelationalPrismaORMRepository implements OwnerRepository {
   }
 
   async findEmailInformation(): Promise<
-    Pick<OwnerDomain, 'email' | 'passwordForEmail'>
+    Pick<OwnerDomain, 'emailForSendNotification' | 'passwordForEmail'>
   > {
     const emailInfo = await this.prismaService.owner.findFirst();
-    return OwnerMapper.toDomain(emailInfo);
+    return OwnerMapper.toDomain(emailInfo, { passwordForEmail: true });
   }
 
+  /**
+   * @param imageId id of the image that you want to find
+   * @returns `OwnerImgDomain` if found or `null` if not found
+   *
+   * Find owner image by id.
+   * If not found, return `null`.
+   */
   async findImageById(
     imageId: OwnerImgDomain['id'],
   ): Promise<NullAble<OwnerImgDomain>> {
-    return this.prismaService.ownerImg.findUnique({ where: { id: imageId } });
+    const ownerImg = await this.prismaService.ownerImg.findUnique({
+      where: { id: imageId },
+    });
+    return OwnerImgMapper.toDomain(ownerImg);
   }
 
   async updateOwnerInformation(
@@ -56,6 +61,25 @@ export class OwnerRelationalPrismaORMRepository implements OwnerRepository {
     return OwnerMapper.toDomain(updatedInfo);
   }
 
+  // -------------------------------------------------------------------- //
+  // ------------------------- OWNER IMAGE PART ------------------------- //
+  // -------------------------------------------------------------------- //
+
+  async createManyOwnerImg(payload: CreateOwnerImgDataType[]): Promise<number> {
+    try {
+      /******  b896bd5d-4a03-4e90-8b0a-e26ce9676100  *******/
+      return this.prismaService.$transaction(async (tx) => {
+        const { count } = await tx.ownerImg.createMany({
+          data: payload,
+        });
+        return count;
+      });
+    } catch (err) {
+      console.error(err);
+      throw ErrorApiResponse.internalServerError(err);
+    }
+  }
+
   async updateOwnerImgById(
     id: OwnerImgDomain['id'],
     newImgPath: OwnerImgDomain['imgPath'],
@@ -64,13 +88,11 @@ export class OwnerRelationalPrismaORMRepository implements OwnerRepository {
       data: { imgPath: newImgPath },
       where: { id },
     });
-    return updatedImg;
+    return OwnerImgMapper.toDomain(updatedImg);
   }
 
   async deleteOwnerImgById(id: OwnerImgDomain['id']): Promise<void> {
-    const currentTime = new Date(Date.now());
-    await this.prismaService.ownerImg.update({
-      data: { deletedAt: currentTime },
+    await this.prismaService.ownerImg.delete({
       where: { id },
     });
     return;

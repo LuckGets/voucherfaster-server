@@ -11,16 +11,14 @@ export class UsableDaysRelationalPrismaORMRepository
   private whereQuery: Prisma.UsableDaysAfterPurchasedFindFirstArgs = {
     where: {
       deletedAt: {
-        not: {
-          equals: null,
-        },
+        equals: null,
       },
     },
   };
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
-  findCurrent(): Promise<UsableDaysAfterPurchasedDomain> {
-    return this.prismaService.usableDaysAfterPurchased.findFirst({
+  findManyAvailable(): Promise<UsableDaysAfterPurchasedDomain[]> {
+    return this.prismaService.usableDaysAfterPurchased.findMany({
       ...this.whereQuery,
     });
   }

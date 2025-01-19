@@ -11,11 +11,15 @@ import {
 @ValidatorConstraint({ name: 'IsEnumValue', async: false })
 export class IsEnumValueValidator implements ValidatorConstraintInterface {
   validate(value: any, args?: ValidationArguments): Promise<boolean> | boolean {
-    return !!args.constraints[value];
+    const [enumVar]: object[] = args.constraints;
+    for (const key in enumVar) {
+      if (enumVar[key] === value) return true;
+    }
+    return false;
   }
 
   defaultMessage(args?: ValidationArguments): string {
-    return `Value provided should be one of the ${args.constraints} value`;
+    return `Value provided should be one of the ${args.constraints.join(', ')} value`;
   }
 }
 

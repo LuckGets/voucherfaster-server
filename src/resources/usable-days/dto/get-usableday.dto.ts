@@ -1,22 +1,12 @@
-import { HttpStatus } from '@nestjs/common';
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsNumber } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
-import { AuthPath, UsableDaysPath, VoucherPath } from 'src/config/api-path';
-import { HATEOSLink } from 'src/common/hateos.type';
 import { UsableDaysAfterPurchasedDomain } from '../domain/usable-day.domain';
+import { HATEOSLink } from 'src/common/hateos.type';
+import { ApiProperty } from '@nestjs/swagger';
+import { AuthPath, UsableDaysPath } from 'src/config/api-path';
+import { HttpStatus } from '@nestjs/common';
 import { HTTPMethod } from 'src/common/http.type';
 
-export class UpdateUsableDaysAfterPurchasedDayDto {
-  id?: string;
-  @ApiProperty({ type: Number })
-  @Transform(({ value }) => Number(value))
-  @IsNumber()
-  usableDays: number;
-}
-
-export class UpdateUsableDaysAfterPurchasedResponse extends CoreApiResponse {
+export class GetUsableDaysAfterPurchasedResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -24,7 +14,7 @@ export class UpdateUsableDaysAfterPurchasedResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'PATCH:: /usabledays successfully.',
+    example: 'GET /usabledays successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -49,13 +39,13 @@ export class UpdateUsableDaysAfterPurchasedResponse extends CoreApiResponse {
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): UpdateUsableDaysAfterPurchasedResponse {
+  ): GetUsableDaysAfterPurchasedResponse {
     const responseMessage =
-      message ?? `${HTTPMethod.Patch}:: ${UsableDaysPath.Base} successfully.`;
+      message ?? `${HTTPMethod.Get} ${UsableDaysPath.Base} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    return new UpdateUsableDaysAfterPurchasedResponse(
+    return new GetUsableDaysAfterPurchasedResponse(
       responseCode,
       responseMessage,
       responseLink,

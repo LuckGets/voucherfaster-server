@@ -4,14 +4,16 @@ import * as Omise from 'omise';
 import { AllConfigType, AllConfigTypeEnum } from 'src/config/all-config.type';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 
 export class OmisePaymentService implements PaymentService {
   private omise: Omise.IOmise;
   private currency: string = 'THB';
   private amountMultiplierToSmallestCurrency: number = 100;
   private logger: Logger = new Logger(OmisePaymentService.name);
-  constructor(private configService: ConfigService<AllConfigType>) {
+  constructor(
+    @Inject(ConfigService) private configService: ConfigService<AllConfigType>,
+  ) {
     this.omise = Omise({
       secretKey: this.configService.getOrThrow(
         `${AllConfigTypeEnum.Payment}.paymentSecretKey`,

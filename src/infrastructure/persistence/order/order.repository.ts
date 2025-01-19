@@ -47,7 +47,7 @@ export type UpdateStockAmountEachInfo = {
 };
 
 export type CreateOrderAndTransactionInput = {
-  payload: Omit<CreateOrderDto, 'paymentToken' | 'items'>;
+  payload: { id: OrderDomain['id']; totalPrice: number };
   accountId: AccountDomain['id'];
   usableDaysAfterPurchasedId: UsableDaysAfterPurchasedDomain['id'];
   updateStockAmountInfo: UpdateStockAmountInfo;

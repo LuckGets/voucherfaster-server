@@ -8,8 +8,8 @@ import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 export function AtLeastOneFilePipe(requiredFields: string[]): PipeTransform {
   return {
     transform(files: any) {
-      const hasAtLeastOne = requiredFields.some(
-        (field) => files[field] && files[field].length > 0,
+      const hasAtLeastOne = requiredFields?.some(
+        (field) => files && files[field] && files[field].length > 0,
       );
 
       if (!hasAtLeastOne) {

@@ -7,6 +7,7 @@ import { IsFutureDateValidator } from './IsFutureDate';
 import { IsInstanceOfClassValidator } from './IsInstaceOfClass';
 import { IsDateGreaterThanValidator } from './IsDateGreaterThan';
 import { IsArrayOfUUIDValidator } from './IsArrayOfUUID';
+import { IsArrayOfClassValidator } from './IsArrayOfClass';
 
 @Module({
   providers: [
@@ -18,6 +19,7 @@ import { IsArrayOfUUIDValidator } from './IsArrayOfUUID';
     IsInstanceOfClassValidator,
     IsDateGreaterThanValidator,
     IsArrayOfUUIDValidator,
+    IsArrayOfClassValidator,
   ],
   exports: [
     IsValidIdentifierValidator,
@@ -28,6 +30,7 @@ import { IsArrayOfUUIDValidator } from './IsArrayOfUUID';
     IsInstanceOfClassValidator,
     IsDateGreaterThanValidator,
     IsArrayOfUUIDValidator,
+    IsArrayOfClassValidator,
   ],
 })
 export class CustomValidatorModule {}

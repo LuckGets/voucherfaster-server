@@ -8,6 +8,8 @@ import { MediaModule } from '@application/media/media.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
+import { PackageVoucherRepository } from 'src/infrastructure/persistence/package/package.repository';
+import { PackageImgRepository } from 'src/infrastructure/persistence/package/package-img.repository';
 
 @Module({
   imports: [

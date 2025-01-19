@@ -1,24 +1,22 @@
 import { HttpStatus } from '@nestjs/common';
+import { ApiProperty } from '@nestjs/swagger';
+import { OwnerImgDomain } from '@resources/owner/domain/owner.domain';
+import { IsUUID } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { HTTPMethod } from 'src/common/http.type';
 import { AuthPath, OwnerPath } from 'src/config/api-path';
-import { OwnerDomain, OwnerImgDomain } from '../domain/owner.domain';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
 
-export class UpdateOwnerInformationDto {
+export const UPDATE_IMG_FILE_FIELD = {
+  IMAGE: 'image',
+} as const;
+export class UpdateOwnerImgDto {
   @ApiProperty({ type: String })
-  @IsString()
-  @IsOptional()
-  name?: string;
-  @ApiProperty({ type: String })
-  @IsOptional()
-  @IsString()
-  colorCode?: string;
+  @IsUUID(7)
+  imageId?: string;
 }
 
-export class UpdateOwnerInformationResponse extends CoreApiResponse {
+export class UpdateOwnerImgResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -26,7 +24,7 @@ export class UpdateOwnerInformationResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'PATCH:: /owners successfully.',
+    example: 'PATCH:: /owners/images ID:1 successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -37,26 +35,26 @@ export class UpdateOwnerInformationResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "data": {
-        "emailForSendNotification": "kasides12@gmail.com",
-        "colorCode": "006838",
-        "name": "Sausage"
+      "id": "019446d1-6d43-760d-9a0b-489e626e2f8d",
+      "imgPath": "facebook.com",
+      "type": "LOGO",
     }`,
   })
-  public data: OwnerDomain;
+  public data: OwnerImgDomain;
 
   public static success(
-    data: OwnerDomain,
+    data: OwnerImgDomain,
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): UpdateOwnerInformationResponse {
+  ): UpdateOwnerImgResponse {
     const responseMessage =
-      message ?? `${HTTPMethod.Patch}:: ${OwnerPath.Base} successful.`;
+      message ??
+      `${HTTPMethod.Patch}:: ${OwnerPath.Base}/${OwnerPath.Image}/${data.id} successful.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    return new UpdateOwnerInformationResponse(
+    return new UpdateOwnerImgResponse(
       responseCode,
       responseMessage,
       responseLink,
