@@ -5,7 +5,13 @@ import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsString, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsNotEmpty,
+  IsPositive,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
@@ -15,18 +21,21 @@ export class CreateVoucherPromotionDto {
   @ApiProperty({ type: String })
   voucherId: VoucherDomain['id'];
   @IsString()
+  @IsNotEmpty()
   @ApiProperty({ type: String })
   name: string;
   @ApiProperty({ type: Number })
-  @IsNumber()
+  @IsPositive()
+  @IsNotEmpty()
   @Transform(({ value }) => Number(value))
   promotionPrice: number;
-  @IsNumber()
-  @Transform(({ value }) => Number(value))
   @ApiProperty({ type: Number })
+  @IsPositive()
+  @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
   stockAmount: number;
   @ApiProperty({ type: Date })
-  @IsFutureDate()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   sellStartedAt: Date;
@@ -36,7 +45,7 @@ export class CreateVoucherPromotionDto {
   @ApiProperty({ type: Date })
   sellExpiredAt: Date;
   @ApiProperty({ type: Date })
-  @IsFutureDate()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usableAt: Date;

@@ -12,8 +12,8 @@ export class DeleteOwnerImgByIdResponse extends CoreApiResponse {
   })
   public HTTPStatusCode: number;
   @ApiProperty({
+    example: `${HTTPMethod.Delete} /owners/images/123 successfully.`,
     type: Number,
-    example: 'GET /usabledays successfully.',
   })
   public message: string;
   @ApiProperty({

@@ -1,7 +1,8 @@
-import { OrderItemDomain } from '../domain/order-item.domain';
+import { OrderItemDomain } from '../../order/domain/order-item.domain';
 
 export const ORDER_EVENT_CONSTANT = {
   CREATED: 'ORDER_CREATED',
+  SUCCESS: 'ORDER_SUCCESS',
 } as const;
 
 export class OrderCreatedEvent {

@@ -8,7 +8,7 @@ import { PackageVoucherModule } from '@resources/package/package.module';
 import { UUIDService } from '@utils/services/uuid.service';
 import { UsableDaysModule } from '@resources/usable-days/usable-days.module';
 import { CalculatorService } from '@utils/services/calculator.service';
-import { OrderEventsModule } from './events/order-events.module';
+import { OrderEventsModule } from '../transaction/events/order-events.module';
 import { RandomCodeGeneratorModule } from '@utils/services/random-code/random-code.module';
 import { OrderItemModule } from '@resources/order-item/order-item.module';
 import { VoucherRelationalPersistenceModule } from 'src/infrastructure/persistence/voucher/voucher-relational.module';

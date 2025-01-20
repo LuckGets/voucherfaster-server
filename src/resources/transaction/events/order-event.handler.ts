@@ -7,11 +7,10 @@ import { FRONTEND_PATH } from 'src/config/api-path';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { UpdateOrderItemDto } from '@resources/order-item/dto/update.dto';
-import { OrderItemDomain } from '../domain/order-item.domain';
 import { OrderItemService } from '@resources/order-item/order-item.service';
 
 @Injectable()
-export class OrderCreatedHandler {
+export class OrderEventHandler {
   private frontEndDomain: string;
   constructor(
     private qrCodeService: QRCodeService,
@@ -24,14 +23,14 @@ export class OrderCreatedHandler {
       infer: true,
     });
   }
-  private logger: Logger = new Logger(OrderCreatedHandler.name);
+  private logger: Logger = new Logger(OrderEventHandler.name);
   /*************  ✨ Codeium Command ⭐  *************/
   /**
    * Handle the ORDER_EVENT_CONSTANT.CREATED event.
    * This event is emitted when the OrderService create a new order.
    * @param event - The OrderCreatedEvent payload.
    */
-  @OnEvent(ORDER_EVENT_CONSTANT.CREATED, { nextTick: true })
+  @OnEvent(ORDER_EVENT_CONSTANT.SUCCESS, { nextTick: true })
   async handle(event: OrderCreatedEvent) {
     // this.logger.log(
     //   `OrderCreatedEvent: Processing ${OrderCreatedEvent.length} order items.`,
@@ -57,12 +56,13 @@ export class OrderCreatedHandler {
       const { buffer, mimetype } =
         await this.qrCodeService.generateQRCodeAsBuffer(urlData);
 
-      const qrcodeImagePath = await this.mediaService.uploadFile(
-        buffer,
-        `order-item-ID:${orderItem}`,
-        mimetype,
-        s3BucketDirectory.qrcodeImg,
-      );
+      const qrcodeImagePath = await this.mediaService.uploadFile({
+        file: buffer,
+        fileName: `order-item-ID:${orderItem}`,
+        filePath: '',
+        mimeType: mimetype,
+        bucketDir: s3BucketDirectory.qrcodeImg,
+      });
       console.log(
         `Upload QRCode to S3 for OrderItem ID: ${orderItem}. \nIMG url: ${qrcodeImagePath}`,
       );

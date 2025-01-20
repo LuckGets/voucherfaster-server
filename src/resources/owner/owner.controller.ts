@@ -136,18 +136,18 @@ export class OwnerController {
     ]),
     UnlinkFileInterceptor,
   )
-  @UsePipes(AtLeastOneFilePipe([UPDATE_IMG_FILE_FIELD.IMAGE]))
   @Patch(OwnerPath.UpdateImage)
   async updateOwnerImg(
     @UploadedFiles()
     files: {
       [UPDATE_IMG_FILE_FIELD.IMAGE]?: Express.Multer.File[];
     },
+    @Body()
     body: UpdateOwnerImgDto,
   ): Promise<UpdateOwnerImgResponse> {
     const file =
       files[UPDATE_IMG_FILE_FIELD.IMAGE] &&
-      files[UPDATE_IMG_FILE_FIELD.IMAGE].length > 0;
+      files[UPDATE_IMG_FILE_FIELD.IMAGE].length === 1;
 
     if (file && !body.imageId)
       throw ErrorApiResponse.badRequest(
@@ -163,7 +163,7 @@ export class OwnerController {
 
   @ApiParam({ name: OwnerPath.ImageIdParam })
   @ApiBearerAuth()
-  @ApiOkResponse({ type: () => UpdateOwnerInformationResponse })
+  @ApiOkResponse({ type: () => DeleteOwnerImgByIdResponse })
   @UseGuards(AdminGuard)
   @Delete(OwnerPath.DeleteImage)
   async deleteOwnerImgById(

@@ -35,7 +35,10 @@ export class VoucherDomain {
   @ApiProperty({ type: () => Date })
   usageExpiredTime: Date;
   @ApiProperty({ type: () => Object })
-  termAndCond?: { th: string[]; en: string[] };
+  termAndCond?: {
+    th: VoucherTermAndCondDomain[];
+    en: VoucherTermAndCondDomain[];
+  };
   @ApiProperty({ type: () => Date })
   saleExpiredTime: Date;
   @ApiProperty({
@@ -103,6 +106,11 @@ export class VoucherTagDomain {
   })
   @ApiProperty({ type: Date, nullable: true })
   deletedAt?: Date;
+}
+
+export enum TermAndCondLangauage {
+  EN = 'EN',
+  TH = 'TH',
 }
 
 /**

@@ -1,5 +1,6 @@
 import {
   registerDecorator,
+  ValidationArguments,
   ValidationOptions,
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -16,8 +17,8 @@ export class IsFutureDateValidator implements ValidatorConstraintInterface {
     return value >= new Date(); // Check if the date is in the future
   }
 
-  defaultMessage(): string {
-    return 'Date must not be less than the present and be in the future';
+  defaultMessage(args: ValidationArguments): string {
+    return `${args.property} must not be less than the present and be in the future`;
   }
 }
 

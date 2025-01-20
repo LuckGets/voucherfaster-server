@@ -13,10 +13,12 @@ export class NotPresentWithValidator implements ValidatorConstraintInterface {
   validate(value: any, args?: ValidationArguments): boolean {
     const [allPropertieseToCheck] = args.constraints as [string[]];
     if (value) {
-      allPropertieseToCheck.forEach((property: string) => {
+      for (const property of allPropertieseToCheck) {
         const otherValue = (args.object as Record<string, any>)[property];
-        if (otherValue) return false;
-      });
+        if (otherValue) {
+          return false;
+        }
+      }
     }
     return true;
   }

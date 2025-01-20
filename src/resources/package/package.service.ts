@@ -74,12 +74,13 @@ export class PackageVoucherService {
     if (allImgBuffer.length < 1) throw ErrorApiResponse.conflictRequest();
     const allPackageImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
-        this.mediaService.uploadFile(
-          item.buffer,
-          item.filename,
-          item.mimetype,
-          s3BucketDirectory.packageImg,
-        ),
+        this.mediaService.uploadFile({
+          file: item.buffer,
+          fileName: item.filename,
+          filePath: item.path,
+          mimeType: item.mimetype,
+          bucketDir: s3BucketDirectory.packageImg,
+        }),
       ),
     );
 
@@ -207,12 +208,13 @@ export class PackageVoucherService {
 
     const uploadedImgPath = await Promise.all(
       files.map((item) =>
-        this.mediaService.uploadFile(
-          item.buffer,
-          item.filename,
-          item.mimetype,
-          s3BucketDirectory.packageImg,
-        ),
+        this.mediaService.uploadFile({
+          file: item.buffer,
+          fileName: item.filename,
+          mimeType: item.mimetype,
+          filePath: item.path,
+          bucketDir: s3BucketDirectory.packageImg,
+        }),
       ),
     );
 
@@ -237,12 +239,13 @@ export class PackageVoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `Package ID: ${id} could not be found.`,
       );
-    const uploadedImgPath = await this.mediaService.uploadFile(
-      file.buffer,
-      file.filename,
-      file.mimetype,
-      s3BucketDirectory.packageImg,
-    );
+    const uploadedImgPath = await this.mediaService.uploadFile({
+      file: file.buffer,
+      fileName: file.filename,
+      mimeType: file.mimetype,
+      filePath: file.path,
+      bucketDir: s3BucketDirectory.packageImg,
+    });
     return this.packageImgRepository.update(id, uploadedImgPath);
   }
 

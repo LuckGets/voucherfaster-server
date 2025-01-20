@@ -14,6 +14,7 @@ import { GenerateAccountResponseHATEOASLink } from 'src/common/HATEOASLinks';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { AccountDomain } from '../domain/account.domain';
+import { IsEmptyValue } from '@utils/validators/IsEmptyValue';
 
 type UpdateAccountResponseType = AccountDomain;
 
@@ -29,21 +30,15 @@ export class UpdateAccountDto {
   @IsOptional()
   phone?: NullAble<string>;
   @ApiProperty({ type: String, required: false })
-  @IsPasswordValid()
-  @IsOptional()
-  password?: NullAble<string>;
-  @ApiProperty({ type: String, required: false })
   @IsString()
   @IsOptional()
   fullname?: NullAble<string>;
-  @ApiProperty({ type: () => Date, required: false })
-  @IsEmail()
-  @IsOptional()
+  @IsEmptyValue()
+  password?: NullAble<string>;
+  @IsEmptyValue()
+  photo?: NullAble<string>;
+  @IsEmptyValue()
   verifiedAt?: NullAble<Date>;
-  @IsUrl()
-  @IsString()
-  @IsOptional()
-  photo?: string;
 }
 
 export class UpdateAccountResponse extends CoreApiResponse {
@@ -64,7 +59,18 @@ export class UpdateAccountResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: `{
+        "id": "019483f3-2100-750b-b39d-27e1c23d9933",
+        "fullname": "JAJAJA JAJA",
+        "phone": "0811234567",
+        "email": "doggo@mail.com",
+        "photo": "d22pq9rbvhh9yl.cloudfront.net/account-image/1737382129208_rocks.jpg",
+        "accountProvider": "LOCAL",
+        "createdAt": "1/20/2025, 8:42:16 PM",
+        "updatedAt": "1/20/2025, 9:17:27 PM",
+        "deletedAt": null,
+        "verifiedAt": null
+    }`,
   })
   public data: UpdateAccountResponseType;
 

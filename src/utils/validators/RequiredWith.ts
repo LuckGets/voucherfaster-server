@@ -53,6 +53,7 @@ export class RequiredWithValidator implements ValidatorConstraintInterface {
 
   defaultMessage(args?: ValidationArguments): string {
     const [propertyToCheck] = args.constraints;
+    console.log(propertyToCheck);
     return `The field "${args.property}" is required because "${propertyToCheck}" is provided.`;
   }
 }

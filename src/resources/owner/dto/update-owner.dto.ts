@@ -37,7 +37,7 @@ export class UpdateOwnerInformationResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "data": {
+        "id": "0194834a-ff5f-77de-b7cb-fc07ffe3b131",
         "emailForSendNotification": "kasides12@gmail.com",
         "colorCode": "006838",
         "name": "Sausage"

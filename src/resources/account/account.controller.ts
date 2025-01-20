@@ -13,7 +13,7 @@ import { AccountPath } from '../../config/api-path';
 import { AccountService } from './account.service';
 import { AccessTokenAuthGuard } from 'src/common/guards/access-token.guard';
 import { RoleEnum } from './types/account.type';
-import { GetMeResponseDto } from './dto/get-me-response.dto';
+import { GetMeResponse } from './dto/get-me-response.dto';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -40,13 +40,10 @@ import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interc
 @ApiTags(AccountPath.Name)
 @Controller({ path: AccountPath.Base, version: '1' })
 export class AccountController {
-  constructor(
-    private accountService: AccountService,
-    private mediaService: MediaService,
-  ) {}
+  constructor(private accountService: AccountService) {}
 
   @ApiOkResponse({
-    type: () => GetMeResponseDto,
+    type: () => GetMeResponse,
   })
   @ApiBearerAuth()
   @SerializeOptions({
@@ -54,12 +51,17 @@ export class AccountController {
   })
   @UseGuards(AccessTokenAuthGuard)
   @Get(AccountPath.Me)
-  async me(@Req() req: HttpRequestWithUser): Promise<GetMeResponseDto> {
+  async me(@Req() req: HttpRequestWithUser): Promise<GetMeResponse> {
     const account = await this.accountService.findById(req.user.accountId);
-    return GetMeResponseDto.success(account);
+    return GetMeResponse.success(account);
   }
 
-  @ApiParam({ name: 'account ID' })
+  @ApiParam({
+    name: 'account ID',
+    required: false,
+    description:
+      'Using parameter as a descriptive name for URL path. Admin can update any account.',
+  })
   @ApiBody({
     description: 'Update the account with expected field',
     schema: {
@@ -68,17 +70,26 @@ export class AccountController {
         accountImage: {
           type: 'string',
           format: 'binary',
-          description: 'Main image for the voucher',
+          description: 'Account image.',
         },
         email: {
           type: 'string',
           nullable: true,
-          description: 'email',
+          description:
+            'If provided email, the account will need to be reverify as email have been change and will cannot make any request to an endpoint that required verified account.',
+          example: 'doggo@mail.com',
         },
         fullname: {
           type: 'string',
           description: 'fullname',
           nullable: true,
+          example: 'John Doggo',
+        },
+        phone: {
+          type: 'string',
+          description: 'phone number',
+          nullable: true,
+          example: '0812345678',
         },
       },
     },
@@ -99,15 +110,11 @@ export class AccountController {
     @UploadedFile() file: Express.Multer.File,
     @Body() body: UpdateAccountDto,
   ): Promise<UpdateAccountResponse> {
-    if (file) {
-      body.photo = await this.mediaService.uploadFile(
-        file.buffer,
-        file.filename,
-        file.mimetype,
-        'account-image',
-      );
-    }
-    const account = await this.accountService.update(req.user.accountId, body);
+    const account = await this.accountService.update(
+      req.user.accountId,
+      body,
+      file,
+    );
     return UpdateAccountResponse.success(account);
   }
 
@@ -124,12 +131,9 @@ export class AccountController {
   async changePassword(
     @Req() req: HttpRequestWithUser,
     @Body() body: ChangePasswordDto,
-  ) {
+  ): Promise<ChangePasswordResponse> {
     const account = await this.accountService.changePassword(req.user, body);
-    return ChangePasswordResponse.success({
-      id: account.id,
-      verifiedAt: account.verifiedAt,
-    });
+    return ChangePasswordResponse.success(account);
   }
 
   @ApiBody({
@@ -195,7 +199,7 @@ export class AccountController {
     );
     return VerifyEmailResponse.success(
       account,
-      'Resend Email verification successful',
+      `Resend verification at email: ${account.email} successful`,
     );
   }
 }

@@ -8,9 +8,11 @@ import { IsInstanceOfClassValidator } from './IsInstaceOfClass';
 import { IsDateGreaterThanValidator } from './IsDateGreaterThan';
 import { IsArrayOfUUIDValidator } from './IsArrayOfUUID';
 import { IsArrayOfClassValidator } from './IsArrayOfClass';
+import { IsEmptyValueValidator } from './IsEmptyValue';
 
 @Module({
   providers: [
+    IsEmptyValueValidator,
     IsValidIdentifierValidator,
     MatcherValidator,
     NotMatchValidator,
@@ -22,6 +24,7 @@ import { IsArrayOfClassValidator } from './IsArrayOfClass';
     IsArrayOfClassValidator,
   ],
   exports: [
+    IsEmptyValueValidator,
     IsValidIdentifierValidator,
     MatcherValidator,
     NotMatchValidator,

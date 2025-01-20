@@ -7,7 +7,7 @@ import { UUIDTypes } from 'uuid';
 import { AccountDomain } from '../domain/account.domain';
 import { GenerateAccountResponseHATEOASLink } from 'src/common/HATEOASLinks';
 
-export class GetMeResponseDto extends CoreApiResponse {
+export class GetMeResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -24,8 +24,18 @@ export class GetMeResponseDto extends CoreApiResponse {
   })
   public links: HATEOSLink;
   @ApiProperty({
-    type: () => GetMeResponseDto,
-    example: 'sdfsdf',
+    type: Object,
+    example: `{
+        "id": "019483f3-2100-750b-b39d-27e1c23d9933",
+        "fullname": "JAJAJA JAJA",
+        "phone": "0812345612",
+        "email": "abcdef@mail.com",
+        "photo": null,
+        "accountProvider": "LOCAL",
+        "createdAt": "1/20/2025, 8:42:16 PM",
+        "updatedAt": "1/20/2025, 8:42:16 PM",
+        "deletedAt": null
+    }`,
   })
   public data: AccountDomain;
 
@@ -34,7 +44,7 @@ export class GetMeResponseDto extends CoreApiResponse {
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): GetMeResponseDto {
+  ): GetMeResponse {
     const responseMessage = message ?? 'Get my information Successfully';
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink =
@@ -43,11 +53,6 @@ export class GetMeResponseDto extends CoreApiResponse {
         data.id as UUIDTypes,
         !!data.verifiedAt,
       );
-    return new GetMeResponseDto(
-      responseCode,
-      responseMessage,
-      responseLink,
-      data,
-    );
+    return new GetMeResponse(responseCode, responseMessage, responseLink, data);
   }
 }

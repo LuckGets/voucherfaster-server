@@ -3,6 +3,7 @@ import {
   VoucherPromotionDomain,
 } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
+  TermAndCondLangauage,
   VoucherCategoryDomain,
   VoucherDomain,
   VoucherDomainCreateInput,
@@ -12,6 +13,7 @@ import {
   VoucherStatusEnum,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
+  VoucherTermAndCondDomain,
 } from '@resources/voucher/domain/voucher.domain';
 import { CreateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/create-promotion.dto';
 import { UpdateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/update-promotion.dto';
@@ -112,6 +114,11 @@ export abstract class VoucherRepository {
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
   }): Promise<VoucherDomain[]>;
+
+  abstract findManyTermAndConditionWithIds(
+    termAndCondIds: VoucherTermAndCondDomain['id'][],
+    lang: TermAndCondLangauage,
+  ): Promise<VoucherTermAndCondDomain[]>;
 
   abstract update(data: UpdateVoucherDto): Promise<VoucherDomain>;
 }

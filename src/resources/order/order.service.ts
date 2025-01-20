@@ -21,7 +21,10 @@ import { OrderItemDomain } from './domain/order-item.domain';
 import { UsableDaysService } from '@resources/usable-days/usable-days.service';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ORDER_EVENT_CONSTANT, OrderCreatedEvent } from './events/order.events';
+import {
+  ORDER_EVENT_CONSTANT,
+  OrderCreatedEvent,
+} from '../transaction/events/order.events';
 import { NullAble } from '@utils/types/common.type';
 import { isUUID } from 'class-validator';
 import { RandomCodeGeneratorService } from '@utils/services/random-code/random-code.service';
@@ -79,13 +82,6 @@ export class OrderService {
 
     const order =
       await this.orderRepository.createOrderAndTransaction(createOrderData);
-
-    // if (transaction.status === 'SUCCESS') {
-    // this.eventEmitter.emit(
-    //   ORDER_EVENT_CONSTANT.CREATED,
-    //   new OrderCreatedEvent(allOrderItemsId),
-    // );
-    // }
     return order;
   }
 

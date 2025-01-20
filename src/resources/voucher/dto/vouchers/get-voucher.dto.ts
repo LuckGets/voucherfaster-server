@@ -104,7 +104,24 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: `[
+        {
+            "id": "0194834a-ff4e-7244-be8c-9a9b6964b3fa",
+            "stockAmount": 10000,
+            "description": "Grilled duck served with special XO sauce",
+            "price": 600,
+            "saleExpiredTime": "12/26/2025, 12:00:00 AM",
+            "title": "Hong Kong grilled duck",
+            "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+            "status": "ACTIVE",
+            "img": [
+                {
+                    "id": "0194834a-ff4e-7244-be8c-c50ef50d022c",
+                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/Roast-Cantonese-Duck-2022.jpg"
+                }
+            ]
+        }
+    ]`,
   })
   public data: NullAble<VoucherDomain[]>;
 
@@ -145,7 +162,49 @@ export class GetVoucherByIdResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: `{
+        "id": "0194834a-ff4e-7244-be8c-877f5b7deb7d",
+        "stockAmount": 10000,
+        "description": "Juicy burgers with crispy french fries.",
+        "price": 300,
+        "saleExpiredTime": "12/26/2025, 12:00:00 AM",
+        "title": "Burger with fries",
+        "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+        "status": "ACTIVE",
+        "img": [
+            {
+                "id": "0194834a-ff4e-7244-be8c-b1521de8c8f0",
+                "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp",
+                "mainImg": true
+            }
+        ],
+        "termAndCond": {
+            "th": [
+                {
+                    "id": "0194834a-ff4e-7244-be8d-17e8a96a7081",
+                    "description": "คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น"
+                }
+            ],
+            "en": [
+                {
+                    "id": "0194834a-ff4e-7244-be8c-e83c51aec35d",
+                    "description": "This voucher can only be used on Saturday."
+                }
+            ]
+        },
+        "promotion": [
+            {
+                "id": "0194834a-ff4e-7244-be8c-de61a53766fc",
+                "name": "ลดแรงต้อนรับปีใหม่",
+                "stockAmount": 150,
+                "sellStartedAt": "1/1/2025, 12:00:00 AM",
+                "sellExpiredAt": "2/15/2025, 12:00:00 AM",
+                "usableAt": "1/11/2025, 12:00:00 AM",
+                "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+                "promotionPrice": 199
+            }
+        ]
+    }`,
   })
   public data: NullAble<VoucherDomain>;
 

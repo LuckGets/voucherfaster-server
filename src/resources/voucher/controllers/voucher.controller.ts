@@ -31,6 +31,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -91,6 +92,7 @@ export class VoucherController {
   @ApiBody({
     ...createVoucherFormDataDocumentation,
   })
+  @ApiCreatedResponse({ type: () => CreateVoucherResponse })
   @UseInterceptors(
     FileFieldsInterceptor([
       {
@@ -103,6 +105,7 @@ export class VoucherController {
     ]),
     UnlinkFileInterceptor,
   )
+  @SerializeOptions({ groups: [RoleEnum.Admin] })
   @UseGuards(AdminGuard)
   @Post()
   async createVoucher(
@@ -112,7 +115,7 @@ export class VoucherController {
       [VOUCHER_FILE_FILED.VOUCHER_IMG]?: Express.Multer.File[];
     },
     @Body() body: CreateVoucherDto,
-  ) {
+  ): Promise<CreateVoucherResponse> {
     const voucher = await this.voucherService.createVoucher(
       body,
       files[VOUCHER_FILE_FILED.MAIN_IMG],
@@ -198,6 +201,7 @@ export class VoucherController {
     type: UpdateVoucherDto,
     description: 'Update specific voucher with a given ID.',
   })
+  @ApiOkResponse({ type: () => UpdateVoucherResponse })
   @UseGuards(AdminGuard)
   @Patch(VoucherPath.UpdateVoucher)
   async updateVoucher(

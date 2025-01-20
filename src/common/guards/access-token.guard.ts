@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
 import { JwtPayloadType } from '../types/token-payload.type';
+import { RoleEnum } from '@resources/account/types/account.type';
 
 @Injectable()
 export class AccessTokenAuthGuard implements CanActivate {
@@ -31,9 +32,11 @@ export class AccessTokenAuthGuard implements CanActivate {
       });
       const { accountId } = request.params;
       if (accountId && accountId !== payload.sub) {
-        throw ErrorApiResponse.unauthorizedRequest(
-          'The URL path does not match with identifier',
-        );
+        if (payload.role !== RoleEnum.Admin) {
+          throw ErrorApiResponse.unauthorizedRequest(
+            'The URL parameter does not match with identifier',
+          );
+        }
       }
       request['user'] = { accountId: payload.sub, role: payload.role };
     } catch (err) {

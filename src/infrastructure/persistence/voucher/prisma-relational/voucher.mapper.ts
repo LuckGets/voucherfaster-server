@@ -12,6 +12,7 @@ import {
   VoucherDomain,
   VoucherStatusEnum,
   VoucherTagDomain,
+  VoucherTermAndCondDomain,
 } from '@resources/voucher/domain/voucher.domain';
 import { plainToInstance } from 'class-transformer';
 
@@ -53,8 +54,18 @@ export class VoucherMapper {
       voucherEntity.VoucherTermAndCondTh
     ) {
       voucherDomain.termAndCond = {
-        th: voucherEntity.VoucherTermAndCondTh.map((item) => item.description),
-        en: voucherEntity.VoucherTermAndCondEN.map((item) => item.description),
+        th: voucherEntity.VoucherTermAndCondTh.map((item) => {
+          const termAndCond = new VoucherTermAndCondDomain();
+          termAndCond.id = item.id;
+          termAndCond.description = item.description;
+          return termAndCond;
+        }),
+        en: voucherEntity.VoucherTermAndCondEN.map((item) => {
+          const termAndCond = new VoucherTermAndCondDomain();
+          termAndCond.id = item.id;
+          termAndCond.description = item.description;
+          return termAndCond;
+        }),
       };
     }
     if (
@@ -141,5 +152,20 @@ export class VoucherPromotionMapper {
     if (voucherPromotionEntity.deletedAt)
       voucherPromotionDomain.deletedAt = voucherPromotionEntity.deletedAt;
     return voucherPromotionDomain;
+  }
+}
+
+export class VoucherTermAndCondMapper {
+  public static toDomain(
+    termAndCondEntity: VoucherTermAndCondEN | VoucherTermAndCondTh,
+  ): VoucherTermAndCondDomain {
+    const termAndCondDomain = new VoucherTermAndCondDomain();
+    termAndCondDomain.id = termAndCondEntity.id;
+    termAndCondDomain.description = termAndCondEntity.description;
+    termAndCondDomain.voucherId = termAndCondEntity.voucherId;
+    termAndCondDomain.createdAt = termAndCondEntity.createdAt;
+    termAndCondDomain.updatedAt = termAndCondEntity.updatedAt;
+    termAndCondDomain.inactiveAt = termAndCondEntity.inactiveAt;
+    return termAndCondDomain;
   }
 }

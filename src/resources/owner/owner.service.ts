@@ -68,12 +68,13 @@ export class OwnerService {
     }
     const uploadedImgPaths = await Promise.all(
       files.map((file) =>
-        this.mediaService.uploadFile(
-          file.buffer,
-          file.filename,
-          file.mimetype,
-          s3BucketDirectory.ownerImg,
-        ),
+        this.mediaService.uploadFile({
+          file: file.buffer,
+          fileName: file.filename,
+          filePath: file.path,
+          mimeType: file.mimetype,
+          bucketDir: s3BucketDirectory.ownerImg,
+        }),
       ),
     );
     const createOwnerImgData: CreateOwnerImgDataType[] = uploadedImgPaths.map(
@@ -97,12 +98,14 @@ export class OwnerService {
       throw ErrorApiResponse.notFoundRequest(
         `Owner image ID: ${imageId} could not be found.`,
       );
-    const uploadedImgPath = await this.mediaService.uploadFile(
-      image.buffer,
-      image.filename,
-      image.mimetype,
-      s3BucketDirectory.ownerImg,
-    );
+    await this.mediaService.deleteFile(isImageExist.imgPath);
+    const uploadedImgPath = await this.mediaService.uploadFile({
+      file: image.buffer,
+      fileName: image.filename,
+      filePath: image.path,
+      mimeType: image.mimetype,
+      bucketDir: s3BucketDirectory.ownerImg,
+    });
     return this.ownerRepository.updateOwnerImgById(imageId, uploadedImgPath);
   }
 

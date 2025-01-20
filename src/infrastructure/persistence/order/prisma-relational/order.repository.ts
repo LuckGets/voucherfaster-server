@@ -149,6 +149,12 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     },
   };
 
+  private nonDeleteWhereQuery: Prisma.OrderWhereInput = {
+    deletedAt: {
+      equals: null,
+    },
+  };
+
   /**
    * This method will create an order and related transaction,
    * and also update the stock amount of vouchers and packages,
@@ -485,6 +491,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             equals: queryTransactionStatus,
           },
         },
+        ...this.nonDeleteWhereQuery,
       },
       include: {
         ...this.findManyIncludeQuery,

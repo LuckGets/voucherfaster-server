@@ -1,4 +1,5 @@
 import {
+  TermAndCondLangauage,
   VoucherCategoryDomain,
   VoucherDomain,
   VoucherDomainCreateInput,
@@ -6,6 +7,7 @@ import {
   VoucherStatusEnum,
   VoucherTagDomain,
   VoucherTermAndCondCreateInput,
+  VoucherTermAndCondDomain,
 } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 import { PrismaService } from '../../config/prisma.service';
@@ -14,7 +16,7 @@ import { Prisma, Voucher, VoucherStatus } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
-import { VoucherMapper } from './voucher.mapper';
+import { VoucherMapper, VoucherTermAndCondMapper } from './voucher.mapper';
 import {
   TermAndCondUpdateDto,
   UpdateVoucherDto,
@@ -27,103 +29,101 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     private voucherTagRepository: VoucherTagRepository,
   ) {}
 
-  private voucherJoinQuery = {
-    include: {
-      VoucherImg: {
-        where: {
-          mainImg: true,
-        },
-        select: {
-          id: true,
-          imgPath: true,
-        },
+  private voucherJoinQuery: Prisma.VoucherInclude = {
+    VoucherImg: {
+      where: {
+        mainImg: true,
       },
-      VoucherPromotion: {
-        select: {
-          id: true,
-          name: true,
-          promotionPrice: true,
-          sellStartedAt: true,
-          sellExpiredAt: true,
-          usableAt: true,
-          usableExpiredAt: true,
-        },
-        where: {
-          deletedAt: {
-            equals: null,
-          },
-          sellStartedAt: {
-            lte: new Date(Date.now()),
-          },
-          sellExpiredAt: {
-            gt: new Date(Date.now()),
-          },
-        },
+      select: {
+        id: true,
+        imgPath: true,
       },
-      // PackageVoucher: {
-      //   where: {
-      //     deletedAt: {
-      //       not: null,
-      //     },
-      //     startedAt: {
-      //       lte: new Date(Date.now()),
-      //     },
-      //     expiredAt: {
-      //       gt: new Date(Date.now()),
-      //     },
-      //   },
-      // },
     },
+    VoucherPromotion: {
+      select: {
+        id: true,
+        name: true,
+        stockAmount: true,
+        promotionPrice: true,
+        sellStartedAt: true,
+        sellExpiredAt: true,
+        usableAt: true,
+        usableExpiredAt: true,
+      },
+      where: {
+        deletedAt: {
+          equals: null,
+        },
+        sellStartedAt: {
+          lte: new Date(Date.now()),
+        },
+        sellExpiredAt: {
+          gt: new Date(Date.now()),
+        },
+      },
+    },
+    // PackageVoucher: {
+    //   where: {
+    //     deletedAt: {
+    //       not: null,
+    //     },
+    //     startedAt: {
+    //       lte: new Date(Date.now()),
+    //     },
+    //     expiredAt: {
+    //       gt: new Date(Date.now()),
+    //     },
+    //   },
+    // },
   };
 
-  private voucherAllDetailJoinQuery = {
-    include: {
-      VoucherImg: {
-        select: {
-          id: true,
-          imgPath: true,
-          mainImg: true,
+  private voucherAllDetailJoinQuery: Prisma.VoucherInclude = {
+    VoucherImg: {
+      select: {
+        id: true,
+        imgPath: true,
+        mainImg: true,
+      },
+    },
+    VoucherPromotion: {
+      select: {
+        id: true,
+        name: true,
+        stockAmount: true,
+        promotionPrice: true,
+        sellStartedAt: true,
+        sellExpiredAt: true,
+        usableAt: true,
+        usableExpiredAt: true,
+      },
+      where: {
+        deletedAt: {
+          equals: null,
+        },
+        sellStartedAt: {
+          lte: new Date(Date.now()),
+        },
+        sellExpiredAt: {
+          gt: new Date(Date.now()),
         },
       },
-      VoucherPromotion: {
-        select: {
-          id: true,
-          name: true,
-          promotionPrice: true,
-          sellStartedAt: true,
-          sellExpiredAt: true,
-          usableAt: true,
-          usableExpiredAt: true,
-        },
-        where: {
-          deletedAt: {
-            equals: null,
-          },
-          sellStartedAt: {
-            lte: new Date(Date.now()),
-          },
-          sellExpiredAt: {
-            gt: new Date(Date.now()),
-          },
+    },
+    VoucherTermAndCondEN: {
+      where: {
+        inactiveAt: {
+          equals: null,
         },
       },
-      VoucherTermAndCondEN: {
-        where: {
-          inactiveAt: {
-            equals: null,
-          },
+    },
+    VoucherTermAndCondTh: {
+      where: {
+        inactiveAt: {
+          equals: null,
         },
       },
-      VoucherTermAndCondTh: {
-        where: {
-          inactiveAt: {
-            equals: null,
-          },
-        },
-        select: {
-          id: true,
-          description: true,
-        },
+      select: {
+        id: true,
+        description: true,
       },
     },
   };
@@ -147,20 +147,28 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     image: VoucherImgCreateInput[];
     promotion: VoucherPromotionCreateInput;
   }): Promise<VoucherDomain> {
-    const voucher = await this.prismaService.$transaction(async (txUnit) => {
-      const voucher = await txUnit.voucher.create({
-        data: voucherData,
-      });
+    const { voucher, createdPromotion } = await this.prismaService.$transaction(
+      async (txUnit) => {
+        const voucher = await txUnit.voucher.create({
+          data: voucherData,
+        });
 
-      await Promise.all([
-        txUnit.voucherTermAndCondTh.createMany({ data: termAndCondThArr }),
-        txUnit.voucherTermAndCondEN.createMany({ data: termAndCondEnArr }),
-        txUnit.voucherImg.createMany({ data: image }),
-        promotion ? txUnit.voucherPromotion.create({ data: promotion }) : null,
-      ]);
-      return voucher;
+        const [, , , createdPromotion] = await Promise.all([
+          txUnit.voucherTermAndCondTh.createMany({ data: termAndCondThArr }),
+          txUnit.voucherTermAndCondEN.createMany({ data: termAndCondEnArr }),
+          txUnit.voucherImg.createMany({ data: image }),
+          promotion
+            ? txUnit.voucherPromotion.create({ data: promotion })
+            : null,
+        ]);
+
+        return { voucher, createdPromotion };
+      },
+    );
+    return VoucherMapper.toDomain({
+      ...voucher,
+      VoucherPromotion: [createdPromotion],
     });
-    return VoucherMapper.toDomain(voucher);
   }
 
   async findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
@@ -169,7 +177,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       where: {
         id,
       },
-      ...voucherJoinQuery,
+      include: voucherJoinQuery,
     });
     return voucher ? VoucherMapper.toDomain(voucher) : null;
   }
@@ -180,7 +188,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       where: {
         id: { in: idList },
       },
-      ...voucherJoinQuery,
+      include: voucherJoinQuery,
     });
     return voucherList.map(VoucherMapper.toDomain);
   }
@@ -235,7 +243,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     const voucherList = await this.prismaService.voucher.findMany({
       ...paginatedQueryOptiion,
       ...whereQueryOption,
-      ...voucherJoinQuery,
+      include: voucherJoinQuery,
     });
     return voucherList.map((item) => VoucherMapper.toDomain(item));
   }
@@ -253,7 +261,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         },
         status,
       },
-      ...voucherJoinQuery,
+      include: voucherJoinQuery,
     });
     return queryVoucherListResult.map((item) => VoucherMapper.toDomain(item));
   }
@@ -276,7 +284,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         },
         status: voucherStatus,
       },
-      ...voucherJoinQuery,
+      include: voucherJoinQuery,
     });
     return voucherQueryList.map((item) => VoucherMapper.toDomain(item));
   }
@@ -311,12 +319,42 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           },
           status: VoucherStatusEnum.ACTIVE,
         },
-        ...voucherJoinQuery,
+        include: voucherJoinQuery,
       });
 
     return queryVoucherListViaCategoryResult.map((item) =>
       VoucherMapper.toDomain(item),
     );
+  }
+
+  async findManyTermAndConditionWithIds(
+    termAndCondIds: VoucherTermAndCondDomain['id'][],
+    lang: TermAndCondLangauage,
+  ): Promise<VoucherTermAndCondDomain[]> {
+    switch (lang) {
+      case TermAndCondLangauage.TH:
+        const termAndCond =
+          await this.prismaService.voucherTermAndCondTh.findMany({
+            where: {
+              id: {
+                in: termAndCondIds,
+              },
+            },
+          });
+        return termAndCond.map(VoucherTermAndCondMapper.toDomain);
+      case TermAndCondLangauage.EN:
+        const termAndCondEN =
+          await this.prismaService.voucherTermAndCondEN.findMany({
+            where: {
+              id: {
+                in: termAndCondIds,
+              },
+            },
+          });
+        return termAndCondEN.map(VoucherTermAndCondMapper.toDomain);
+      default:
+        return [];
+    }
   }
 
   /**
@@ -329,6 +367,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     // Extract term and condition which need to
     // update in another table
     const { id, termAndCondEn, termAndCondTh, ...data } = payload;
+
+    const joinQuery = this.voucherAllDetailJoinQuery;
 
     // Everything is wrapped in one transaction
     const voucher = await this.prismaService.$transaction(async (tx) => {
@@ -344,6 +384,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       const voucher = await tx.voucher.update({
         data: data,
         where: { id: id },
+        include: joinQuery,
       });
 
       return voucher; // Return the updated voucher

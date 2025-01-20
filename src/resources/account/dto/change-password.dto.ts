@@ -51,7 +51,8 @@ export class ChangePasswordResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Account details for account id 123',
+    example:
+      'Request for changing the password successful. Please confirm changing password by checking the confirmation link in email.',
   })
   public message: string;
   @ApiProperty({
@@ -61,7 +62,18 @@ export class ChangePasswordResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: '',
+    example: `{
+        "id": "019483f3-2100-750b-b39d-27e1c23d9933",
+        "fullname": "JAJAJA JAJA",
+        "phone": "0811234567",
+        "email": "abcdef@mail.com",
+        "photo": "d22pq9rbvhh9yl.cloudfront.net/account-image/1737382129208_rocks.jpg",
+        "accountProvider": "LOCAL",
+        "createdAt": "1/20/2025, 8:42:16 PM",
+        "updatedAt": "1/20/2025, 9:30:29 PM",
+        "deletedAt": null,
+        "verifiedAt": null
+    }`,
   })
   public data: null;
 
@@ -72,7 +84,8 @@ export class ChangePasswordResponse extends CoreApiResponse {
     statusCode?: number,
   ): ChangePasswordResponse {
     const responseMessage =
-      message ?? 'Request for changing the password successful.';
+      message ??
+      'Request for changing the password successful. Please confirm changing password by checking the confirmation link in email.';
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink =
       links ??

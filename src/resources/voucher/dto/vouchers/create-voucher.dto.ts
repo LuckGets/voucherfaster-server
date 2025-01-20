@@ -1,35 +1,80 @@
-import { HttpStatus } from '@nestjs/common';
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { ApiBodyOptions, ApiProperty } from '@nestjs/swagger';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsDate,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
+  Validate,
+  ValidateNested,
 } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { VoucherDomain } from '../../domain/voucher.domain';
 import { AuthPath } from 'src/config/api-path';
-import { VoucherPromotionCreateInput } from '../../domain/voucher-promotion.domain';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
-import { IsInstanceOfClass } from '@utils/validators/IsInstaceOfClass';
 import { CreateVoucherPromotionDto } from '../voucher-promotion/create-promotion.dto';
+import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 
 type CreateVoucherDataType = Omit<VoucherDomain, 'img'>;
+class CreatePromotionNestedInVoucherDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ type: String })
+  name: string;
+  @ApiProperty({ type: Number })
+  @IsPositive()
+  @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
+  promotionPrice: number;
+  @ApiProperty({ type: Number })
+  @IsPositive()
+  @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
+  stockAmount: number;
+  @ApiProperty({ type: Date })
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  sellStartedAt: Date;
+  @IsDateGreaterThan('sellStartedAt')
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  @ApiProperty({ type: Date })
+  sellExpiredAt: Date;
+  @ApiProperty({ type: Date })
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  usableAt: Date;
+  @IsDateGreaterThan('usableAt')
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  @ApiProperty({ type: Date })
+  usableExpiredAt: Date;
+}
 
-export const createVoucherFormDataDocumentation = {
+export const createVoucherFormDataDocumentation: ApiBodyOptions = {
   description: 'Create a voucher with its associated details and file uploads',
   schema: {
     type: 'object',
     properties: {
-      title: { type: 'string', example: 'New Year Sale' },
+      title: {
+        description: "Voucher's title",
+        type: 'string',
+        example: 'New Year Sale',
+      },
       description: {
         type: 'string',
         example: 'Enjoy discounts for the new year!',
+        description: "Voucher's description",
       },
-      price: { type: 'number', example: 500 },
+      price: { type: 'number', example: 500, description: 'Voucher price' },
+      stockAmount: { type: 'number', example: 500 },
       usageExpiredTime: {
         type: 'string',
         format: 'date-time',
@@ -55,9 +100,9 @@ export const createVoucherFormDataDocumentation = {
         type: 'object',
         description: 'Details of the promotion associated with the voucher',
         properties: {
-          voucherId: { type: 'string', example: '123' },
           name: { type: 'string', example: 'Holiday Promo' },
           promotionPrice: { type: 'number', example: 400 },
+          stockAmount: { type: 'number', example: 500 },
           sellStartedAt: {
             type: 'string',
             format: 'date-time',
@@ -80,8 +125,8 @@ export const createVoucherFormDataDocumentation = {
           },
         },
         required: [
-          'voucherId',
           'name',
+          'stockAmount',
           'promotionPrice',
           'sellStartedAt',
           'sellExpiredAt',
@@ -124,10 +169,10 @@ export class CreateVoucherDto {
   title: string;
   @IsString()
   description: string;
-  @IsNumber()
+  @IsPositive()
   @Transform(({ value }) => Number(value))
   price: number;
-  @IsNumber()
+  @IsPositive()
   @Transform(({ value }) => Number(value))
   @ApiProperty({ type: Number })
   stockAmount: number;
@@ -135,7 +180,6 @@ export class CreateVoucherDto {
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usageExpiredTime: Date;
-  @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   saleExpiredTime: Date;
@@ -152,11 +196,20 @@ export class CreateVoucherDto {
   )
   termAndCondEn: string[];
   @IsOptional()
-  @IsInstanceOfClass(CreateVoucherPromotionDto)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  promotion?: CreateVoucherPromotionDto;
+  @ValidateNested()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return plainToInstance(CreatePromotionNestedInVoucherDto, parsed);
+      } catch (error) {
+        throw new BadRequestException('Invalid JSON format for promotion');
+      }
+    }
+    return value;
+  })
+  @Type(() => CreatePromotionNestedInVoucherDto)
+  promotion?: CreatePromotionNestedInVoucherDto;
 }
 
 export class CreateVoucherResponse extends CoreApiResponse {
@@ -167,7 +220,7 @@ export class CreateVoucherResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Voucher code 123 have been created successfully.',
+    example: 'Voucher ID: 123 have been created successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -177,7 +230,30 @@ export class CreateVoucherResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: `{
+        "id": "01948481-cbe0-7674-aeef-4c08a5198cb5",
+        "stockAmount": 10000,
+        "description": "Juicy burgers with crispy french fries.",
+        "price": 300,
+        "saleExpiredTime": "12/26/2025, 12:00:00 AM",
+        "title": "Burger with fries",
+        "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+        "status": "ACTIVE",
+        "promotion": [
+            {
+                "id": "01948481-cbe0-7674-aeef-5cba7e36b39f",
+                "name": "ลดแรงต้อนรับปีใหม่",
+                "stockAmount": 100,
+                "sellStartedAt": "1/1/2025, 7:00:00 AM",
+                "sellExpiredAt": "1/1/2026, 6:59:59 AM",
+                "usableAt": "1/1/2024, 7:00:00 AM",
+                "usableExpiredAt": "1/1/2026, 6:59:59 AM",
+                "promotionPrice": 199,
+                "createdAt": "1/20/2025, 11:18:06 PM",
+                "updatedAt": "1/20/2025, 11:18:06 PM"
+            }
+        ]
+    }`,
   })
   public data: CreateVoucherDataType;
 

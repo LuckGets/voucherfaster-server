@@ -12,11 +12,13 @@ import { diskStorage } from 'multer';
 import { MediaModule } from '@application/media/media.module';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
+import accountConfig from './config/account.config';
 
 @Module({
   imports: [
     AccountRelationalPersistenceModule,
     ConfigModule.forFeature(authConfig),
+    ConfigModule.forFeature(accountConfig),
     MulterModule.register({
       storage: diskStorage({
         destination: MULTER_UPLOAD_CONSTANT.DIRECTORY,

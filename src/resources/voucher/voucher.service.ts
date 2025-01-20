@@ -5,6 +5,7 @@ import {
   UpdateVoucherTagDto,
 } from './dto/voucher-tag.dto';
 import {
+  TermAndCondLangauage,
   VoucherCategoryDomain,
   VoucherDomain,
   VoucherDomainCreateInput,
@@ -28,7 +29,10 @@ import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
-import { UpdateVoucherDto } from './dto/vouchers/update-voucher.dto';
+import {
+  TermAndCondUpdateDto,
+  UpdateVoucherDto,
+} from './dto/vouchers/update-voucher.dto';
 import {
   AddVoucherImgDto,
   UpdateVoucherImgDto,
@@ -84,12 +88,13 @@ export class VoucherService {
     // Firstly we need to upload the img to s3 and get the link back.
     const allVoucherImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
-        this.mediaService.uploadFile(
-          item.buffer,
-          item.filename,
-          item.mimetype,
-          s3BucketDirectory.voucherImg,
-        ),
+        this.mediaService.uploadFile({
+          file: item.buffer,
+          fileName: item.filename,
+          filePath: item.path,
+          mimeType: item.mimetype,
+          bucketDir: s3BucketDirectory.voucherImg,
+        }),
       ),
     );
     // ------- SECOND PART : SET UP INFORMATION -------
@@ -127,7 +132,7 @@ export class VoucherService {
     // If the voucher creating input
     // provided a promotion
     let promotionData: VoucherPromotionCreateInput;
-    if (promotion) {
+    if (promotion && Object.keys(promotion).length > 0) {
       promotionData = {
         ...promotion,
         id: String(this.uuidService.make()),
@@ -230,11 +235,64 @@ export class VoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `The voucher ID: ${data.id} could not be found on this server`,
       );
-    // If updated data contain
-    // the new updated voucher code,
-    // have to check first
-    // does the new code already exist?
+
+    if (data.termAndCondTh) {
+      await this.checkVoucherTermAndCondBeforeUpdate(
+        data.termAndCondTh,
+        TermAndCondLangauage.TH,
+      );
+    }
+
+    if (data.termAndCondEn) {
+      await this.checkVoucherTermAndCondBeforeUpdate(
+        data.termAndCondEn,
+        TermAndCondLangauage.EN,
+      );
+    }
+
     return this.voucherRepository.update(data);
+  }
+
+  // ------------------------- VOUCHER TERM AND COND PART --------------- //
+  public async checkVoucherTermAndCondBeforeUpdate(
+    data: TermAndCondUpdateDto[],
+    lang: TermAndCondLangauage,
+  ) {
+    const actionMap = new Map<string, TermAndCondUpdateDto>();
+    const allTermAndCondId = data.map((item) => {
+      if (actionMap.get(item.id)) {
+        throw ErrorApiResponse.conflictRequest(
+          `Please provide only one action per term and condition ID as ID: ${item.id} is duplicate in request.`,
+        );
+      }
+      actionMap.set(item.id, item);
+
+      return item.id;
+    });
+    const termAndCondList =
+      await this.voucherRepository.findManyTermAndConditionWithIds(
+        allTermAndCondId,
+        lang,
+      );
+    if (termAndCondList.length !== allTermAndCondId.length) {
+      throw ErrorApiResponse.conflictRequest(
+        `The term and condition of language: ${lang} ID ${allTermAndCondId.filter((item) => !termAndCondList.map((item) => item.id).includes(item)).join(', ')} could not be found on this server.`,
+      );
+    }
+
+    termAndCondList.forEach((item) => {
+      if (actionMap.get(item.id).inactive && item.inactiveAt) {
+        throw ErrorApiResponse.conflictRequest(
+          `The term and condition ID: ${item.id} has already been inactive.`,
+        );
+      }
+
+      if (actionMap.get(item.id).inactive === false) {
+        throw ErrorApiResponse.conflictRequest(
+          `Please provided inactive value as a boolean to set ID: ${item.id} as inactive.`,
+        );
+      }
+    });
   }
 
   // -------------------------------------------------------------------- //
@@ -420,12 +478,13 @@ export class VoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `Voucher image ID: ${data.voucherImgId} could not be found on this server.`,
       );
-    const imageLink = await this.mediaService.uploadFile(
-      file.buffer,
-      file.filename,
-      file.mimetype,
-      s3BucketDirectory.voucherImg,
-    );
+    const imageLink = await this.mediaService.uploadFile({
+      file: file.buffer,
+      fileName: file.filename,
+      filePath: file.path,
+      mimeType: file.mimetype,
+      bucketDir: s3BucketDirectory.voucherImg,
+    });
     const updatedVoucherImg = await this.voucherImgRepository.updateVoucherImg(
       data.voucherImgId,
       { imgPath: imageLink },
@@ -456,12 +515,13 @@ export class VoucherService {
     mainImg: Express.Multer.File;
     deleteMainImg?: boolean;
   }): Promise<VoucherImgDomain> {
-    const mainImageLink = await this.mediaService.uploadFile(
-      mainImg.buffer,
-      mainImg.filename,
-      mainImg.mimetype,
-      s3BucketDirectory.voucherImg,
-    );
+    const mainImageLink = await this.mediaService.uploadFile({
+      file: mainImg.buffer,
+      fileName: mainImg.filename,
+      filePath: mainImg.path,
+      mimeType: mainImg.mimetype,
+      bucketDir: s3BucketDirectory.voucherImg,
+    });
     const mainImgToUpdate: VoucherImgCreateInput = {
       id: String(this.uuidService.make()),
       imgPath: mainImageLink,
@@ -493,12 +553,13 @@ export class VoucherService {
   ): Promise<void> {
     const voucherImgLink = await Promise.all(
       data.map((item) => {
-        return this.mediaService.uploadFile(
-          item.buffer,
-          item.filename,
-          item.mimetype,
-          s3BucketDirectory.voucherImg,
-        );
+        return this.mediaService.uploadFile({
+          file: item.buffer,
+          fileName: item.filename,
+          filePath: item.path,
+          mimeType: item.mimetype,
+          bucketDir: s3BucketDirectory.voucherImg,
+        });
       }),
     );
     const voucherImgToUpdate = voucherImgLink.map((item) => {

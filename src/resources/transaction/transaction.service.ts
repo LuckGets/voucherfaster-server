@@ -44,6 +44,15 @@ export class TransactionService {
     );
   }
 
+  public async updateSuccessTransactionAndUploadQrCode(
+    transactionId: TransactionDomain['id'],
+  ) {
+    // this.eventEmitter.emit(
+    //   ORDER_EVENT_CONSTANT.CREATED,
+    //   new OrderCreatedEvent(allOrderItemsId),
+    // );
+  }
+
   public async getAllUnSuccessTransactionAndOrderWithinTime(timeLimit: Date) {
     if (!timeLimit || timeLimit instanceof Date)
       throw ErrorApiResponse.conflictRequest('Invalid time limit provided.');

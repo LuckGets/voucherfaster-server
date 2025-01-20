@@ -35,9 +35,11 @@ export class UpdateOwnerImgResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-      "id": "019446d1-6d43-760d-9a0b-489e626e2f8d",
-      "imgPath": "facebook.com",
-      "type": "LOGO",
+        "id": "0194842a-b475-70d9-8fb7-184668145512",
+        "imgPath": "d22pq9rbvhh9yl.cloudfront.net/owner-img/1737386405498_vegan-salad.jpg",
+        "type": "BACKGROUND",
+        "createdAt": "1/20/2025, 9:42:58 PM",
+        "updatedAt": "1/20/2025, 10:20:05 PM"
     }`,
   })
   public data: OwnerImgDomain;

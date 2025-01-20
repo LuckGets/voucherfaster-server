@@ -14,6 +14,8 @@ import { UpdateAccountDto } from './dto/update-account.dto';
 import { MailService } from '@application/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { VerifyTokenPayloadType } from 'src/common/types/token-payload.type';
+import { MediaService } from '@application/media/media.service';
+import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 
 @Injectable()
 export class AccountService {
@@ -25,15 +27,19 @@ export class AccountService {
     private cryptoService: CryptoService,
     private configService: ConfigService<AllConfigType>,
     private mailService: MailService,
+    private mediaService: MediaService,
     private jwtService: JwtService,
   ) {
-    this.changePasswordSecret = configService.get(
+    this.changePasswordSecret = configService.getOrThrow(
       'account.changePasswordSecret',
       { infer: true },
     );
-    this.verifyEmailSecret = configService.get('auth.verifyEmailSecret', {
-      infer: true,
-    });
+    this.verifyEmailSecret = configService.getOrThrow(
+      'auth.verifyEmailSecret',
+      {
+        infer: true,
+      },
+    );
   }
   public create(createAccountDto: CreateAccountDto): Promise<AccountDomain> {
     this.logger.log(`Create Account: ${JSON.stringify(createAccountDto)}`);
@@ -69,6 +75,7 @@ export class AccountService {
   public async update(
     accountId: AccountDomain['id'],
     data: UpdateAccountDto,
+    file?: Express.Multer.File,
   ): Promise<NullAble<AccountDomain>> {
     if (data.email) {
       data.verifiedAt = null;
@@ -79,7 +86,16 @@ export class AccountService {
         'This account with provided ID does not exist',
       );
     }
-
+    if (file) {
+      const imageUrlPath = await this.mediaService.uploadFile({
+        file: file.buffer,
+        filePath: file.path,
+        fileName: file.filename,
+        mimeType: file.mimetype,
+        bucketDir: s3BucketDirectory.accountImg,
+      });
+      data.photo = imageUrlPath;
+    }
     const updatedAccount = await this.accountRepository.update(accountId, data);
     if (updatedAccount.email !== account.email) {
       const payload: VerifyTokenPayloadType = { sub: updatedAccount.id };

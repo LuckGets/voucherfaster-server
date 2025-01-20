@@ -1,4 +1,4 @@
-import { HttpStatus } from '@nestjs/common';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
@@ -6,12 +6,15 @@ import { AuthPath } from 'src/config/api-path';
 import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
 import {
   IsArray,
+  IsBoolean,
   IsOptional,
   IsPositive,
   IsString,
   IsUUID,
+  Validate,
+  ValidateNested,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { RequiredWith } from '@utils/validators/RequiredWith';
@@ -50,9 +53,30 @@ export class TermAndCondUpdateDto {
       'Set the term and condition id which provided together to inactive.',
   })
   @IsOptional()
+  @IsBoolean()
   @RequiredWith('id')
   @NotPresentWith(['description', 'updatedDescription'])
   inactive?: boolean;
+}
+
+function transformUpdateTermAndCond(data: string): TermAndCondUpdateDto[] {
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data);
+      console.log(parsed);
+      if (!Array.isArray(parsed)) {
+        throw new BadRequestException(
+          'Expected an array for term and condition',
+        );
+      }
+      return parsed.map((item) => plainToInstance(TermAndCondUpdateDto, item));
+    } catch (error) {
+      throw new BadRequestException(
+        'Invalid JSON format for term and condition',
+      );
+    }
+  }
+  return data;
 }
 
 export class UpdateVoucherDto {
@@ -92,12 +116,16 @@ export class UpdateVoucherDto {
   @IsOptional()
   tagId?: string;
   @ApiProperty({ type: () => [TermAndCondUpdateDto] })
-  @IsArray()
   @IsOptional()
+  @ValidateNested({ each: true })
+  @Transform(({ value }) => transformUpdateTermAndCond(value))
+  @Type(() => TermAndCondUpdateDto)
   termAndCondTh?: TermAndCondUpdateDto[];
   @ApiProperty({ type: () => [TermAndCondUpdateDto] })
-  @IsArray()
   @IsOptional()
+  @ValidateNested({ each: true })
+  @Transform(({ value }) => transformUpdateTermAndCond(value))
+  @Type(() => TermAndCondUpdateDto)
   termAndCondEn?: TermAndCondUpdateDto[];
   @ApiProperty({ type: String, enum: VoucherStatusEnum })
   @IsEnumValue(VoucherStatusEnum)
@@ -124,21 +152,47 @@ export class UpdateVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-      "id": "019446d1-6d43-760d-9a0b-489e626e2f8d",
-      "code": "AA-101",
-      "description": "Juicy burgers with crispy french fries.",
-      "price": 300,
-      "stockAmount": 10000,
-      "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-      "title": "Burger with fries",
-      "usageExpiredTime": "12/26/2025, 12:00:00 AM",
-      "status": "ACTIVE",
-      "img": [
-        {
-          "id": "019446d1-6d44-73cf-bcdf-8b1bbd6b070f",
-          "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
-        }
-      ]
+        "id": "0194834a-ff4e-7244-be8c-877f5b7deb7d",
+        "stockAmount": 10000,
+        "description": "Juicy burgers with crispy french fries.",
+        "price": 300,
+        "saleExpiredTime": "12/26/2025, 12:00:00 AM",
+        "title": "Burger with fries",
+        "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+        "status": "ACTIVE",
+        "img": [
+            {
+                "id": "0194834a-ff4e-7244-be8c-b1521de8c8f0",
+                "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp",
+                "mainImg": true
+            }
+        ],
+        "termAndCond": {
+            "th": [
+                {
+                    "id": "0194834a-ff4e-7244-be8d-17e8a96a7081",
+                    "description": "คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น"
+                }
+            ],
+            "en": [
+                {
+                    "id": "0194834a-ff4e-7244-be8c-e83c51aec35d",
+                    "description": "This voucher can only be used on Saturday."
+                }
+            ]
+        },
+        "promotion": [
+            {
+                "id": "0194834a-ff4e-7244-be8c-de61a53766fc",
+                "name": "ลดแรงต้อนรับปีใหม่",
+                "stockAmount": 150,
+                "sellStartedAt": "1/1/2025, 12:00:00 AM",
+                "sellExpiredAt": "2/15/2025, 12:00:00 AM",
+                "usableAt": "1/11/2025, 12:00:00 AM",
+                "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+                "promotionPrice": 199
+            }
+        ]
     }`,
   })
   public data: VoucherDomain;

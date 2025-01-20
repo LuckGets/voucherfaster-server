@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { MediaService } from '../media.service';
 import { AllConfigType } from 'src/config/all-config.type';
 import * as AWS from '@aws-sdk/client-s3';
+import * as fs from 'fs';
 import { Inject } from '@nestjs/common';
 
 export class MediaS3Service implements MediaService {
@@ -31,13 +32,25 @@ export class MediaS3Service implements MediaService {
     );
   }
 
-  async uploadFile(
-    file: Buffer,
-    fileName: string,
-    mimeType: string,
-    bucketDir: string,
-  ): Promise<string> {
+  async uploadFile({
+    file,
+    fileName,
+    filePath,
+    mimeType,
+    bucketDir,
+  }: {
+    file: Buffer;
+    fileName: string;
+    filePath: string;
+    mimeType: string;
+    bucketDir: string;
+  }): Promise<string> {
     const fileKey = `${bucketDir}/${String(fileName)}`;
+    if (!file) {
+      if (!filePath)
+        throw new Error('File path is required to read the buffer.');
+      file = fs.readFileSync(filePath);
+    }
     try {
       await this.uploadFileToS3(file, fileKey, mimeType);
       const linkUrl = `${this.CLOUDFRONT_DOMAIN_NAME}/${fileKey}`;
