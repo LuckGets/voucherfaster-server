@@ -23,8 +23,10 @@ export class PackageVoucherMapper {
     packageVoucherDomain.stockAmount = packageVoucherEntity.stockAmount;
     packageVoucherDomain.quotaVoucherId = packageVoucherEntity.quotaVoucherId;
     packageVoucherDomain.quotaAmount = packageVoucherEntity.quotaAmount;
-    packageVoucherDomain.startedAt = packageVoucherEntity.startedAt;
-    packageVoucherDomain.expiredAt = packageVoucherEntity.expiredAt;
+    packageVoucherDomain.usableAt = packageVoucherEntity.usableAt;
+    packageVoucherDomain.usableExpiredAt = packageVoucherEntity.usableExpiredAt;
+    packageVoucherDomain.sellStartedAt = packageVoucherEntity.sellStartedAt;
+    packageVoucherDomain.sellExpiredAt = packageVoucherEntity.sellExpiredAt;
     packageVoucherDomain.createdAt = packageVoucherEntity.createdAt;
     packageVoucherDomain.updatedAt = packageVoucherEntity.updatedAt;
     packageVoucherDomain.deletedAt = packageVoucherEntity.deletedAt;

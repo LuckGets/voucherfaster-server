@@ -1,6 +1,6 @@
 import { OnEvent } from '@nestjs/event-emitter';
 import { ORDER_EVENT_CONSTANT, OrderCreatedEvent } from './order.events';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { QRCodeService } from '@utils/services/qr-code.service';
 import { ConfigService } from '@nestjs/config';
 import { FRONTEND_PATH } from 'src/config/api-path';
@@ -15,6 +15,7 @@ export class OrderCreatedHandler {
   private frontEndDomain: string;
   constructor(
     private qrCodeService: QRCodeService,
+    @Inject(ConfigService)
     private configService: ConfigService,
     private mediaService: MediaService,
     private orderItemService: OrderItemService,
@@ -32,11 +33,16 @@ export class OrderCreatedHandler {
    */
   @OnEvent(ORDER_EVENT_CONSTANT.CREATED, { nextTick: true })
   async handle(event: OrderCreatedEvent) {
-    this.logger.log(
+    // this.logger.log(
+    //   `OrderCreatedEvent: Processing ${OrderCreatedEvent.length} order items.`,
+    // );
+    console.log(
       `OrderCreatedEvent: Processing ${OrderCreatedEvent.length} order items.`,
     );
     const updateOrderItem: UpdateOrderItemDto[] = await Promise.all(
-      event.orderItems.map(this.handleCreateQRCodeAndUploadImage),
+      event.orderItems.map((item) =>
+        this.handleCreateQRCodeAndUploadImage(item),
+      ),
     );
     return this.orderItemService.updateManyQRCodeAfterCreated(updateOrderItem);
   }
@@ -45,23 +51,24 @@ export class OrderCreatedHandler {
     orderItem: OrderCreatedEvent['orderItems'][number],
   ): Promise<UpdateOrderItemDto> {
     try {
-      this.logger.log(`Generate QRCode for OrderItem ID: ${orderItem}`);
+      // this.logger.log(`Generate QRCode for OrderItem ID: ${orderItem}`);
+      console.log(`Generate QRCode for OrderItem ID: ${orderItem}`);
       const urlData = `${this.frontEndDomain}/${FRONTEND_PATH.RETRIEVE_ORDER_ITEM}/${orderItem}`;
       const { buffer, mimetype } =
         await this.qrCodeService.generateQRCodeAsBuffer(urlData);
 
       const qrcodeImagePath = await this.mediaService.uploadFile(
         buffer,
-        `Order-item-ID:${orderItem}`,
+        `order-item-ID:${orderItem}`,
         mimetype,
         s3BucketDirectory.qrcodeImg,
       );
-      this.logger.log(
+      console.log(
         `Upload QRCode to S3 for OrderItem ID: ${orderItem}. \nIMG url: ${qrcodeImagePath}`,
       );
       return { id: orderItem, qrcodeImagePath };
     } catch (err) {
-      this.logger.error(
+      console.error(
         `There is an error while upload image: ${err.message}`,
         err,
       );

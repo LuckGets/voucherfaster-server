@@ -15,6 +15,7 @@ import { CoreApiResponse } from 'src/common/core-api-response';
 import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
+import { IsFutureDate } from '@utils/validators/IsFutureDate';
 
 export const PACKAGE_FILE_FIELD = {
   MAIN_IMG: 'mainImg',
@@ -57,13 +58,21 @@ export class CreatePackageVoucherDto {
   )
   termAndCondEn: string[];
   @ApiProperty({ type: Date })
-  @IsDate()
+  @IsFutureDate()
   @Transform(({ value }) => new Date(value))
-  startedAt: Date;
+  sellStartedAt: Date;
   @ApiProperty({ type: Date })
-  @IsDateGreaterThan('startedAt')
+  @IsDateGreaterThan('sellStartedAt')
   @Transform(({ value }) => new Date(value))
-  expiredAt: Date;
+  sellExpiredAt: Date;
+  @ApiProperty({ type: Date })
+  @IsFutureDate()
+  @Transform(({ value }) => new Date(value))
+  usableAt: Date;
+  @ApiProperty({ type: Date })
+  @IsDateGreaterThan('usableExpiredAt')
+  @Transform(({ value }) => new Date(value))
+  usableExpiredAt: Date;
 }
 
 export class CreatePackageVoucherResponse extends CoreApiResponse {

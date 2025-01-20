@@ -6,6 +6,7 @@ import {
   Post,
   Query,
   Req,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { OrderPath } from 'src/config/api-path';
@@ -18,6 +19,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateOrderDto, CreateOrderResponse } from './dto/create-order.dto';
 import { HttpRequestWithUser } from 'src/common/http.type';
@@ -26,6 +28,13 @@ import {
   GetOrderByIdReponse,
   GetPaginationOrderResponse,
 } from './dto/get-order.dto';
+import {
+  TransactionDomain,
+  TransactionStatusEnum,
+} from '@resources/transaction/domain/transaction.domain';
+import { TransactionStatus } from '@prisma/client';
+import { ErrorApiResponse } from 'src/common/core-api-response';
+import { RoleEnum } from '@resources/account/types/account.type';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {
@@ -48,7 +57,11 @@ export class OrderController {
     return CreateOrderResponse.success(createdOrder, req.user.accountId);
   }
 
-  @ApiParam({ name: OrderPath.OrderIdParam })
+  @ApiParam({
+    name: OrderPath.OrderIdParam,
+    description: 'Order ID',
+    example: '0194462e-a077-7616-b2d8-f8f14121ec54',
+  })
   @ApiOkResponse({ type: () => GetOrderByIdReponse })
   @Get(OrderPath.GetOrderById)
   async getOrderById(
@@ -58,11 +71,31 @@ export class OrderController {
     return CreateOrderResponse.success(order);
   }
 
+  @ApiQuery({ name: OrderPath.GetOrdersQueryCursor, required: false })
+  @ApiQuery({
+    name: OrderPath.GetOrdersQueryTransactionStatus,
+    required: false,
+    enumName: 'TransactionStatus',
+    description:
+      "Provided this query to get order by transaction status. If this query is not provided, then it will get all of the order which has transaction status 'SUCCESS'.",
+    enum: [
+      TransactionStatusEnum.SUCCESS,
+      TransactionStatusEnum.FAILED,
+      TransactionStatusEnum.PENDING,
+    ],
+  })
+  @ApiOkResponse({ type: () => GetPaginationOrderResponse })
+  @SerializeOptions({ groups: [RoleEnum.Admin] })
   @Get()
   async getPaginationOrders(
     @Query(OrderPath.GetOrdersQueryCursor) cursor: OrderDomain['id'],
+    @Query(OrderPath.GetOrdersQueryTransactionStatus)
+    transactionStatus: TransactionDomain['status'],
   ): Promise<GetPaginationOrderResponse> {
-    const ordersList = await this.orderService.getPaginationOrders({ cursor });
+    const ordersList = await this.orderService.getPaginationOrders({
+      cursor,
+      transactionStatus,
+    });
     return GetPaginationOrderResponse.success(ordersList);
   }
 }

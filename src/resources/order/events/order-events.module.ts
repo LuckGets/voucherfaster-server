@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { OrderCreatedHandler } from './order-created.handler';
 import { ConfigModule } from '@nestjs/config';
 import clientConfig from 'src/config/client/client.config';

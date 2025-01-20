@@ -249,6 +249,7 @@ export const voucherImg: Prisma.VoucherImgCreateManyInput[] = [
 
 export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
   {
+    id: uuidv7(),
     name: 'ลดแรงต้อนรับปีใหม่',
     promotionPrice: 199,
     stockAmount: 150,
@@ -259,6 +260,7 @@ export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
   {
+    id: uuidv7(),
     name: 'โปรคุ้มก่อนสิ้นปี',
     promotionPrice: 299,
     stockAmount: 150,
@@ -269,6 +271,7 @@ export const voucherPromotions: Prisma.VoucherPromotionCreateManyInput[] = [
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
   {
+    id: uuidv7(),
     name: 'ต้อนรับปีใหม่',
     promotionPrice: 120,
     stockAmount: 150,

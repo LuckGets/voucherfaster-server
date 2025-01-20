@@ -139,8 +139,16 @@ export class PackageVoucherService {
     });
   }
 
-  async getAllPackageVoucher(): Promise<PackageVoucherDomain[]> {
-    return this.packageVoucherRepository.findManyPackageVoucher();
+  async getAllPackageVoucher({
+    cursor,
+  }: {
+    cursor?: PackageVoucherDomain['id'];
+  }): Promise<PackageVoucherDomain[]> {
+    if (cursor && !isUUID(cursor))
+      throw ErrorApiResponse.badRequest(
+        `Cursor: ${cursor} is not valid data type for searching.`,
+      );
+    return this.packageVoucherRepository.findManyPackageVoucher({ cursor });
   }
 
   async getPackageVoucherById(

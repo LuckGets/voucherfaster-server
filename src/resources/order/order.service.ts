@@ -26,6 +26,10 @@ import { NullAble } from '@utils/types/common.type';
 import { isUUID } from 'class-validator';
 import { RandomCodeGeneratorService } from '@utils/services/random-code/random-code.service';
 import { OrderItemService } from '@resources/order-item/order-item.service';
+import {
+  TransactionDomain,
+  TransactionStatusEnum,
+} from '@resources/transaction/domain/transaction.domain';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
@@ -76,18 +80,11 @@ export class OrderService {
     const order =
       await this.orderRepository.createOrderAndTransaction(createOrderData);
 
-    // const transaction = await this.transactionService.processPayment({
-    //   token: paymentToken,
-    //   amount: totalPrice,
-    //   description: `OrderId:${order.id} | TransactionId:${order.transaction.id}`,
-    //   transactionId: order.transaction.id,
-    // });
-
     // if (transaction.status === 'SUCCESS') {
-    this.eventEmitter.emit(
-      ORDER_EVENT_CONSTANT.CREATED,
-      new OrderCreatedEvent(allOrderItemsId),
-    );
+    // this.eventEmitter.emit(
+    //   ORDER_EVENT_CONSTANT.CREATED,
+    //   new OrderCreatedEvent(allOrderItemsId),
+    // );
     // }
     return order;
   }
@@ -422,7 +419,7 @@ export class OrderService {
           acc.rewardList = curr.rewardVouchers.map((rewardVoucher) => {
             const orderItem = {
               id: String(this.uuidService.make()),
-              voucherId: rewardVoucher.id,
+              voucherId: rewardVoucher.voucherId,
               packageId: curr.id,
             };
             allOrderItemsId.push(orderItem.id);
@@ -539,9 +536,19 @@ export class OrderService {
 
   public async getPaginationOrders({
     cursor,
+    transactionStatus,
   }: {
     cursor?: OrderDomain['id'];
+    transactionStatus?: TransactionDomain['status'];
   }): Promise<OrderDomain[]> {
-    return this.orderRepository.findMany({ cursor });
+    // Check the transaction status query if provided
+    if (transactionStatus) {
+      for (const key in TransactionStatusEnum) {
+        if (transactionStatus.toUpperCase() !== TransactionStatusEnum[key]) {
+          throw ErrorApiResponse.badRequest(`Invalid transaction status`);
+        }
+      }
+    }
+    return this.orderRepository.findMany({ cursor, transactionStatus });
   }
 }

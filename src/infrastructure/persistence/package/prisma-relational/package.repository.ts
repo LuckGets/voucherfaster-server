@@ -114,12 +114,16 @@ export class PackageVoucherRelationalPrismaORMRepository
     return PackageVoucherMapper.toDomain(createdPackageVoucher);
   }
 
-  async findManyPackageVoucher(): Promise<PackageVoucherDomain[]> {
+  async findManyPackageVoucher({
+    cursor,
+  }: {
+    cursor: PackageVoucherDomain['id'];
+  }): Promise<PackageVoucherDomain[]> {
     // Grab the pagination query option
     const paginateQueryOption = generatePaginationQueryOption<
       any,
       PackageVoucherDomain['id']
-    >({});
+    >({ cursor });
     // Set the today date for query.
     const currentDate: Date = new Date(Date.now());
     // Grab JOIN query
@@ -131,8 +135,11 @@ export class PackageVoucherRelationalPrismaORMRepository
           deletedAt: {
             equals: null,
           },
-          startedAt: {
+          sellStartedAt: {
             lte: currentDate,
+          },
+          sellExpiredAt: {
+            gt: currentDate,
           },
         },
         ...paginateQueryOption,

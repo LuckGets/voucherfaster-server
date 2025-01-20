@@ -182,8 +182,10 @@ model PackageVoucher {
   stockAmount                 Int                           @map("stock_amount") @db.Integer()
   packagePrice                Decimal                       @map("package_price") @db.Decimal(8, 2)
   quotaAmount                 Int                           @map("quota_amount") @db.SmallInt
-  startedAt                   DateTime                      @map("started_at") @db.Timestamptz(3)
-  expiredAt                   DateTime                      @map("expired_at") @db.Timestamptz(3)
+  sellStartedAt               DateTime                      @map("sell_started_at") @db.Timestamptz(3)
+  sellExpiredAt               DateTime                      @map("sell_expired_at") @db.Timestamptz(3)
+  usableAt                    DateTime                      @map("usable_at") @db.Timestamptz(3)
+  usableExpiredAt             DateTime                      @map("usable_expired_at") @db.Timestamptz(3)
   createdAt                   DateTime                      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                   DateTime                      @updatedAt() @map("updated_at") @db.Timestamptz(3)
   deletedAt                   DateTime?                     @map("deleted_at") @db.Timestamptz(3)

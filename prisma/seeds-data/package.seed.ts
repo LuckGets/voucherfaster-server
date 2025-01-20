@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { v7 as uuidv7 } from 'uuid';
 import { vouchers } from './voucher.seed';
 
-const packageVoucherId = Array(2)
+export const packageVoucherId = Array(2)
   .fill('')
   .map(() => uuidv7());
 
@@ -12,10 +12,12 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     title: 'โปรโมชั่นแพ็คเกจ ซื้อ1แถม1',
     quotaVoucherId: vouchers[0].id,
     quotaAmount: 1,
+    usableAt: '2024-12-31T17:00:00.000Z',
+    usableExpiredAt: '2025-01-31T17:00:00.000Z',
+    sellStartedAt: '2024-12-31T17:00:00.000Z',
+    sellExpiredAt: '2025-01-31T17:00:00.000Z',
     stockAmount: 100,
     packagePrice: 300,
-    startedAt: '2024-12-31T17:00:00.000Z',
-    expiredAt: '2025-01-31T17:00:00.000Z',
   },
   {
     id: packageVoucherId[1],
@@ -24,8 +26,10 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     quotaVoucherId: vouchers[5].id,
     quotaAmount: 2,
     packagePrice: 1200,
-    startedAt: '2024-12-31T17:00:00.000Z',
-    expiredAt: '2025-01-31T17:00:00.000Z',
+    usableAt: '2024-12-31T17:00:00.000Z',
+    usableExpiredAt: '2025-01-31T17:00:00.000Z',
+    sellStartedAt: '2024-12-31T17:00:00.000Z',
+    sellExpiredAt: '2025-01-31T17:00:00.000Z',
   },
 ];
 

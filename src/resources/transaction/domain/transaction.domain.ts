@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export type TransactionStatusEnum = 'PENDING' | 'SUCCESS' | 'FAILED';
+export enum TransactionStatusEnum {
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+}
 
 export class TransactionDomain {
   @ApiProperty({ type: String })

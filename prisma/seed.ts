@@ -18,9 +18,19 @@ import {
   packageTermAndCondTH,
 } from './seeds-data/package.seed';
 import { ownerImg, ownerInfo } from './seeds-data/owner.seed';
-import { usableDaysAfterPurchased } from './seeds-data/order.seed';
+import {
+  orderItems,
+  orderItemsPackage,
+  orderItemsPromotion,
+  orderItemsVouher,
+  orders,
+  usableDaysAfterPurchased,
+} from './seeds-data/order.seed';
 import { accounts } from './seeds-data/account.seed';
-import { transactionSystem } from './seeds-data/transaction.seed';
+import {
+  transactionsOfOrders,
+  transactionSystem,
+} from './seeds-data/transaction.seed';
 config({ path: '.env.development' });
 
 const prisma = new PrismaClient();
@@ -70,6 +80,8 @@ const seed = async (): Promise<void> => {
     transactionSystem,
     'Transaction-system.',
   );
+  await seedingFunc(prisma.order.createMany, orders, 'orders');
+  await seedingFunc(prisma.orderItem.createMany, orderItems, 'order-items');
   await Promise.all([
     seedingFunc(prisma.voucherImg.createMany, voucherImg, 'voucher-img'),
     seedingFunc(
@@ -103,6 +115,26 @@ const seed = async (): Promise<void> => {
       'package-voucher-term-and-condition-EN',
     ),
     seedingFunc(prisma.ownerImg.createMany, ownerImg, 'owner-images'),
+    seedingFunc(
+      prisma.transaction.createMany,
+      transactionsOfOrders,
+      'order-transactions',
+    ),
+    seedingFunc(
+      prisma.orderItemVoucher.createMany,
+      orderItemsVouher,
+      'order-items-voucher',
+    ),
+    seedingFunc(
+      prisma.orderItemPromotion.createMany,
+      orderItemsPromotion,
+      'order-items-promotion',
+    ),
+    seedingFunc(
+      prisma.orderItemPackage.createMany,
+      orderItemsPackage,
+      'order-items-package',
+    ),
   ]);
 };
 

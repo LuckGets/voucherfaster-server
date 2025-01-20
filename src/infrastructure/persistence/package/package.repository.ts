@@ -32,7 +32,11 @@ export abstract class PackageVoucherRepository {
    *
    * Find many package voucher.
    */
-  abstract findManyPackageVoucher(): Promise<PackageVoucherDomain[]>;
+  abstract findManyPackageVoucher({
+    cursor,
+  }: {
+    cursor?: PackageVoucherDomain['id'];
+  }): Promise<PackageVoucherDomain[]>;
 
   abstract findPackageVoucherById(
     id: PackageVoucherDomain['id'],

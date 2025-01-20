@@ -12,19 +12,36 @@ import {
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { Prisma } from '@prisma/client';
-import { OrderMapper } from './order.mapper';
+import { AllOrderInformation, OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
+import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
+import { defaultPaginationOption } from 'src/common/types/pagination.type';
+
+type CreateOrderItemAndItemVoucherQuery = Prisma.OrderItemCreateManyInput &
+  Prisma.OrderItemVoucherCreateNestedOneWithoutOrderItemInput;
+
+type CreateOrderItemAndItemPromotionQuery = Prisma.OrderItemCreateManyInput &
+  Prisma.OrderItemPromotionCreateNestedOneWithoutOrderItemInput;
+
+type CreateOrderItemAndItemPackageQuery = Prisma.OrderItemCreateManyInput &
+  Prisma.OrderItemPackageCreateNestedOneWithoutOrderItemInput;
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultQrcodeImgPathToWaitForUpload: string = 'WAITFORUPLOAD';
+  private defaultOrderItemLimitPaginationForFindMany: number = 1;
 
   private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {
       include: {
         VoucherImg: {
           where: {
+            mainImg: true,
+          },
+          select: {
+            id: true,
+            imgPath: true,
             mainImg: true,
           },
         },
@@ -41,6 +58,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
               where: {
                 mainImg: true,
               },
+              select: {
+                id: true,
+                imgPath: true,
+                mainImg: true,
+              },
             },
           },
         },
@@ -55,6 +77,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           where: {
             mainImg: true,
           },
+          select: {
+            id: true,
+            imgPath: true,
+            mainImg: true,
+          },
         },
         PackageRewardVoucher: {
           include: {
@@ -65,8 +92,43 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     },
   };
 
-  private includeQuery: Prisma.OrderInclude = {
+  private orderItemAndUsableDaysIncludeQuery: Prisma.OrderInclude = {
+    usableDaysAfterPurchased: {
+      select: {
+        id: true,
+        usableDays: true,
+      },
+    },
     OrderItem: {
+      include: {
+        OrderItemVoucher: {
+          include: {
+            ...this.orderItemVoucherIncludeQuery,
+          },
+        },
+        OrderItemPromotion: {
+          include: {
+            ...this.orderItemPromotionIncludeQuery,
+          },
+        },
+        OrderItemPackage: {
+          include: {
+            ...this.orderItemPackageIncludeQuery,
+          },
+        },
+      },
+    },
+  };
+
+  private findManyIncludeQuery: Prisma.OrderInclude = {
+    usableDaysAfterPurchased: {
+      select: {
+        id: true,
+        usableDays: true,
+      },
+    },
+    OrderItem: {
+      take: this.defaultOrderItemLimitPaginationForFindMany,
       include: {
         OrderItemVoucher: {
           include: {
@@ -106,11 +168,13 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     // Initialize the create order items
     // promise to provide in transaction
     try {
-      const createManyOrderItemQuery = this.generateOrderItemsQuery({
-        voucherIdList,
-        promotionIdList,
-        packageIdList,
-      });
+      const { vouchers, packages, promotions, allOrderItems } =
+        this.generateOrderItemsQuery({
+          voucherIdList,
+          promotionIdList,
+          packageIdList,
+          orderId: payload.id,
+        });
       // Find the transaction system
       const transactionSystem =
         await this.prismaService.transactionSystem.findFirst({
@@ -136,14 +200,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             );
 
           // Create order and transaction
-          const createOrderPromise = this.prismaService.order.create({
+          const createOrderPromise = tx.order.create({
             data: {
               ...payload,
               usableDaysAfterPurchasedId,
               accountId,
-              OrderItem: {
-                ...createManyOrderItemQuery,
-              },
               Transaction: {
                 create: {
                   transactionSystemId: transactionSystem.id,
@@ -176,6 +237,22 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             createOrderPromise,
             ...updateStockTransactionPromise,
           ]);
+          await tx.orderItem.createMany({
+            data: allOrderItems,
+          });
+          await Promise.all([
+            vouchers.length > 0
+              ? tx.orderItemVoucher.createMany({ data: vouchers })
+              : null,
+            promotions.length > 0
+              ? tx.orderItemPromotion.createMany({ data: promotions })
+              : null,
+            packages.quota.length > 0 && packages.rewards.length > 0
+              ? tx.orderItemPackage.createMany({
+                  data: [...packages.quota, ...packages.rewards],
+                })
+              : null,
+          ]);
 
           return orderAndTransaction;
         },
@@ -199,53 +276,56 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     voucherIdList,
     promotionIdList,
     packageIdList,
+    orderId,
   }: {
     voucherIdList?: CreateOrderVoucherIdList;
     promotionIdList?: CreateOrderPromotionIdList;
     packageIdList?: CreateOrderPackageIdList;
-  }): Prisma.OrderItemCreateNestedManyWithoutOrderInput => {
-    const createManyOrderItemQuery: Prisma.OrderItemCreateNestedManyWithoutOrderInput =
-      {
-        create: [],
-      };
-
-    const queryForCreateArr: Prisma.OrderItemCreateWithoutOrderInput[] = [];
+    orderId: OrderDomain['id'];
+  }): {
+    allOrderItems: Prisma.OrderItemCreateManyInput[];
+    vouchers: Prisma.OrderItemVoucherCreateManyInput[];
+    promotions: Prisma.OrderItemPromotionCreateManyInput[];
+    packages: {
+      quota: Prisma.OrderItemPackageCreateManyInput[];
+      rewards: Prisma.OrderItemPackageCreateManyInput[];
+    };
+  } => {
+    const allOrderItemData: Prisma.OrderItemCreateManyInput[] = [];
+    const voucherItemsData: Prisma.OrderItemVoucherCreateManyInput[] = [];
+    const promotionItemsData: Prisma.OrderItemPromotionCreateManyInput[] = [];
+    const packageQuotaItemsData: Prisma.OrderItemPackageCreateManyInput[] = [];
+    const packageRewardItemsData: Prisma.OrderItemPackageCreateManyInput[] = [];
 
     if (voucherIdList && voucherIdList.length > 0) {
       voucherIdList.forEach((item) => {
-        const query: Prisma.OrderItemCreateWithoutOrderInput = {
+        allOrderItemData.push({
           id: item.id,
-          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
           code: item.code,
-          OrderItemVoucher: {
-            create: {
-              voucher: {
-                connect: { id: item.voucherId },
-              },
-            },
-          },
-        };
-        queryForCreateArr.push(query);
+          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          orderId,
+        });
+
+        voucherItemsData.push({
+          orderItemId: item.id,
+          voucherId: item.voucherId,
+        });
       });
     }
 
     if (promotionIdList && promotionIdList.length > 0) {
       promotionIdList.forEach((item) => {
-        const query: Prisma.OrderItemCreateWithoutOrderInput = {
+        allOrderItemData.push({
           id: item.id,
-          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
           code: item.code,
-          OrderItemPromotion: {
-            create: {
-              voucherPromotion: {
-                connect: {
-                  id: item.promotionId,
-                },
-              },
-            },
-          },
-        };
-        queryForCreateArr.push(query);
+          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          orderId,
+        });
+
+        promotionItemsData.push({
+          orderItemId: item.id,
+          voucherPromotionId: item.promotionId,
+        });
       });
     }
 
@@ -255,56 +335,46 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       packageIdList.rewardList.length > 0
     ) {
       packageIdList.quotaList.forEach((item) => {
-        const query: Prisma.OrderItemCreateWithoutOrderInput = {
+        allOrderItemData.push({
           id: item.id,
-          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
           code: item.code,
-          OrderItemPackage: {
-            create: {
-              package: {
-                connect: {
-                  id: item.packageId,
-                },
-              },
-              voucher: {
-                connect: {
-                  id: item.voucherId,
-                },
-              },
-              rewardVoucher: false,
-            },
-          },
-        };
-        queryForCreateArr.push(query);
+          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          orderId,
+        });
+        packageQuotaItemsData.push({
+          orderItemId: item.id,
+          rewardVoucher: false,
+          packageId: item.packageId,
+          voucherId: item.voucherId,
+        });
       });
 
       packageIdList.rewardList.forEach((item) => {
-        const query: Prisma.OrderItemCreateWithoutOrderInput = {
+        allOrderItemData.push({
           id: item.id,
-          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
           code: item.code,
-          OrderItemPackage: {
-            create: {
-              package: {
-                connect: {
-                  id: item.packageId,
-                },
-              },
-              voucher: {
-                connect: {
-                  id: item.voucherId,
-                },
-              },
-              rewardVoucher: true,
-            },
-          },
-        };
-        queryForCreateArr.push(query);
+          qrcodeImgPath: this.defaultQrcodeImgPathToWaitForUpload,
+          orderId,
+        });
+
+        packageRewardItemsData.push({
+          orderItemId: item.id,
+          packageId: item.packageId,
+          rewardVoucher: true,
+          voucherId: item.voucherId,
+        });
       });
     }
 
-    createManyOrderItemQuery.create = [...queryForCreateArr];
-    return createManyOrderItemQuery;
+    return {
+      allOrderItems: allOrderItemData,
+      vouchers: voucherItemsData,
+      promotions: promotionItemsData,
+      packages: {
+        quota: packageQuotaItemsData,
+        rewards: packageRewardItemsData,
+      },
+    };
   };
 
   private generateUpdateStockAmountTransactionPromise(
@@ -392,7 +462,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     const order = await this.prismaService.order.findUnique({
       where: { id },
       include: {
-        ...this.includeQuery,
+        ...this.orderItemAndUsableDaysIncludeQuery,
       },
     });
     return OrderMapper.toDomain(order);
@@ -400,18 +470,53 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
 
   async findMany({
     cursor,
+    transactionStatus,
   }: {
     cursor?: OrderDomain['id'];
+    transactionStatus?: TransactionDomain['status'];
   }): Promise<OrderDomain[]> {
     const paginationQuery = generatePaginationQueryOption({ cursor });
-
+    const queryTransactionStatus = transactionStatus ?? 'SUCCESS';
     const ordersList = await this.prismaService.order.findMany({
       ...paginationQuery,
+      where: {
+        Transaction: {
+          status: {
+            equals: queryTransactionStatus,
+          },
+        },
+      },
       include: {
-        ...this.includeQuery,
+        ...this.findManyIncludeQuery,
       },
     });
 
-    return ordersList.map(OrderMapper.toDomain);
+    const accountList = await this.prismaService.account.findMany({
+      where: {
+        id: {
+          in: ordersList.map((item) => item.accountId),
+        },
+      },
+      select: {
+        id: true,
+        fullname: true,
+        email: true,
+        phone: true,
+      },
+    });
+
+    const accountMap = new Map<string, (typeof accountList)[number]>();
+    accountList.forEach((account) => accountMap.set(account.id, account));
+
+    const allOrdersInfo: AllOrderInformation[] = ordersList.map((order) => {
+      const matchedAccount = accountMap.get(order.accountId);
+      if (!matchedAccount)
+        throw ErrorApiResponse.conflictRequest(
+          `The order ID: ${order.id} does not have matching account. Please contact developer to fix the issue.`,
+        );
+      return { ...order, account: matchedAccount };
+    });
+
+    return allOrdersInfo.map(OrderMapper.toDomain);
   }
 }

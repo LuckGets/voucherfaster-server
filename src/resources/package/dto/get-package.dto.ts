@@ -5,7 +5,7 @@ import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { ApiProperty } from '@nestjs/swagger';
 import { AuthPath } from 'src/config/api-path';
 
-export class GetAllPackageVoucherResponse extends CoreApiResponse {
+export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -50,23 +50,30 @@ export class GetAllPackageVoucherResponse extends CoreApiResponse {
         `,
   })
   public data: PackageVoucherDomain[];
+  public cursor: PackageVoucherDomain['id'];
 
   public static success(
     data: PackageVoucherDomain[],
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): GetAllPackageVoucherResponse {
+  ): GetPaginationPackageVoucherResponse {
     const responseMessage = message ?? `GET :: /packages successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    return new GetAllPackageVoucherResponse(
+    const response = new GetPaginationPackageVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
     );
+    if (data.length > 0) {
+      response.cursor = data[data.length - 1].id;
+      return response;
+    }
+    response.cursor = null;
+    return response;
   }
 }
 

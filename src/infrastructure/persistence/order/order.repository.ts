@@ -7,6 +7,7 @@ import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/us
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 
 export type CreateOrderVoucherIdList = {
   id: string;
@@ -71,7 +72,9 @@ export abstract class OrderRepository {
 
   abstract findMany({
     cursor,
+    transactionStatus,
   }: {
     cursor?: OrderDomain['id'];
+    transactionStatus?: TransactionDomain['status'];
   }): Promise<OrderDomain[]>;
 }

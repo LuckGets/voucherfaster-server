@@ -1,5 +1,8 @@
 import { Transaction, TransactionSystem } from '@prisma/client';
-import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
+import {
+  TransactionDomain,
+  TransactionStatusEnum,
+} from '@resources/transaction/domain/transaction.domain';
 
 export type TransactionAndSystem = Transaction & {
   transactionSystem?: Partial<TransactionSystem>;
@@ -13,7 +16,7 @@ export class TransactionMapper {
       return null;
     const transaction: TransactionDomain = new TransactionDomain();
     transaction.id = transactionEntity.id;
-    transaction.status = transactionEntity.status;
+    transaction.status = TransactionStatusEnum[transactionEntity.status];
     transaction.transactionSystem = transactionEntity.transactionSystem.system;
     transaction.createdAt = transactionEntity.createdAt;
     transaction.updatedAt = transactionEntity.updatedAt;

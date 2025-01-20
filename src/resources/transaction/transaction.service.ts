@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PaymentService } from 'src/infrastructure/payment/payment.service';
-import { TransactionDomain } from './domain/transaction.domain';
+import {
+  TransactionDomain,
+  TransactionStatusEnum,
+} from './domain/transaction.domain';
 import { TransactionRepository } from 'src/infrastructure/persistence/transaction/transaction.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 
@@ -31,7 +34,7 @@ export class TransactionService {
     if (payment.status === 'successful') {
       return this.transactionRepository.update({
         id: transactionId,
-        status: 'SUCCESS',
+        status: TransactionStatusEnum.SUCCESS,
         paymentId: payment.id,
       });
     }

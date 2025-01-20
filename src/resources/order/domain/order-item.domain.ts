@@ -1,7 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
-import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
+import {
+  VoucherDomain,
+  VoucherImgDomain,
+} from '@resources/voucher/domain/voucher.domain';
+
+export class OrderItemDetails {
+  title: string;
+  price: number;
+  usageExpiredTime: Date | string;
+  img: Partial<VoucherImgDomain> | Partial<PackageVoucherDomain>;
+}
 
 export class OrderItemDomain {
   @ApiProperty({ type: String })
@@ -14,10 +24,7 @@ export class OrderItemDomain {
   redeemedAt?: Date;
   @ApiProperty({ type: Date })
   updatedAt?: Date;
-  item:
-    | OrderItemVoucherDomain
-    | OrderItemPromotionDomain
-    | OrderItemPackageDomain;
+  detail: OrderItemDetails;
 }
 
 export class OrderItemVoucherDomain {

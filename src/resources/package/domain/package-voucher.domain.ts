@@ -20,9 +20,13 @@ export class PackageVoucherDomain {
   @ApiProperty({ type: String })
   title: string;
   @ApiProperty({ type: Date })
-  startedAt: Date;
+  sellStartedAt: Date;
   @ApiProperty({ type: Date })
-  expiredAt: Date;
+  sellExpiredAt: Date;
+  @ApiProperty({ type: Date })
+  usableAt: Date;
+  @ApiProperty({ type: Date })
+  usableExpiredAt: Date;
   @ApiProperty({ type: Date })
   createdAt?: Date;
   @ApiProperty({ type: Date })
@@ -37,10 +41,12 @@ export type PackageVoucherCreateInput = {
   quotaVoucherId: string;
   quotaAmount: number;
   stockAmount: number;
+  sellStartedAt: Date;
+  sellExpiredAt: Date;
+  usableAt: Date;
+  usableExpiredAt: Date;
   price: number;
   title: string;
-  startedAt: Date;
-  expiredAt: Date;
 };
 
 export class PackageImgDomain {

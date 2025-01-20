@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   SerializeOptions,
   UploadedFiles,
   UseGuards,
@@ -25,6 +26,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { RoleEnum } from '@resources/account/types/account.type';
@@ -32,8 +34,8 @@ import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interc
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { PackageVoucherService } from './package.service';
 import {
-  GetAllPackageVoucherResponse,
   GetPackageVoucherByIdResponse,
+  GetPaginationPackageVoucherResponse,
 } from './dto/get-package.dto';
 import { PackageVoucherDomain } from './domain/package-voucher.domain';
 import { DeletePackageVoucherByIdResponse } from './dto/delete-package.dto';
@@ -92,12 +94,20 @@ export class PackageVoucherController {
     return CreatePackageVoucherResponse.success(createPackage);
   }
 
-  @ApiOkResponse({ type: () => GetAllPackageVoucherResponse })
+  @ApiQuery({
+    name: PackageVoucherPath.GetPackageQueryCursor,
+    description:
+      'The last ID of the previous page package list. Provided the package ID to find the next page.',
+  })
+  @ApiOkResponse({ type: () => GetPaginationPackageVoucherResponse })
   @Get()
-  async getAllPackageVoucher(): Promise<GetAllPackageVoucherResponse> {
+  async getPaginationPackageVoucher(
+    @Query(PackageVoucherPath.GetPackageQueryCursor)
+    cursor: PackageVoucherDomain['id'],
+  ): Promise<GetPaginationPackageVoucherResponse> {
     const packageVoucherQueryList =
-      await this.packageVoucherService.getAllPackageVoucher();
-    return GetAllPackageVoucherResponse.success(packageVoucherQueryList);
+      await this.packageVoucherService.getAllPackageVoucher({ cursor });
+    return GetPaginationPackageVoucherResponse.success(packageVoucherQueryList);
   }
 
   @ApiParam({ name: PackageVoucherPath.PackageParamId })

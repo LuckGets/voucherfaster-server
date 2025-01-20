@@ -14,9 +14,8 @@ export class OrderDomain {
   @ApiProperty({ type: () => Date })
   usableDay: Date;
   @ApiProperty({ type: String })
-  accountId: AccountDomain['id'];
+  account: Partial<AccountDomain>;
   @ApiProperty({ type: Date })
-  @Expose({ groups: [RoleEnum.Admin] })
   createdAt?: Date;
   @ApiProperty({ type: Date })
   @Expose({ groups: [RoleEnum.Admin] })

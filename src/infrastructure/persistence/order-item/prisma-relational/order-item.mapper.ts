@@ -3,30 +3,36 @@ import {
   OrderItemPackage,
   OrderItemPromotion,
   OrderItemVoucher,
+  PackageImg,
   PackageVoucher,
   Voucher,
+  VoucherImg,
   VoucherPromotion,
 } from '@prisma/client';
 import {
+  OrderItemDetails,
   OrderItemDomain,
   OrderItemPackageDomain,
   OrderItemPromotionDomain,
-  OrderItemVoucherDomain,
 } from '@resources/order/domain/order-item.domain';
-import {
-  VoucherMapper,
-  VoucherPromotionMapper,
-} from '../../voucher/prisma-relational/voucher.mapper';
+import { VoucherPromotionMapper } from '../../voucher/prisma-relational/voucher.mapper';
+import { PackageVoucherMapper } from '../../package/prisma-relational/mapper/package.mapper';
 
 export type OrderItemAndDetails = OrderItem & {
   OrderItemVoucher?: OrderItemVoucher & {
-    voucher?: Voucher;
+    voucher?: Voucher & {
+      VoucherImg?: Partial<VoucherImg>;
+    };
   };
   OrderItemPromotion?: OrderItemPromotion & {
-    voucherPromotion?: VoucherPromotion;
+    voucherPromotion?: VoucherPromotion & {
+      VoucherImg?: Partial<VoucherImg>;
+    };
   };
   OrderItemPackage?: OrderItemPackage & {
-    package?: PackageVoucher;
+    package?: PackageVoucher & {
+      PackageImg?: Partial<PackageImg>;
+    };
   };
 };
 
@@ -55,28 +61,40 @@ export class OrderItemMapper {
     const orderItemDomain = new OrderItemDomain();
     orderItemDomain.id = orderItem.id;
     orderItemDomain.qrcodeImagePath = orderItem.qrcodeImgPath;
+    orderItemDomain.code = orderItem.code;
     orderItemDomain.redeemedAt = orderItem.redeemedAt;
     orderItemDomain.updatedAt = orderItem.updatedAt;
 
     if (OrderItemVoucher) {
       // Map to OrderItemVoucherDomain
-      orderItemDomain.item = new OrderItemVoucherDomain();
-      orderItemDomain.item.id = OrderItemVoucher.id;
-      orderItemDomain.item.voucher = VoucherMapper.toDomain(
-        OrderItemVoucher.voucher,
-      );
+      const orderItemDetail: OrderItemDetails = new OrderItemDetails();
+      orderItemDetail.title = OrderItemVoucher.voucher.title;
+      orderItemDetail.price = OrderItemVoucher.voucher.price.toNumber();
+      orderItemDetail.usageExpiredTime =
+        OrderItemVoucher.voucher.usageExpiredTime;
+      orderItemDetail.img = OrderItemVoucher.voucher.VoucherImg;
+      orderItemDomain.detail = orderItemDetail;
     } else if (OrderItemPromotion) {
       // Map to OrderItemPromotionDomain
-      orderItemDomain.item = new OrderItemPromotionDomain();
-      orderItemDomain.item.id = OrderItemPromotion.id;
-      orderItemDomain.item.promotionVoucher = VoucherPromotionMapper.toDomain(
-        OrderItemPromotion.voucherPromotion,
-      );
+      const orderItemDetail: OrderItemDetails = new OrderItemDetails();
+      orderItemDetail.title = OrderItemPromotion.voucherPromotion?.name;
+      orderItemDetail.price =
+        OrderItemPromotion.voucherPromotion?.promotionPrice.toNumber();
+      orderItemDetail.img = OrderItemPromotion.voucherPromotion?.VoucherImg;
+      orderItemDetail.usageExpiredTime =
+        OrderItemPromotion.voucherPromotion?.usableExpiredAt;
+
+      orderItemDomain.detail = orderItemDetail;
     } else if (OrderItemPackage) {
       // Map to OrderItemPackageDomain
-      orderItemDomain.item = new OrderItemPackageDomain();
-      orderItemDomain.item.id = OrderItemPackage.id;
-      orderItemDomain.item.package = OrderItemPackage.package;
+      const orderItemDetail: OrderItemDetails = new OrderItemDetails();
+      orderItemDetail.title = OrderItemPackage.package?.title;
+      orderItemDetail.price = OrderItemPackage.package?.packagePrice.toNumber();
+      orderItemDetail.img = OrderItemPackage.package?.PackageImg;
+      orderItemDetail.usageExpiredTime =
+        OrderItemPackage.package?.usableExpiredAt;
+
+      orderItemDomain.detail = orderItemDetail;
     }
     return orderItemDomain;
   }

@@ -69,6 +69,7 @@ export const PackageVoucherPath = {
   CreatePackageImage: '/images',
   UpdatePackageImage: '/images/:imageId',
   DeletePackageImage: '/images/:imageId',
+  GetPackageQueryCursor: 'cursor',
 } as const;
 
 export const UsableDaysPath = {
@@ -82,6 +83,7 @@ export const OrderPath = {
   OrderIdParam: 'orderId',
   GetOrderById: `:orderId`,
   GetOrdersQueryCursor: 'cursor',
+  GetOrdersQueryTransactionStatus: 'tstatus',
 } as const;
 
 export const OrderItemPath = {
