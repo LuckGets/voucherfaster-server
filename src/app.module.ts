@@ -15,6 +15,7 @@ import { TransactionModule } from './resources/transaction/transaction.module';
 import { UsableDaysModule } from './resources/usable-days/usable-days.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { OrderItemModule } from './resources/order-item/order-item.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { OrderItemModule } from './resources/order-item/order-item.module';
       maxListeners: 1000,
       verboseMemoryLeak: true,
     }),
+    ScheduleModule.forRoot(),
     JwtModule.register({ global: true }),
     AuthModule,
     AccountModule,

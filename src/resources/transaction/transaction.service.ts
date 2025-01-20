@@ -43,4 +43,13 @@ export class TransactionService {
       `Could not proceed transaction as the payment status: ${payment.status}`,
     );
   }
+
+  public async getAllUnSuccessTransactionAndOrderWithinTime(timeLimit: Date) {
+    if (!timeLimit || timeLimit instanceof Date)
+      throw ErrorApiResponse.conflictRequest('Invalid time limit provided.');
+
+    return this.transactionRepository.findAllUnSuccessTransactionAndOrderWithinTime(
+      timeLimit,
+    );
+  }
 }

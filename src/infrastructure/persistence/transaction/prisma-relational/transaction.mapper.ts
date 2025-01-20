@@ -21,6 +21,7 @@ export class TransactionMapper {
     transaction.createdAt = transactionEntity.createdAt;
     transaction.updatedAt = transactionEntity.updatedAt;
     transaction.deletedAt = transactionEntity.deletedAt;
+
     return transaction;
   }
 }

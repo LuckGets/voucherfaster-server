@@ -519,4 +519,36 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
 
     return allOrdersInfo.map(OrderMapper.toDomain);
   }
+
+  async deleteManyOrderWithUnsuccessTransaction(
+    orderIdList: OrderDomain['id'][],
+    transactionIdList: TransactionDomain['id'][],
+  ): Promise<void> {
+    try {
+      const currentDate = new Date(Date.now());
+      await this.prismaService.$transaction(async (tx) => {
+        return Promise.all([
+          ...orderIdList.map((orderId) => {
+            return tx.order.update({
+              where: { id: orderId },
+              data: {
+                deletedAt: currentDate,
+              },
+            });
+          }),
+          ...transactionIdList.map((transactionId) => {
+            return tx.transaction.update({
+              where: { id: transactionId },
+              data: {
+                status: 'FAILED',
+                deletedAt: currentDate,
+              },
+            });
+          }),
+        ]);
+      });
+    } catch (err) {
+      throw new Error(err);
+    }
+  }
 }

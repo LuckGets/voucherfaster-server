@@ -77,4 +77,9 @@ export abstract class OrderRepository {
     cursor?: OrderDomain['id'];
     transactionStatus?: TransactionDomain['status'];
   }): Promise<OrderDomain[]>;
+
+  abstract deleteManyOrderWithUnsuccessTransaction(
+    orderList: OrderDomain['id'][],
+    transactionIdList: TransactionDomain['id'][],
+  ): Promise<void>;
 }

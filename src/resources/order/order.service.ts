@@ -551,4 +551,17 @@ export class OrderService {
     }
     return this.orderRepository.findMany({ cursor, transactionStatus });
   }
+
+  public async deleteManyOrderWithUnsuccessTransaction(
+    orderIdList: OrderDomain['id'][],
+    transactionIdList: TransactionDomain['id'][],
+  ): Promise<void> {
+    if (!orderIdList || orderIdList.length < 1) return;
+    if (!transactionIdList || transactionIdList.length < 1) return;
+    await this.orderRepository.deleteManyOrderWithUnsuccessTransaction(
+      orderIdList,
+      transactionIdList,
+    );
+    return;
+  }
 }
