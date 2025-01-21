@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Match } from '@utils/validators/Match';
 import { NotMatch } from '@utils/validators/NotMatch';
-import { Length } from 'class-validator';
+import { IsJWT, Length } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
@@ -39,7 +39,7 @@ export class ConfirmChangePasswordDto {
     type: String,
     description: 'Token which provided via hash field in URL query.',
   })
-  @Length(10, 20)
+  @IsJWT()
   token: string;
 }
 

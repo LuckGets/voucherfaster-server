@@ -19,6 +19,7 @@ import { VerifyTokenPayloadType } from 'src/common/types/token-payload.type';
 export class AccountService {
   private readonly verifyEmailSecret: string;
   private readonly changePasswordSecret: string;
+  private readonly hashSaltRound: number;
   private readonly logger: Logger = new Logger(AccountService.name);
   constructor(
     private accountRepository: AccountRepository,
@@ -27,11 +28,17 @@ export class AccountService {
     private mailService: MailService,
     private jwtService: JwtService,
   ) {
-    this.changePasswordSecret = configService.get(
+    this.changePasswordSecret = configService.getOrThrow(
       'account.changePasswordSecret',
       { infer: true },
     );
-    this.verifyEmailSecret = configService.get('auth.verifyEmailSecret', {
+    this.verifyEmailSecret = configService.getOrThrow(
+      'auth.verifyEmailSecret',
+      {
+        infer: true,
+      },
+    );
+    this.hashSaltRound = configService.getOrThrow('auth.bcryptSaltRound', {
       infer: true,
     });
   }
@@ -149,8 +156,13 @@ export class AccountService {
       await this.jwtService.verifyAsync<VerifyTokenPayloadType>(token, {
         secret: this.changePasswordSecret,
       });
+
+    const hashedPassword = await this.cryptoService.hash(
+      newPassword,
+      this.hashSaltRound,
+    );
     return this.update(sub, {
-      password: newPassword,
+      password: hashedPassword,
     });
   }
 
@@ -161,6 +173,18 @@ export class AccountService {
         secret: this.verifyEmailSecret,
       },
     );
+
+    const isAccountExist = await this.accountRepository.findById(payload.sub);
+    if (!isAccountExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `The token contain invalid account ID.`,
+      );
+
+    if (isAccountExist.verifiedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `Account ID : ${isAccountExist.id} has already been verified at ${isAccountExist.verifiedAt.toLocaleString()}`,
+      );
+
     return this.accountRepository.update(payload.sub, {
       verifiedAt: new Date(Date.now()),
     });
@@ -173,6 +197,11 @@ export class AccountService {
     if (!account) {
       throw ErrorApiResponse.notFoundRequest();
     }
+
+    if (account.verifiedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `The account ID :${account.id} has already been verified at ${account.verifiedAt.toLocaleString()}`,
+      );
 
     const payload: VerifyTokenPayloadType = { sub: account.id };
     const token: string = await this.jwtService.signAsync(payload, {

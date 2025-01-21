@@ -46,7 +46,7 @@ export const accounts: Prisma.AccountCreateInput[] = [
     email: 'kasides15@gmail.com',
     fullname: 'Me Me',
     phone: '0812345556',
-    verifiedAt: new Date(),
+    // verifiedAt: new Date(),
     accountProvider: AccountProviderEnum.Local,
     role: RoleEnum.User,
   },
