@@ -41,7 +41,6 @@ import {
   OrderSuccessAfterPaymentResponse,
   ProcessPaymentDto,
 } from './dto/transactions/process-payment.dto';
-import { AdminGuard } from 'src/common/guards/admin.guard';
 import { OrderOwnerGuard } from 'src/common/guards/order-owner.guard';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 

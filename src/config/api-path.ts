@@ -90,6 +90,8 @@ export const OrderPath = {
 export const OrderItemPath = {
   Name: 'order-items',
   Base: '/order-items',
+  Redeem: '/:itemId/redeem',
+  OrderItemIdParm: 'itemId',
 };
 
 export const TransactionPath = {

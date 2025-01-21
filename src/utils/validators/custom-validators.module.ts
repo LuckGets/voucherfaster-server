@@ -9,9 +9,11 @@ import { IsDateGreaterThanValidator } from './IsDateGreaterThan';
 import { IsArrayOfUUIDValidator } from './IsArrayOfUUID';
 import { IsArrayOfClassValidator } from './IsArrayOfClass';
 import { IsEmptyValueValidator } from './IsEmptyValue';
+import { AtLeastOnePropertyConstraint } from './AtleastOneProp';
 
 @Module({
   providers: [
+    AtLeastOnePropertyConstraint,
     IsEmptyValueValidator,
     IsValidIdentifierValidator,
     MatcherValidator,
@@ -24,6 +26,7 @@ import { IsEmptyValueValidator } from './IsEmptyValue';
     IsArrayOfClassValidator,
   ],
   exports: [
+    AtLeastOnePropertyConstraint,
     IsEmptyValueValidator,
     IsValidIdentifierValidator,
     MatcherValidator,

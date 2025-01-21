@@ -14,6 +14,11 @@ import { Transporter } from 'nodemailer';
 
 export type MailTransporter = Transporter;
 
+export type OrderItemDetailForMail = OrderItemDomain & {
+  qrCodeUrl: string;
+  countNumber: number;
+};
+
 @Injectable()
 export class MailService {
   private basePath: string;
@@ -102,7 +107,7 @@ export class MailService {
   }
 
   async orderItem(
-    mailData: IMailData<OrderItemDomain>,
+    mailData: IMailData<OrderItemDetailForMail>,
     transporter?: MailTransporter,
   ): Promise<void> {
     const { data } = mailData;

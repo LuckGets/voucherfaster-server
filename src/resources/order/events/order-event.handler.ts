@@ -9,8 +9,18 @@ import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { UpdateOrderItemDto } from '@resources/order-item/dto/update.dto';
 import { OrderItemService } from '@resources/order-item/order-item.service';
 import { AccountDomain } from '@resources/account/domain/account.domain';
-import { MailService, MailTransporter } from '@application/mail/mail.service';
+import {
+  MailService,
+  MailTransporter,
+  OrderItemDetailForMail,
+} from '@application/mail/mail.service';
 import { MailerService } from '@application/mailer/mailer.service';
+import { OrderItemDomain } from '../domain/order-item.domain';
+
+type UpdateOrderItemAndQRCode = {
+  updateData: UpdateOrderItemDto;
+  qrCodeUrl: string;
+};
 
 @Injectable()
 export class OrderEventHandler {
@@ -41,11 +51,13 @@ export class OrderEventHandler {
       console.log(
         `OrderCreatedEvent: Processing ${event.orderItemIdList.length} order items.`,
       );
+      const qrCodeMap = new Map<OrderItemDomain['id'], string>();
       const updateOrderItem: UpdateOrderItemDto[] = await Promise.all(
         event.orderItemIdList.map((item) =>
-          this.handleCreateQRCodeAndUploadImage(item),
+          this.handleCreateQRCodeAndUploadImage(item, qrCodeMap),
         ),
       );
+
       const allUpdatedOrder =
         await this.orderItemService.updateManyQRCodeAfterCreated(
           updateOrderItem,
@@ -59,13 +71,21 @@ export class OrderEventHandler {
 
   async handleCreateQRCodeAndUploadImage(
     orderItem: OrderSuccessEvent['orderItemIdList'][number],
+    qrCodeMap: Map<OrderItemDomain['id'], string>,
   ): Promise<UpdateOrderItemDto> {
     try {
       // this.logger.log(`Generate QRCode for OrderItem ID: ${orderItem}`);
+      // Check does the id of order item
+      // is duplicated.
+      if (qrCodeMap.has(orderItem.id))
+        throw Error(
+          `The qrcode generated for the ID: ${orderItem.id} is duplicated. Please contact developer.`,
+        );
+
       console.log(`Generate QRCode for OrderItem ID: ${orderItem.id}`);
-      const urlData = `${this.frontEndDomain}/${FRONTEND_PATH.RETRIEVE_ORDER_ITEM}/${orderItem.id}`;
+      const qrCodeUrl = `${this.frontEndDomain}/${FRONTEND_PATH.RETRIEVE_ORDER_ITEM}/${orderItem.id}`;
       const { buffer, mimetype } =
-        await this.qrCodeService.generateQRCodeAsBuffer(urlData);
+        await this.qrCodeService.generateQRCodeAsBuffer(qrCodeUrl);
 
       const qrcodeImagePath = await this.mediaService.uploadFile({
         file: buffer,
@@ -77,7 +97,12 @@ export class OrderEventHandler {
       console.log(
         `Upload QRCode to S3 for OrderItem ID: ${orderItem.id}. \nIMG url: ${qrcodeImagePath}`,
       );
-      return { id: orderItem.id, qrcodeImagePath };
+
+      qrCodeMap.set(orderItem.id, qrCodeUrl);
+      return {
+        id: orderItem.id,
+        qrcodeImagePath,
+      };
     } catch (err) {
       console.error(
         `There is an error while upload image: ${err.message}`,
@@ -89,12 +114,26 @@ export class OrderEventHandler {
   async sendingQrcodeToEmail(
     orderItem: OrderSuccessEvent['orderItemIdList'],
     email: AccountDomain['email'],
+    qrCodeMap: Map<OrderItemDomain['id'], string>,
   ) {
+    if (qrCodeMap.size !== orderItem.length)
+      throw new Error(
+        `The QR code generated does not equal to order item. Please contact developer to fix the issue.`,
+      );
+
     const emailTransporter: MailTransporter =
       await this.mailerService.getTransporter();
 
     await Promise.all(
       orderItem.map((item) => {
+        if (!qrCodeMap.has(item.id))
+          throw new Error(
+            `There is no generated qrcode for this ID: ${item.id}`,
+          );
+        const data: OrderItemDetailForMail = {
+          ...item,
+          qrCodeUrl: qrCodeMap.get(item.id),
+        };
         this.mailService.orderItem({ to: email, data: item }, emailTransporter);
       }),
     );

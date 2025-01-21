@@ -15,9 +15,11 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { AccountDomain } from '../domain/account.domain';
 import { IsEmptyValue } from '@utils/validators/IsEmptyValue';
+import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
 
 type UpdateAccountResponseType = AccountDomain;
 
+@AtLeastOneProperty(['email', 'phone', 'fullname'])
 export class UpdateAccountDto {
   @ApiProperty({ type: String, required: false })
   @IsEmail()
