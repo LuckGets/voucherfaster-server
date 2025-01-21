@@ -26,15 +26,15 @@ export class GetMeResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "019483f3-2100-750b-b39d-27e1c23d9933",
-        "fullname": "JAJAJA JAJA",
-        "phone": "0812345612",
-        "email": "abcdef@mail.com",
+        "id": "01948762-dfe1-702b-9ccf-65716725fb39",
+        "fullname": "Me Me",
+        "phone": "0812345556",
+        "email": "kasides15@gmail.com",
         "photo": null,
         "accountProvider": "LOCAL",
-        "createdAt": "1/20/2025, 8:42:16 PM",
-        "updatedAt": "1/20/2025, 8:42:16 PM",
-        "deletedAt": null
+        "createdAt": "1/21/2025, 12:43:15 PM",
+        "updatedAt": "1/21/2025, 12:54:19 PM",
+        "verifiedAt": "1/21/2025, 12:50:51 PM"
     }`,
   })
   public data: AccountDomain;

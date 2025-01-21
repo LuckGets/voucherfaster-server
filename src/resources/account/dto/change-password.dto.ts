@@ -71,8 +71,7 @@ export class ChangePasswordResponse extends CoreApiResponse {
         "accountProvider": "LOCAL",
         "createdAt": "1/20/2025, 8:42:16 PM",
         "updatedAt": "1/20/2025, 9:30:29 PM",
-        "deletedAt": null,
-        "verifiedAt": null
+        "verifiedAt": "1/20/2025, 9:30:29 PM"
     }`,
   })
   public data: null;
