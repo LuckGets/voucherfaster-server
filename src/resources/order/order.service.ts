@@ -520,12 +520,14 @@ export class OrderService {
   async processPaymentWithOrderId(
     payload: ProcessPaymentDto,
     user: HttpRequestWithUser['user'],
+    order: OrderDomain,
   ): Promise<OrderDomain> {
     try {
       const { orderId, paymentToken } = payload;
       const orderAndTransaction = await this.checkOrderAndTransaction(
         orderId,
         user,
+        order,
       );
 
       const transaction =
@@ -562,59 +564,35 @@ export class OrderService {
   async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
     user: HttpRequestWithUser['user'],
+    order: OrderDomain,
   ): Promise<OrderDomain> {
-    const isOrderExist = await this.orderRepository.findById(orderId);
-
-    if (!isOrderExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `Order ID: ${orderId} could not be found on this server.`,
-      );
-    if (isOrderExist.deletedAt)
+    if (!order.account.verifiedAt)
       throw ErrorApiResponse.conflictRequest(
-        `Order ID: ${isOrderExist.id} has been deleted at ${isOrderExist.deletedAt.toLocaleString()}.`,
+        `The Order ID: ${order.id} created by un-verified account. Please verify account before making transaction.`,
       );
-
-    if (!isOrderExist.account || Object.keys(isOrderExist.account).length === 0)
-      throw ErrorApiResponse.conflictRequest(
-        `Order ID: ${isOrderExist.id} does not connect with any account.`,
-      );
-
-    if (
-      isOrderExist.account.id !== user.accountId &&
-      user.role !== RoleEnum.Admin
-    )
-      throw ErrorApiResponse.unauthorizedRequest();
-
-    if (!isOrderExist.account.verifiedAt)
-      throw ErrorApiResponse.conflictRequest(
-        `The Order ID: ${isOrderExist.id} created by un-verified account. Please verify account before making transaction.`,
-      );
-    if (!isOrderExist.account.email || !isOrderExist.id)
+    if (!order.account.email || !order.id)
       throw ErrorApiResponse.internalServerError(
-        `The account ID : ${isOrderExist.account.id} does not have valid information.`,
+        `The account ID : ${order.account.id} does not have valid information.`,
       );
 
-    if (
-      !isOrderExist.transaction ||
-      Object.keys(isOrderExist.transaction).length === 0
-    )
+    if (!order.transaction || Object.keys(order.transaction).length === 0)
       throw ErrorApiResponse.conflictRequest(
-        `Order ID: ${isOrderExist.id} does not have any transaction.`,
+        `Order ID: ${order.id} does not have any transaction.`,
       );
 
     if (
-      isOrderExist.transaction.status === TransactionStatusEnum.SUCCESS ||
-      isOrderExist.transaction.paymentId
+      order.transaction.status === TransactionStatusEnum.SUCCESS ||
+      order.transaction.paymentId
     )
       throw ErrorApiResponse.conflictRequest(
         `Transaction of order ID: ${orderId} has already been processed.`,
       );
 
-    if (isOrderExist.transaction.deletedAt)
+    if (order.transaction.deletedAt)
       throw ErrorApiResponse.conflictRequest(
-        `Transaction of order ID: ${isOrderExist} has been deleted at ${isOrderExist.transaction.deletedAt.toLocaleString()}.`,
+        `Transaction of order ID: ${order} has been deleted at ${order.transaction.deletedAt.toLocaleString()}.`,
       );
 
-    return isOrderExist;
+    return order;
   }
 }

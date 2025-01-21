@@ -23,7 +23,10 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { CreateOrderDto, CreateOrderResponse } from './dto/create-order.dto';
-import { HttpRequestWithUser } from 'src/common/http.type';
+import {
+  HttpRequestWithUser,
+  HttpRequestWithUserAndOrder,
+} from 'src/common/http.type';
 import { OrderDomain } from './domain/order.domain';
 import {
   GetOrderByIdReponse,
@@ -34,8 +37,13 @@ import {
   TransactionStatusEnum,
 } from '@resources/transaction/domain/transaction.domain';
 import { RoleEnum } from '@resources/account/types/account.type';
-import { ProcessPaymentDto } from './dto/transactions/process-payment.dto';
+import {
+  OrderSuccessAfterPaymentResponse,
+  ProcessPaymentDto,
+} from './dto/transactions/process-payment.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';
+import { OrderOwnerGuard } from 'src/common/guards/order-owner.guard';
+import { ErrorApiResponse } from 'src/common/core-api-response';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {
@@ -65,7 +73,7 @@ export class OrderController {
     example: '0194462e-a077-7616-b2d8-f8f14121ec54',
   })
   @ApiOkResponse({ type: () => GetOrderByIdReponse })
-  @UseGuards(AdminGuard)
+  @UseGuards(AccessTokenAuthGuard, OrderOwnerGuard)
   @Get(OrderPath.GetOrderById)
   async getOrderById(
     @Param(OrderPath.OrderIdParam) orderId: OrderDomain['id'],
@@ -107,12 +115,27 @@ export class OrderController {
   // -------------------------------------------------------------------- //
   @ApiBearerAuth()
   @ApiBody({ type: () => ProcessPaymentDto })
-  @UseGuards(AccessTokenAuthGuard, VerifiedAccountGuard)
+  @ApiOkResponse({ type: () => OrderSuccessAfterPaymentResponse })
+  @UseGuards(AccessTokenAuthGuard, OrderOwnerGuard)
   @Patch(OrderPath.ProcessPayment)
   async processPaymentWithOrderId(
-    @Req() req: HttpRequestWithUser,
+    @Req() req: HttpRequestWithUserAndOrder,
     @Body() body: ProcessPaymentDto,
-  ) {
-    await this.orderService.processPaymentWithOrderId(body, req.user);
+  ): Promise<OrderSuccessAfterPaymentResponse> {
+    if (
+      !req.order ||
+      Object.keys(req.order).length === 0 ||
+      !(req.order instanceof OrderDomain)
+    )
+      throw ErrorApiResponse.internalServerError(
+        `The request did not have the order property. Please contact developer to fix the issue.`,
+      );
+
+    const updatedOrder = await this.orderService.processPaymentWithOrderId(
+      body,
+      req.user,
+      req.order,
+    );
+    return OrderSuccessAfterPaymentResponse.success(updatedOrder);
   }
 }

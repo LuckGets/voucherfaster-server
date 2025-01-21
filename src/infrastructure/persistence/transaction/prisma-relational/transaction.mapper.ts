@@ -24,6 +24,7 @@ export class TransactionMapper {
       throw new Error(
         `The transaction ID : ${transactionEntity.id} does not have system information.`,
       );
+    transaction.paymentId = transactionEntity.paymentId;
     transaction.transactionSystem = transactionEntity.transactionSystem?.system;
     transaction.createdAt = transactionEntity.createdAt;
     transaction.updatedAt = transactionEntity.updatedAt;

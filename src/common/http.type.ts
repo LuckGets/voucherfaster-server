@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { Role } from '@resources/account/types/account.type';
+import { OrderDomain } from '@resources/order/domain/order.domain';
 
 export enum HTTPMethod {
   Get = 'GET',
@@ -14,4 +15,8 @@ export interface HttpRequestWithUser extends Request {
     accountId: string;
     role: Role;
   };
+}
+
+export interface HttpRequestWithUserAndOrder extends HttpRequestWithUser {
+  order: OrderDomain;
 }

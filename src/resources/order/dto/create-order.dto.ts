@@ -88,7 +88,20 @@ export class CreateOrderResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: `{
+        "id": "019488cd-a13d-764f-be0d-080d4072aac5",
+        "totalPrice": 300,
+        "createdAt": "1/21/2025, 7:19:25 PM",
+        "usableDay": "2025-01-23T17:00:00.000Z",
+        "transaction": {
+            "id": "019488cd-a14b-7e13-9146-3bcbfdaef644",
+            "status": "PENDING",
+            "transactionSystem": "omise",
+            "createdAt": "1/21/2025, 7:19:25 PM",
+            "updatedAt": "1/21/2025, 7:19:25 PM",
+            "deletedAt": null
+        }
+    }`,
   })
   public data: OrderDomain;
 
