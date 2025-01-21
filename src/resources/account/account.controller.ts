@@ -34,7 +34,7 @@ import {
   UpdateAccountResponse,
 } from './dto/update-account.dto';
 import { MediaService } from '@application/media/media.service';
-import { VerifyEmailResponse } from './dto/verify-emai.dto';
+import { VerifyEmailDto, VerifyEmailResponse } from './dto/verify-emai.dto';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 
 @ApiTags(AccountPath.Name)
@@ -54,6 +54,54 @@ export class AccountController {
   async me(@Req() req: HttpRequestWithUser): Promise<GetMeResponse> {
     const account = await this.accountService.findById(req.user.accountId);
     return GetMeResponse.success(account);
+  }
+  @ApiBody({
+    type: () => VerifyEmailDto,
+    schema: {
+      properties: {
+        token: {
+          type: 'string',
+          description: 'Token which provided via hash field in URL query.',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    type: () => VerifyEmailResponse,
+  })
+  @SerializeOptions({
+    groups: [RoleEnum.Me],
+  })
+  @Patch(AccountPath.Verify)
+  async verfiyEmail(
+    @Body() body: VerifyEmailDto,
+  ): Promise<VerifyEmailResponse> {
+    const account = await this.accountService.verifyEmail(body.token);
+    return VerifyEmailResponse.success(account);
+  }
+
+  @ApiBody({
+    type: () => ConfirmChangePasswordDto,
+  })
+  @ApiOkResponse({
+    type: () => ChangePasswordResponse,
+  })
+  @ApiBearerAuth()
+  @SerializeOptions({
+    groups: [RoleEnum.Me],
+  })
+  @Patch(AccountPath.ConfirmChangePassword)
+  async confirmChangePassword(
+    @Body() body: ConfirmChangePasswordDto,
+  ): Promise<ChangePasswordResponse> {
+    const account = await this.accountService.confirmChangePassword(body.token);
+    return ChangePasswordResponse.success(
+      {
+        id: account.id,
+        verifiedAt: account.verifiedAt,
+      },
+      `Changed password successfully. Please Login with the newly changed password.`,
+    );
   }
 
   @ApiParam({
@@ -136,58 +184,11 @@ export class AccountController {
     return ChangePasswordResponse.success(account);
   }
 
-  @ApiBody({
-    type: () => ConfirmChangePasswordDto,
-  })
-  @ApiOkResponse({
-    type: () => ChangePasswordResponse,
-  })
-  @ApiBearerAuth()
-  @SerializeOptions({
-    groups: [RoleEnum.Me],
-  })
-  @UseGuards(AccessTokenAuthGuard)
-  @Patch(AccountPath.ConfirmChangePassword)
-  async confirmChangePassword(
-    @Body() body: ConfirmChangePasswordDto,
-  ): Promise<ChangePasswordResponse> {
-    const account = await this.accountService.confirmChangePassword(body.token);
-    return ChangePasswordResponse.success(
-      {
-        id: account.id,
-        verifiedAt: account.verifiedAt,
-      },
-      `Changed password successfully. Please Login with the newly changed password.`,
-    );
-  }
-
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        token: {
-          type: 'string',
-          description: 'Token which provided via hash field in URL query.',
-        },
-      },
-    },
-  })
   @ApiOkResponse({
     type: () => VerifyEmailResponse,
   })
   @SerializeOptions({
     groups: [RoleEnum.Me],
-  })
-  @Patch(AccountPath.Verify)
-  async verfiyEmail(
-    @Body() body: { token: string },
-  ): Promise<VerifyEmailResponse> {
-    const account = await this.accountService.verifyEmail(body.token);
-    return VerifyEmailResponse.success(account);
-  }
-
-  @ApiOkResponse({
-    type: () => VerifyEmailResponse,
   })
   @UseGuards(AccessTokenAuthGuard)
   @Get(AccountPath.Verify)

@@ -57,7 +57,7 @@ export class AccountDomain {
   @Expose({ groups: [RoleEnum.Me, RoleEnum.Admin] })
   updatedAt: NullAble<Date>;
   @ApiProperty()
-  @Expose({ groups: [RoleEnum.Me, RoleEnum.Admin] })
+  @Expose({ groups: [RoleEnum.Admin] })
   deletedAt?: NullAble<Date>;
   @ApiProperty()
   verifiedAt: NullAble<Date>;

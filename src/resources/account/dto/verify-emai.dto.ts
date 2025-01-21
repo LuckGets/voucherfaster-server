@@ -5,6 +5,18 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { AccountDomain } from '../domain/account.domain';
 import { GenerateAccountResponseHATEOASLink } from 'src/common/HATEOASLinks';
+import { IsJWT } from 'class-validator';
+
+type VerifyEmailResponseDataType = AccountDomain;
+
+export class VerifyEmailDto {
+  @ApiProperty({
+    type: String,
+    description: 'Token which provided via hash field in URL query.',
+  })
+  @IsJWT()
+  token: string;
+}
 
 export class VerifyEmailResponse extends CoreApiResponse {
   @ApiProperty({
@@ -23,20 +35,10 @@ export class VerifyEmailResponse extends CoreApiResponse {
   })
   public links: HATEOSLink;
   @ApiProperty({
-    type: () => Object,
-    example: `{
-        "id": "019483f3-2100-750b-b39d-27e1c23d9933",
-        "fullname": "JAJAJA JAJA",
-        "phone": "0812345612",
-        "email": "abcdef@mail.com",
-        "photo": null,
-        "accountProvider": "LOCAL",
-        "createdAt": "1/20/2025, 8:42:16 PM",
-        "updatedAt": "1/20/2025, 8:42:16 PM",
-        "deletedAt": null
-    }`,
+    type: Object,
+    example: 'sdfsdf',
   })
-  public data: AccountDomain;
+  public data: VerifyEmailResponseDataType;
 
   public static success(
     data: AccountDomain,
@@ -46,7 +48,7 @@ export class VerifyEmailResponse extends CoreApiResponse {
   ): VerifyEmailResponse {
     const responseMessage =
       message ?? `Verify accountID : ${data.id} successfully`;
-    const responseCode = statusCode ?? HttpStatus.ACCEPTED;
+    const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink =
       links ??
       GenerateAccountResponseHATEOASLink(String(data.id), !!data.verifiedAt);

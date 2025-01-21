@@ -4,7 +4,7 @@ export enum AccountPath {
   Update = '/:accountId',
   Me = '/me',
   ChangePassword = ':accountId/password',
-  ConfirmChangePassword = '/password/confirm',
+  ConfirmChangePassword = '/confirm-password',
   AccountIdParam = 'accountId',
   Verify = '/verify',
 }
