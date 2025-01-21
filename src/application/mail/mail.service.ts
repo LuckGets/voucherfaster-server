@@ -6,8 +6,13 @@ import { IMailData } from './mail-data.interface';
 import * as path from 'path';
 import {
   CHANGE_PASSWORD_CONSTANT,
+  MAIL_ORDER_ITEM_CONSTANT,
   VERIFY_EMAIL_CONSTANT,
 } from './config/mail.constant';
+import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { Transporter } from 'nodemailer';
+
+export type MailTransporter = Transporter;
 
 @Injectable()
 export class MailService {
@@ -27,7 +32,10 @@ export class MailService {
     });
   }
 
-  async verifyEmail(mailData: IMailData<{ token: string }>): Promise<void> {
+  async verifyEmail(
+    mailData: IMailData<{ token: string }>,
+    transporter?: MailTransporter,
+  ): Promise<void> {
     const verifyEmailPath = this.configService.get('client.verifyEmailPath', {
       infer: true,
     });
@@ -44,6 +52,7 @@ export class MailService {
       ),
       to: mailData.to,
       subject: VERIFY_EMAIL_CONSTANT.title,
+      transporter,
       context: {
         title: VERIFY_EMAIL_CONSTANT.title,
         app_name: this.appName,
@@ -56,7 +65,10 @@ export class MailService {
     });
   }
 
-  async changePassword(mailData: IMailData<{ token: string }>): Promise<void> {
+  async changePassword(
+    mailData: IMailData<{ token: string }>,
+    transporter?: MailTransporter,
+  ): Promise<void> {
     const changePasswordPath = this.configService.get(
       'client.changePasswordPath',
       {
@@ -75,6 +87,7 @@ export class MailService {
         'verify.hbs',
       ),
       to: mailData.to,
+      transporter,
       subject: CHANGE_PASSWORD_CONSTANT.title,
       context: {
         title: CHANGE_PASSWORD_CONSTANT.title,
@@ -86,5 +99,38 @@ export class MailService {
         url,
       },
     });
+  }
+
+  async orderItem(
+    mailData: IMailData<OrderItemDomain>,
+    transporter?: MailTransporter,
+  ): Promise<void> {
+    const { data } = mailData;
+
+    console.log(`Sending Order item voucher to email: ${mailData.to}...`);
+    await this.mailerService.sendMail({
+      templatePath: path.join(
+        this.basePath,
+        'src',
+        'application',
+        'mail',
+        'templates',
+        'order-item.hbs',
+      ),
+      transporter,
+      to: mailData.to,
+      subject: MAIL_ORDER_ITEM_CONSTANT.title,
+      context: {
+        title: MAIL_ORDER_ITEM_CONSTANT.title,
+        app_name: this.appName,
+        item_name: data.detail.title,
+        item_code: data.code,
+        qrcode_path: data.qrcodeImagePath,
+        expired_time: data.detail.usageExpiredTime,
+      },
+    });
+    console.log(
+      `Sending Order item voucher to email: ${mailData.to} successful!`,
+    );
   }
 }

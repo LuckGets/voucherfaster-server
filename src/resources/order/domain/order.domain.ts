@@ -3,14 +3,13 @@ import { RoleEnum } from '@resources/account/types/account.type';
 import { Expose } from 'class-transformer';
 import { OrderItemDomain } from './order-item.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
-import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/usable-day.domain';
 import { AccountDomain } from '@resources/account/domain/account.domain';
 
 export class OrderDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: String })
-  totalPrice: string;
+  totalPrice: number;
   @ApiProperty({ type: () => Date })
   usableDay: Date;
   @ApiProperty({ type: String })

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -32,9 +33,9 @@ import {
   TransactionDomain,
   TransactionStatusEnum,
 } from '@resources/transaction/domain/transaction.domain';
-import { TransactionStatus } from '@prisma/client';
-import { ErrorApiResponse } from 'src/common/core-api-response';
 import { RoleEnum } from '@resources/account/types/account.type';
+import { ProcessPaymentDto } from './dto/transactions/process-payment.dto';
+import { AdminGuard } from 'src/common/guards/admin.guard';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {
@@ -57,12 +58,14 @@ export class OrderController {
     return CreateOrderResponse.success(createdOrder, req.user.accountId);
   }
 
+  @ApiBearerAuth()
   @ApiParam({
     name: OrderPath.OrderIdParam,
     description: 'Order ID',
     example: '0194462e-a077-7616-b2d8-f8f14121ec54',
   })
   @ApiOkResponse({ type: () => GetOrderByIdReponse })
+  @UseGuards(AdminGuard)
   @Get(OrderPath.GetOrderById)
   async getOrderById(
     @Param(OrderPath.OrderIdParam) orderId: OrderDomain['id'],
@@ -97,5 +100,19 @@ export class OrderController {
       transactionStatus,
     });
     return GetPaginationOrderResponse.success(ordersList);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- TRANSACTION PART ------------------------- //
+  // -------------------------------------------------------------------- //
+  @ApiBearerAuth()
+  @ApiBody({ type: () => ProcessPaymentDto })
+  @UseGuards(AccessTokenAuthGuard, VerifiedAccountGuard)
+  @Patch(OrderPath.ProcessPayment)
+  async processPaymentWithOrderId(
+    @Req() req: HttpRequestWithUser,
+    @Body() body: ProcessPaymentDto,
+  ) {
+    await this.orderService.processPaymentWithOrderId(body, req.user);
   }
 }

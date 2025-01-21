@@ -1,3 +1,5 @@
+import { CreatePaymentTokenDto } from '@resources/transaction/dto/create-token.dto';
+
 export type PaymentServiceResponse = {
   id: string;
   status: 'failed' | 'reversed' | 'expired' | 'pending' | 'successful';
@@ -16,4 +18,6 @@ export abstract class PaymentService {
     amount: number,
     description: string,
   ): Promise<PaymentServiceResponse>;
+
+  abstract createPaymentToken(payload: CreatePaymentTokenDto): Promise<string>;
 }

@@ -15,3 +15,12 @@ export const CHANGE_PASSWORD_CONSTANT = {
     'We received the requested but before the request has been authorized',
   thirdText: 'Clicking the links below to confirm your request.',
 } as const;
+
+export const MAIL_ORDER_ITEM_CONSTANT = {
+  title: 'Thanks you for purchasing with voucher-faster.',
+  actionTitle: 'Change password',
+  firstText: 'As the user has requested to changing the password in platform',
+  secondText:
+    'We received the requested but before the request has been authorized',
+  thirdText: 'Clicking the links below to confirm your request.',
+};

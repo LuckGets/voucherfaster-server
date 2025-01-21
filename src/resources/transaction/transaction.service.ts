@@ -6,6 +6,12 @@ import {
 } from './domain/transaction.domain';
 import { TransactionRepository } from 'src/infrastructure/persistence/transaction/transaction.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { CreatePaymentTokenDto } from './dto/create-token.dto';
+
+enum PaymentStatus {
+  Success = 'successful',
+  Failed = 'failed',
+}
 
 @Injectable()
 export class TransactionService {
@@ -14,7 +20,7 @@ export class TransactionService {
     private transactionRepository: TransactionRepository,
   ) {}
 
-  public async processPayment({
+  public async makePaymentAndUpdateTransaction({
     token,
     amount,
     description,
@@ -31,10 +37,21 @@ export class TransactionService {
       description,
     );
 
-    if (payment.status === 'successful') {
+    if (!payment)
+      throw ErrorApiResponse.conflictRequest(
+        `Payment process unsucceed. Please try again.`,
+      );
+
+    if (payment.status === PaymentStatus.Success) {
       return this.transactionRepository.update({
         id: transactionId,
         status: TransactionStatusEnum.SUCCESS,
+        paymentId: payment.id,
+      });
+    } else if (payment.status === PaymentStatus.Failed) {
+      return this.transactionRepository.update({
+        id: transactionId,
+        status: TransactionStatusEnum.FAILED,
         paymentId: payment.id,
       });
     }
@@ -44,13 +61,10 @@ export class TransactionService {
     );
   }
 
-  public async updateSuccessTransactionAndUploadQrCode(
-    transactionId: TransactionDomain['id'],
-  ) {
-    // this.eventEmitter.emit(
-    //   ORDER_EVENT_CONSTANT.CREATED,
-    //   new OrderCreatedEvent(allOrderItemsId),
-    // );
+  public async createPaymentToken(
+    payload: CreatePaymentTokenDto,
+  ): Promise<string> {
+    return this.paymentService.createPaymentToken(payload);
   }
 
   public async getAllUnSuccessTransactionAndOrderWithinTime(timeLimit: Date) {

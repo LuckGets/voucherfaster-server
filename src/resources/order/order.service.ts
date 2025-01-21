@@ -21,10 +21,6 @@ import { OrderItemDomain } from './domain/order-item.domain';
 import { UsableDaysService } from '@resources/usable-days/usable-days.service';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  ORDER_EVENT_CONSTANT,
-  OrderCreatedEvent,
-} from '../transaction/events/order.events';
 import { NullAble } from '@utils/types/common.type';
 import { isUUID } from 'class-validator';
 import { RandomCodeGeneratorService } from '@utils/services/random-code/random-code.service';
@@ -33,6 +29,11 @@ import {
   TransactionDomain,
   TransactionStatusEnum,
 } from '@resources/transaction/domain/transaction.domain';
+import { ProcessPaymentDto } from './dto/transactions/process-payment.dto';
+import { TransactionService } from '@resources/transaction/transaction.service';
+import { ORDER_EVENT_CONSTANT, OrderSuccessEvent } from './events/order.events';
+import { HttpRequestWithUser } from 'src/common/http.type';
+import { RoleEnum } from '@resources/account/types/account.type';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
@@ -53,7 +54,7 @@ export class OrderService {
     private voucherService: VoucherService,
     private packageVoucherService: PackageVoucherService,
     private usableDaysService: UsableDaysService,
-    // private transactionService: TransactionService,
+    private transactionService: TransactionService,
     private uuidService: UUIDService,
     private randomCodeGeneratorService: RandomCodeGeneratorService,
     private eventEmitter: EventEmitter2,
@@ -85,54 +86,6 @@ export class OrderService {
     return order;
   }
 
-  // Not promise.all but solid
-  //   async findOrderItemInformation(data: CreateOrderDto): Promise<{
-  //     items: OrderItemsInfo;
-  //     totalPrice: number;
-  //   }> {
-  //     let totalPrice: number = 0;
-  //     const allItemsInfo: OrderItemsInfo = {
-  //       vouchers: [],
-  //       promotions: [],
-  //       packages: [],
-  //     };
-  //     try {
-  //       for (const item of data.items) {
-  //         switch (item.voucherType) {
-  //           case 'voucher': {
-  //             const voucher = await this.voucherService.getVoucherById(item.id);
-  //             totalPrice += voucher.price;
-  //             allItemsInfo.vouchers.push(voucher);
-  //             break;
-  //           }
-  //           case 'promotion': {
-  //             const promotion = await this.voucherService.getVoucherPromotionById(
-  //               item.id,
-  //             );
-  //             totalPrice += promotion.promotionPrice;
-  //             allItemsInfo.promotions.push(promotion);
-  //             break;
-  //           }
-  //           case 'package': {
-  //             const packageVoucher =
-  //               await this.packageVoucherService.getPackageVoucherById(item.id);
-  //             totalPrice += packageVoucher.price;
-  //             allItemsInfo.packages.push(packageVoucher);
-  //             break;
-  //           }
-  //           default:
-  //             throw new Error(`Unknown voucher type: ${item.voucherType}`);
-  //         }
-  //       }
-
-  //       return { items: allItemsInfo, totalPrice };
-  //     } catch (err) {
-  //       throw new Error(`Failed to process order items: ${err.message}`);
-  //     }
-  //   }
-  // }
-
-  // promise.all but untested.
   // There are going to have the
   // race condition in total price
   // but since it does not have to lock
@@ -541,11 +494,11 @@ export class OrderService {
     if (transactionStatus) {
       for (const key in TransactionStatusEnum) {
         if (transactionStatus.toUpperCase() !== TransactionStatusEnum[key]) {
-          throw ErrorApiResponse.badRequest(`Invalid transaction status`);
+          return this.orderRepository.findMany({ cursor, transactionStatus });
         }
       }
     }
-    return this.orderRepository.findMany({ cursor, transactionStatus });
+    throw ErrorApiResponse.badRequest(`Invalid transaction status`);
   }
 
   public async deleteManyOrderWithUnsuccessTransaction(
@@ -559,5 +512,109 @@ export class OrderService {
       transactionIdList,
     );
     return;
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- TRANSACTION PART ------------------------- //
+  // -------------------------------------------------------------------- //
+  async processPaymentWithOrderId(
+    payload: ProcessPaymentDto,
+    user: HttpRequestWithUser['user'],
+  ): Promise<OrderDomain> {
+    try {
+      const { orderId, paymentToken } = payload;
+      const orderAndTransaction = await this.checkOrderAndTransaction(
+        orderId,
+        user,
+      );
+
+      // const transaction =
+      //   await this.transactionService.makePaymentAndUpdateTransaction({
+      //     transactionId: orderAndTransaction.transaction.id,
+      //     token: paymentToken,
+      //     amount: orderAndTransaction.totalPrice,
+      //     description: `Transaction for order ID: ${orderAndTransaction.id}`,
+      //   });
+
+      // if (transaction.status !== TransactionStatusEnum.SUCCESS)
+      //   throw ErrorApiResponse.badRequest('Transaction failed.');
+
+      const allOrderItems = [...orderAndTransaction.orderItems];
+
+      // Emit event
+      // for generating qrcode
+      // and upload the qrcode to media storage
+      // then updating the qrcode
+      // for each order item
+      // After finish updating, sending email
+      this.eventEmitter.emit(
+        ORDER_EVENT_CONSTANT.SUCCESS,
+        new OrderSuccessEvent(orderAndTransaction.account.email, allOrderItems),
+      );
+
+      return orderAndTransaction;
+    } catch (err) {
+      console.error(err);
+      throw ErrorApiResponse.conflictRequest(err);
+    }
+  }
+
+  async checkOrderAndTransaction(
+    orderId: OrderDomain['id'],
+    user: HttpRequestWithUser['user'],
+  ): Promise<OrderDomain> {
+    const isOrderExist = await this.orderRepository.findById(orderId);
+
+    if (!isOrderExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Order ID: ${orderId} could not be found on this server.`,
+      );
+    if (isOrderExist.deletedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `Order ID: ${isOrderExist.id} has been deleted at ${isOrderExist.deletedAt.toLocaleString()}.`,
+      );
+
+    if (!isOrderExist.account || Object.keys(isOrderExist.account).length === 0)
+      throw ErrorApiResponse.conflictRequest(
+        `Order ID: ${isOrderExist.id} does not connect with any account.`,
+      );
+
+    if (
+      isOrderExist.account.id !== user.accountId &&
+      user.role !== RoleEnum.Admin
+    )
+      throw ErrorApiResponse.unauthorizedRequest();
+
+    if (!isOrderExist.account.verifiedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `The Order ID: ${isOrderExist.id} created by un-verified account. Please verify account before making transaction.`,
+      );
+    if (!isOrderExist.account.email || !isOrderExist.id)
+      throw ErrorApiResponse.internalServerError(
+        `The account ID : ${isOrderExist.account.id} does not have valid information.`,
+      );
+
+    if (
+      !isOrderExist.transaction ||
+      Object.keys(isOrderExist.transaction).length === 0
+    )
+      throw ErrorApiResponse.conflictRequest(
+        `Order ID: ${isOrderExist.id} does not have any transaction.`,
+      );
+
+    if (
+      isOrderExist.transaction.status === TransactionStatusEnum.SUCCESS ||
+      isOrderExist.transaction.paymentId
+    )
+      throw ErrorApiResponse.conflictRequest(
+        `Transaction of order ID: ${orderId} has already been processed.`,
+      );
+
+    if (isOrderExist.transaction.deletedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `Transaction of order ID: ${isOrderExist} has been deleted at ${isOrderExist.transaction.deletedAt.toLocaleString()}.`,
+      );
+
+    return isOrderExist;
   }
 }

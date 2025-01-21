@@ -5,6 +5,8 @@ import { AllConfigType, AllConfigTypeEnum } from 'src/config/all-config.type';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { Inject, Logger } from '@nestjs/common';
+import { PAYMENT_CONFIG } from '../config/payment-config.type';
+import { CreatePaymentTokenDto } from '@resources/transaction/dto/create-token.dto';
 
 export class OmisePaymentService implements PaymentService {
   private omise: Omise.IOmise;
@@ -16,7 +18,11 @@ export class OmisePaymentService implements PaymentService {
   ) {
     this.omise = Omise({
       secretKey: this.configService.getOrThrow(
-        `${AllConfigTypeEnum.Payment}.paymentSecretKey`,
+        `${AllConfigTypeEnum.Payment}.${PAYMENT_CONFIG.SECRET_KEY}`,
+        { infer: true },
+      ),
+      publicKey: this.configService.getOrThrow(
+        `${AllConfigTypeEnum.Payment}.${PAYMENT_CONFIG.PUBLIC_KEY}`,
         { infer: true },
       ),
     });
@@ -35,19 +41,30 @@ export class OmisePaymentService implements PaymentService {
     };
 
     try {
-      return this.omise.charges.create(chargeParams, (err, response) => {
-        if (err) {
-          this.logger.error(err);
-          throw ErrorApiResponse.conflictRequest('Payment failed');
-        } else {
-          return {
-            id: response.id,
-            status: response.status,
-          };
-        }
-      });
+      return this.omise.charges.create(chargeParams);
     } catch (error) {
       throw ErrorApiResponse.conflictRequest(error.message);
+    }
+  }
+
+  async createPaymentToken(payload: CreatePaymentTokenDto): Promise<string> {
+    try {
+      const card: Omise.Tokens.IRequest = {
+        card: {
+          name: payload.name,
+          number: payload.number,
+          city: payload.city,
+          postal_code: payload.postalCode,
+          expiration_month: payload.expirationMonth,
+          expiration_year: payload.expirationYear,
+          security_code: payload.securityCode,
+        },
+      };
+      const token = await this.omise.tokens.create({ ...card });
+      return token.id;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
     }
   }
 }

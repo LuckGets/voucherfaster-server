@@ -17,7 +17,14 @@ export class TransactionMapper {
     const transaction: TransactionDomain = new TransactionDomain();
     transaction.id = transactionEntity.id;
     transaction.status = TransactionStatusEnum[transactionEntity.status];
-    transaction.transactionSystem = transactionEntity.transactionSystem.system;
+    if (
+      !transactionEntity.transactionSystem ||
+      Object.keys(transactionEntity).length === 0
+    )
+      throw new Error(
+        `The transaction ID : ${transactionEntity.id} does not have system information.`,
+      );
+    transaction.transactionSystem = transactionEntity.transactionSystem?.system;
     transaction.createdAt = transactionEntity.createdAt;
     transaction.updatedAt = transactionEntity.updatedAt;
     transaction.deletedAt = transactionEntity.deletedAt;

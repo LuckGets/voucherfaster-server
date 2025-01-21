@@ -51,10 +51,11 @@ export class OrderMapper {
       accountDomain.email = order.account.email;
       accountDomain.fullname = order.account.fullname;
       accountDomain.phone = order.account.phone;
+      accountDomain.verifiedAt = order.account.verifiedAt;
       orderDomain.account = accountDomain;
     }
 
-    orderDomain.totalPrice = order.totalPrice.toString();
+    orderDomain.totalPrice = order.totalPrice.toNumber();
     orderDomain.createdAt = order.createdAt;
     orderDomain.updatedAt = order.updatedAt;
 

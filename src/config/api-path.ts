@@ -84,6 +84,7 @@ export const OrderPath = {
   GetOrderById: `:orderId`,
   GetOrdersQueryCursor: 'cursor',
   GetOrdersQueryTransactionStatus: 'tstatus',
+  ProcessPayment: ':orderId/payment',
 } as const;
 
 export const OrderItemPath = {
@@ -94,6 +95,7 @@ export const OrderItemPath = {
 export const TransactionPath = {
   Name: 'transactions',
   Base: '/transactions',
+  CreatePaymentToken: '/token',
 } as const;
 
 export const OwnerPath = {

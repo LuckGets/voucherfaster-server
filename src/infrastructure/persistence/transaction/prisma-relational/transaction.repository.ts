@@ -64,6 +64,7 @@ export class TransactionRelationalPrismaORMRepository
 
   async update(payload: UpdateTransactionData): Promise<TransactionDomain> {
     const { id, ...data } = payload;
+
     const updatedTransaction = await this.prismaService.transaction.update({
       where: { id },
       data,

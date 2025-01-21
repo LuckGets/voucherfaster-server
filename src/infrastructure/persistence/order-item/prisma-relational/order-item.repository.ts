@@ -119,6 +119,9 @@ export class OrderItemRelationPrismaORMRepository
               data: {
                 qrcodeImgPath: item.qrcodeImagePath,
               },
+              include: {
+                ...this.includeQuery,
+              },
             });
           }),
         );

@@ -16,16 +16,8 @@ import { AllOrderInformation, OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
-import { defaultPaginationOption } from 'src/common/types/pagination.type';
-
-type CreateOrderItemAndItemVoucherQuery = Prisma.OrderItemCreateManyInput &
-  Prisma.OrderItemVoucherCreateNestedOneWithoutOrderItemInput;
-
-type CreateOrderItemAndItemPromotionQuery = Prisma.OrderItemCreateManyInput &
-  Prisma.OrderItemPromotionCreateNestedOneWithoutOrderItemInput;
-
-type CreateOrderItemAndItemPackageQuery = Prisma.OrderItemCreateManyInput &
-  Prisma.OrderItemPackageCreateNestedOneWithoutOrderItemInput;
+import { AccountMapper } from '../../account/prisma-relational/account.mapper';
+import { RoleEnum } from '@resources/account/types/account.type';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -116,6 +108,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             ...this.orderItemPackageIncludeQuery,
           },
         },
+      },
+    },
+    Transaction: {
+      include: {
+        transactionSystem: true,
       },
     },
   };
@@ -464,6 +461,8 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     }
   }
 
+  // --------------------- CREATE PART ENDED --------------------------//
+
   async findById(id: string): Promise<NullAble<OrderDomain>> {
     const order = await this.prismaService.order.findUnique({
       where: { id },
@@ -471,7 +470,12 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         ...this.orderItemAndUsableDaysIncludeQuery,
       },
     });
-    return OrderMapper.toDomain(order);
+    const findedAccount = await this.prismaService.account.findUnique({
+      where: { id: order.accountId },
+    });
+    const account = AccountMapper.toDomain(findedAccount, RoleEnum.Me);
+
+    return OrderMapper.toDomain({ ...order, account });
   }
 
   async findMany({

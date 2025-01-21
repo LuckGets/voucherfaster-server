@@ -24,6 +24,7 @@ export class OrderItemDomain {
   redeemedAt?: Date;
   @ApiProperty({ type: Date })
   updatedAt?: Date;
+  @ApiProperty({ type: () => OrderItemDetails })
   detail: OrderItemDetails;
 }
 

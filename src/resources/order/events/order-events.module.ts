@@ -5,12 +5,16 @@ import { QRCodeService } from '@utils/services/qr-code.service';
 import { MediaModule } from '@application/media/media.module';
 import { OrderItemModule } from '@resources/order-item/order-item.module';
 import { OrderEventHandler } from './order-event.handler';
+import { MailModule } from '@application/mail/mail.module';
+import { MailerModule } from '@application/mailer/mailer.module';
 
 @Module({
   imports: [
     ConfigModule.forFeature(clientConfig),
     MediaModule,
     OrderItemModule,
+    MailModule,
+    MailerModule,
   ],
   providers: [OrderEventHandler, QRCodeService],
   exports: [OrderEventHandler],

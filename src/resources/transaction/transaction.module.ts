@@ -8,5 +8,6 @@ import { TransactionRelationalPersistenceModule } from 'src/infrastructure/persi
   imports: [PaymentModule, TransactionRelationalPersistenceModule],
   providers: [TransactionService],
   controllers: [TransactionController],
+  exports: [TransactionService],
 })
 export class TransactionModule {}
