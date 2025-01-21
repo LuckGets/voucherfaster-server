@@ -528,16 +528,16 @@ export class OrderService {
         user,
       );
 
-      // const transaction =
-      //   await this.transactionService.makePaymentAndUpdateTransaction({
-      //     transactionId: orderAndTransaction.transaction.id,
-      //     token: paymentToken,
-      //     amount: orderAndTransaction.totalPrice,
-      //     description: `Transaction for order ID: ${orderAndTransaction.id}`,
-      //   });
+      const transaction =
+        await this.transactionService.makePaymentAndUpdateTransaction({
+          transactionId: orderAndTransaction.transaction.id,
+          token: paymentToken,
+          amount: orderAndTransaction.totalPrice,
+          description: `Transaction for order ID: ${orderAndTransaction.id}`,
+        });
 
-      // if (transaction.status !== TransactionStatusEnum.SUCCESS)
-      //   throw ErrorApiResponse.badRequest('Transaction failed.');
+      if (transaction.status !== TransactionStatusEnum.SUCCESS)
+        throw ErrorApiResponse.badRequest('Transaction failed.');
 
       const allOrderItems = [...orderAndTransaction.orderItems];
 
