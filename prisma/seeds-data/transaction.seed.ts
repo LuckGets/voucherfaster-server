@@ -7,12 +7,19 @@ export const transactionSystem: Prisma.TransactionSystemCreateInput = {
   system: 'omise',
 };
 
+export const transactionExpireTime: Prisma.TransactionExpireTimeCreateInput = {
+  id: uuidv7(),
+  number: 30,
+  unit: 'MINUTE',
+};
+
 export const transactionsOfOrders: Prisma.TransactionCreateManyInput[] = [
   {
     id: uuidv7(),
     orderId: orderIDArr[0],
     paymentId: uuidv7(),
     transactionSystemId: transactionSystem.id,
+    expiredAt: new Date(),
     status: 'SUCCESS',
   },
   {
@@ -20,6 +27,7 @@ export const transactionsOfOrders: Prisma.TransactionCreateManyInput[] = [
     orderId: orderIDArr[1],
     paymentId: uuidv7(),
     transactionSystemId: transactionSystem.id,
+    expiredAt: new Date(),
     status: 'SUCCESS',
   },
   {
@@ -27,6 +35,7 @@ export const transactionsOfOrders: Prisma.TransactionCreateManyInput[] = [
     orderId: orderIDArr[2],
     paymentId: uuidv7(),
     transactionSystemId: transactionSystem.id,
+    expiredAt: new Date(),
     status: 'SUCCESS',
   },
   {
@@ -34,6 +43,7 @@ export const transactionsOfOrders: Prisma.TransactionCreateManyInput[] = [
     orderId: orderIDArr[3],
     paymentId: uuidv7(),
     transactionSystemId: transactionSystem.id,
+    expiredAt: new Date(),
     status: 'SUCCESS',
   },
   {
@@ -41,6 +51,7 @@ export const transactionsOfOrders: Prisma.TransactionCreateManyInput[] = [
     orderId: orderIDArr[4],
     paymentId: uuidv7(),
     transactionSystemId: transactionSystem.id,
+    expiredAt: new Date(),
     status: 'SUCCESS',
   },
 ];

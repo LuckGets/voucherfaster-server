@@ -35,6 +35,7 @@ export const VoucherPath = {
   UpdateVoucherImg: ':voucherId/images/:imageId',
   TagQuery: 'tag',
   CategoryQuery: 'category',
+  StatusQuery: 'status',
 } as const;
 
 export const VoucherCategoryPath = {

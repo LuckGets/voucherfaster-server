@@ -16,11 +16,7 @@ import {
 } from '@application/mail/mail.service';
 import { MailerService } from '@application/mailer/mailer.service';
 import { OrderItemDomain } from '../domain/order-item.domain';
-
-type UpdateOrderItemAndQRCode = {
-  updateData: UpdateOrderItemDto;
-  qrCodeUrl: string;
-};
+import { OwnerService } from '@resources/owner/owner.service';
 
 @Injectable()
 export class OrderEventHandler {
@@ -31,6 +27,7 @@ export class OrderEventHandler {
     private configService: ConfigService,
     private mediaService: MediaService,
     private orderItemService: OrderItemService,
+    private ownerService: OwnerService,
     private mailService: MailService,
     private mailerService: MailerService,
   ) {
@@ -62,7 +59,7 @@ export class OrderEventHandler {
         await this.orderItemService.updateManyQRCodeAfterCreated(
           updateOrderItem,
         );
-      return this.sendingQrcodeToEmail(allUpdatedOrder, event.email);
+      return this.sendingQrcodeToEmail(allUpdatedOrder, event.email, qrCodeMap);
     } catch (err) {
       console.error(err);
       throw new Error(err);
@@ -124,8 +121,14 @@ export class OrderEventHandler {
     const emailTransporter: MailTransporter =
       await this.mailerService.getTransporter();
 
-    await Promise.all(
-      orderItem.map((item) => {
+    let count: 1;
+    const total = orderItem.length;
+    const orderItemListForMail: OrderItemDetailForMail[] = orderItem.map(
+      (item) => {
+        if (count > orderItem.length)
+          throw new Error(
+            `There is an error while preparing data for email sending. Please contact developer to fix the issue.`,
+          );
         if (!qrCodeMap.has(item.id))
           throw new Error(
             `There is no generated qrcode for this ID: ${item.id}`,
@@ -133,8 +136,22 @@ export class OrderEventHandler {
         const data: OrderItemDetailForMail = {
           ...item,
           qrCodeUrl: qrCodeMap.get(item.id),
+          countNumber: count++,
+          total,
         };
-        this.mailService.orderItem({ to: email, data: item }, emailTransporter);
+        return data;
+      },
+    );
+
+    const owner = await this.ownerService.getOwnerInformation();
+
+    await Promise.all(
+      orderItemListForMail.map((item) => {
+        this.mailService.orderItem(
+          { to: email, data: item },
+          owner.name,
+          emailTransporter,
+        );
       }),
     );
   }

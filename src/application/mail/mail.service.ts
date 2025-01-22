@@ -11,12 +11,16 @@ import {
 } from './config/mail.constant';
 import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
 import { Transporter } from 'nodemailer';
+import { OwnerDomain } from '@resources/owner/domain/owner.domain';
+import { DateFormatterService } from '@utils/services/date-formatter.service';
+import { HandleBarContextHelper } from './templates/mail-context.helper';
 
 export type MailTransporter = Transporter;
 
 export type OrderItemDetailForMail = OrderItemDomain & {
   qrCodeUrl: string;
   countNumber: number;
+  total: number;
 };
 
 @Injectable()
@@ -108,9 +112,26 @@ export class MailService {
 
   async orderItem(
     mailData: IMailData<OrderItemDetailForMail>,
+    ownerName: OwnerDomain['name'],
     transporter?: MailTransporter,
   ): Promise<void> {
     const { data } = mailData;
+    const title = MAIL_ORDER_ITEM_CONSTANT.generateTitle(ownerName, data.code);
+    const context = HandleBarContextHelper.orderItem({
+      ownerName,
+      itemName: data.detail.title,
+      appName: this.appName,
+      itemImg: data.detail.img,
+      itemCode: data.code,
+      qrcodePath: data.qrcodeImagePath,
+      qrcodeUrl: data.qrCodeUrl,
+      expiredDate: new Date(data.detail.usableExpiredAt),
+      countNumber: data.countNumber,
+      total: data.total,
+      category: data.detail.category,
+      promotion: data.detail.promotion,
+      rewardVoucher: data.detail.package?.reward,
+    });
 
     console.log(`Sending Order item voucher to email: ${mailData.to}...`);
     await this.mailerService.sendMail({
@@ -124,15 +145,8 @@ export class MailService {
       ),
       transporter,
       to: mailData.to,
-      subject: MAIL_ORDER_ITEM_CONSTANT.title,
-      context: {
-        title: MAIL_ORDER_ITEM_CONSTANT.title,
-        app_name: this.appName,
-        item_name: data.detail.title,
-        item_code: data.code,
-        qrcode_path: data.qrcodeImagePath,
-        expired_time: data.detail.usageExpiredTime,
-      },
+      subject: title,
+      context,
     });
     console.log(
       `Sending Order item voucher to email: ${mailData.to} successful!`,

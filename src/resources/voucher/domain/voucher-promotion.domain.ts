@@ -3,7 +3,7 @@ import { RoleEnum } from '@resources/account/types/account.type';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Expose, Transform } from 'class-transformer';
-import { IsNumber, IsPositive, IsString, IsUUID } from 'class-validator';
+import { IsPositive, IsString, IsUUID } from 'class-validator';
 
 export class VoucherPromotionDomain {
   @ApiProperty({ type: String })

@@ -107,12 +107,14 @@ export abstract class VoucherRepository {
     cursor,
     paginationOption,
     sortOption,
+    status,
   }: {
     tag?: VoucherTagDomain['name'];
     category?: VoucherCategoryDomain['name'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
+    status?: VoucherDomain['status'];
   }): Promise<VoucherDomain[]>;
 
   abstract findManyTermAndConditionWithIds(

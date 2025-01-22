@@ -29,6 +29,18 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     private voucherTagRepository: VoucherTagRepository,
   ) {}
 
+  private tagAndCategoryIncludeQuery: Prisma.VoucherInclude = {
+    voucherTag: {
+      include: {
+        voucherCategory: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    },
+  };
+
   private voucherJoinQuery: Prisma.VoucherInclude = {
     VoucherImg: {
       where: {
@@ -62,22 +74,11 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         },
       },
     },
-    // PackageVoucher: {
-    //   where: {
-    //     deletedAt: {
-    //       not: null,
-    //     },
-    //     startedAt: {
-    //       lte: new Date(Date.now()),
-    //     },
-    //     expiredAt: {
-    //       gt: new Date(Date.now()),
-    //     },
-    //   },
-    // },
+    ...this.tagAndCategoryIncludeQuery,
   };
 
   private voucherAllDetailJoinQuery: Prisma.VoucherInclude = {
+    ...this.tagAndCategoryIncludeQuery,
     VoucherImg: {
       select: {
         id: true,
@@ -165,10 +166,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         return { voucher, createdPromotion };
       },
     );
-    return VoucherMapper.toDomain({
-      ...voucher,
-      VoucherPromotion: [createdPromotion],
-    });
+    const createdVoucher = await this.findById(voucher.id);
+    return createdVoucher;
   }
 
   async findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>> {
@@ -179,7 +178,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       },
       include: voucherJoinQuery,
     });
-    return voucher ? VoucherMapper.toDomain(voucher) : null;
+    return VoucherMapper.toDomain(voucher, { allInfo: true });
   }
 
   async findByIds(idList: VoucherDomain['id'][]): Promise<VoucherDomain[]> {
@@ -190,7 +189,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       },
       include: voucherJoinQuery,
     });
-    return voucherList.map(VoucherMapper.toDomain);
+    return voucherList.map((item) =>
+      VoucherMapper.toDomain(item, { allInfo: false }),
+    );
   }
 
   async findMany({
@@ -199,12 +200,14 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     paginationOption,
     cursor,
     sortOption,
+    status,
   }: {
     tag?: VoucherTagDomain['id'];
     category?: VoucherCategoryDomain['name'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
     sortOption?: any;
+    status: VoucherDomain['status'];
   }): Promise<VoucherDomain[]> {
     const paginatedQueryOptiion = generatePaginationQueryOption({
       cursor,
@@ -214,10 +217,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
 
     // Prepare the variable
     // for using as prisma where query
-    const whereQueryOption = {
-      where: {
-        status: VoucherStatusEnum.ACTIVE,
-      },
+    const whereQueryOption: Prisma.VoucherWhereInput = {
+      status,
     };
 
     // Voucher Join query
@@ -234,7 +235,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
 
       // Provide the in query
       // which related to tag or category name
-      whereQueryOption.where['tagId'] = {
+      whereQueryOption.tagId = {
         in: tagListFromCategories.map((item) => item.id),
       };
     } else if (!category && tag) {
@@ -242,10 +243,14 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     }
     const voucherList = await this.prismaService.voucher.findMany({
       ...paginatedQueryOptiion,
-      ...whereQueryOption,
+      where: {
+        ...whereQueryOption,
+      },
       include: voucherJoinQuery,
     });
-    return voucherList.map((item) => VoucherMapper.toDomain(item));
+    return voucherList.map((item) =>
+      VoucherMapper.toDomain(item, { allInfo: false }),
+    );
   }
 
   async findByTitle(
@@ -263,7 +268,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       },
       include: voucherJoinQuery,
     });
-    return queryVoucherListResult.map((item) => VoucherMapper.toDomain(item));
+    return queryVoucherListResult.map((item) =>
+      VoucherMapper.toDomain(item, { allInfo: false }),
+    );
   }
 
   async findByCategory(
@@ -286,7 +293,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       },
       include: voucherJoinQuery,
     });
-    return voucherQueryList.map((item) => VoucherMapper.toDomain(item));
+    return voucherQueryList.map((item) =>
+      VoucherMapper.toDomain(item, { allInfo: false }),
+    );
   }
 
   async findBySearchContent(searchContent: string): Promise<VoucherDomain[]> {
@@ -323,7 +332,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       });
 
     return queryVoucherListViaCategoryResult.map((item) =>
-      VoucherMapper.toDomain(item),
+      VoucherMapper.toDomain(item, { allInfo: false }),
     );
   }
 
@@ -389,7 +398,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
 
       return voucher; // Return the updated voucher
     });
-    return VoucherMapper.toDomain(voucher);
+    return VoucherMapper.toDomain(voucher, { allInfo: true });
   }
 
   async upsertManyTermAndCond(

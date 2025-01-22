@@ -68,6 +68,11 @@ export class VoucherImgRelationalPrismaORMRepository
   }
   async createMany(dataList: VoucherImgCreateInput[]): Promise<void> {
     await this.prismaService.voucherImg.createMany({ data: dataList });
+    const voucher = await this.prismaService.voucher.findUnique({
+      where: {
+        id: dataList[0].voucherId,
+      },
+    });
     return;
   }
 }

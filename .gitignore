@@ -12,7 +12,10 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
+# TODO
+*.todo
+
+# OS:w
 .DS_Store
 
 # Tests

@@ -43,6 +43,7 @@ import {
 } from './dto/transactions/process-payment.dto';
 import { OrderOwnerGuard } from 'src/common/guards/order-owner.guard';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { ObjectHelper } from '@utils/services/object.helper';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {
@@ -122,8 +123,7 @@ export class OrderController {
     @Body() body: ProcessPaymentDto,
   ): Promise<OrderSuccessAfterPaymentResponse> {
     if (
-      !req.order ||
-      Object.keys(req.order).length === 0 ||
+      ObjectHelper.isObjectEmpty(req.order) ||
       !(req.order instanceof OrderDomain)
     )
       throw ErrorApiResponse.internalServerError(
@@ -132,7 +132,6 @@ export class OrderController {
 
     const updatedOrder = await this.orderService.processPaymentWithOrderId(
       body,
-      req.user,
       req.order,
     );
     return OrderSuccessAfterPaymentResponse.success(updatedOrder);

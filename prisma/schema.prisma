@@ -92,8 +92,8 @@ model Voucher {
   stockAmount          Int                    @map("stock_amount") @db.Integer()
   tagId                String                 @map("tag_id") @db.Uuid
   voucherTag           VoucherTag             @relation(fields: [tagId], references: [id])
-  usageExpiredTime     DateTime               @map("usage_expired_time") @db.Timestamptz(3)
-  saleExpiredTime      DateTime               @map("sale_expired_time") @db.Timestamptz(3)
+  usableExpiredAt      DateTime               @map("usage_expired_at") @db.Timestamptz(3)
+  sellExpiredAt        DateTime               @map("sale_expired_at") @db.Timestamptz(3)
   createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime               @updatedAt() @map("updated_at") @db.Timestamptz(3)
   VoucherTermAndCondTh VoucherTermAndCondTh[]
@@ -324,6 +324,26 @@ model TransactionSystem {
   @@map("transaction_system")
 }
 
+enum TransactionExpireUnit {
+  SECOND
+  MINUTE
+  HOUR
+  DAY
+  MONTH
+  YEAR
+}
+
+model TransactionExpireTime {
+  id        String                @id @default(uuid(7)) @db.Uuid
+  number    Int                   @db.Integer()
+  unit      TransactionExpireUnit
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime              @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?             @map("deleted_at") @db.Timestamptz(3)
+
+  @@map("transaction_expire_time")
+}
+
 model Transaction {
   id                  String            @id @default(uuid(7)) @db.Uuid
   orderId             String            @unique @map("order_id") @db.Uuid
@@ -333,6 +353,7 @@ model Transaction {
   status              TransactionStatus @default(PENDING)
   createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime          @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  expiredAt           DateTime          @map("expired_at") @db.Timestamptz(3)
   deletedAt           DateTime?         @map("deleted_at") @db.Timestamptz(3)
   transactionSystemId String            @map("transaction_system_id") @db.Uuid
 

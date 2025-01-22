@@ -179,10 +179,10 @@ export class CreateVoucherDto {
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
-  usageExpiredTime: Date;
+  usableExpiredAt: Date;
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
-  saleExpiredTime: Date;
+  sellExpiredAt: Date;
   @IsString()
   tagId: string;
   @Transform(({ value }) =>
@@ -231,26 +231,51 @@ export class CreateVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "01948481-cbe0-7674-aeef-4c08a5198cb5",
+        "id": "01948da7-a4e9-710f-a31a-3a1fc1a810a7",
         "stockAmount": 10000,
-        "description": "Juicy burgers with crispy french fries.",
-        "price": 300,
-        "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-        "title": "Burger with fries",
-        "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+        "description": "CRISPY BURGER",
+        "price": 30000,
+        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+        "title": "CRISPY BURGER",
+        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
         "status": "ACTIVE",
+        "tag": "main courses",
+        "category": "Yok chinese restaurant",
+        "img": [
+            {
+                "id": "01948da7-a4e9-710f-a31a-4fa3793003dd",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737543361333_rocks.jpg",
+                "mainImg": true
+            }
+        ],
+        "termAndCond": {
+            "th": [
+                {
+                    "id": "01948da7-a4e9-710f-a31a-3dbf85c53202",
+                    "description": "เคี้ยวมันส์ๆ"
+                }
+            ],
+            "en": [
+                {
+                    "id": "01948da7-a4e9-710f-a31a-423559e46cf3",
+                    "description": "Enjoy eating"
+                },
+                {
+                    "id": "01948da7-a4e9-710f-a31a-4539b7c185a8",
+                    "description": "Have fun"
+                }
+            ]
+        },
         "promotion": [
             {
-                "id": "01948481-cbe0-7674-aeef-5cba7e36b39f",
+                "id": "01948da7-a4e9-710f-a31a-4adc498cfb2d",
                 "name": "ลดแรงต้อนรับปีใหม่",
                 "stockAmount": 100,
                 "sellStartedAt": "1/1/2025, 7:00:00 AM",
                 "sellExpiredAt": "1/1/2026, 6:59:59 AM",
                 "usableAt": "1/1/2024, 7:00:00 AM",
                 "usableExpiredAt": "1/1/2026, 6:59:59 AM",
-                "promotionPrice": 199,
-                "createdAt": "1/20/2025, 11:18:06 PM",
-                "updatedAt": "1/20/2025, 11:18:06 PM"
+                "promotionPrice": 199
             }
         ]
     }`,

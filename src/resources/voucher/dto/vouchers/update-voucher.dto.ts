@@ -5,13 +5,11 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
 import {
-  IsArray,
   IsBoolean,
   IsOptional,
   IsPositive,
   IsString,
   IsUUID,
-  Validate,
   ValidateNested,
 } from 'class-validator';
 import { plainToInstance, Transform, Type } from 'class-transformer';
@@ -19,6 +17,7 @@ import { IsEnumValue } from '@utils/validators/IsEnum';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { RequiredWith } from '@utils/validators/RequiredWith';
 import { NotPresentWith } from '@utils/validators/NotPresentWith';
+import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
 
 export class TermAndCondUpdateDto {
   @ApiProperty({ type: String, required: false })
@@ -79,6 +78,7 @@ function transformUpdateTermAndCond(data: string): TermAndCondUpdateDto[] {
   return data;
 }
 
+@AtLeastOneProperty(UpdateVoucherDto.updatAbleField())
 export class UpdateVoucherDto {
   @ApiProperty({ type: String })
   @IsUUID(7)
@@ -105,12 +105,12 @@ export class UpdateVoucherDto {
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
-  usageExpiredTime?: Date;
+  usableExpiredAt?: Date;
   @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
-  saleExpiredTime?: Date;
+  sellExpiredAt?: Date;
   @ApiProperty({ type: String })
   @IsUUID(7)
   @IsOptional()
@@ -131,6 +131,21 @@ export class UpdateVoucherDto {
   @IsEnumValue(VoucherStatusEnum)
   @IsOptional()
   status?: VoucherStatusEnum;
+
+  public static updatAbleField(): Array<keyof UpdateVoucherDto> {
+    return [
+      'title',
+      'description',
+      'price',
+      'stockAmount',
+      'usableExpiredAt',
+      'sellExpiredAt',
+      'tagId',
+      'termAndCondTh',
+      'termAndCondEn',
+      'status',
+    ];
+  }
 }
 
 export class UpdateVoucherResponse extends CoreApiResponse {
@@ -152,44 +167,60 @@ export class UpdateVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "0194834a-ff4e-7244-be8c-877f5b7deb7d",
-        "stockAmount": 10000,
-        "description": "Juicy burgers with crispy french fries.",
-        "price": 300,
-        "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-        "title": "Burger with fries",
-        "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+        "id": "01948d58-6319-76a8-bf42-bbd3135c0822",
+        "stockAmount": 1,
+        "description": "CRISPY BURGER",
+        "price": 30000,
+        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+        "title": "HOMHOM",
+        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
         "status": "ACTIVE",
+        "tag": "Lunch",
+        "category": "All-international",
         "img": [
             {
-                "id": "0194834a-ff4e-7244-be8c-b1521de8c8f0",
-                "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp",
+                "id": "01948d58-631a-7409-8cb8-f560ad5ff124",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737538167115_rocks.jpg",
                 "mainImg": true
+            },
+            {
+                "id": "01948d58-631a-7409-8cb8-f870d27cc8ce",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737538167115_cute-dog.jpg",
+                "mainImg": false
+            },
+            {
+                "id": "01948d58-631a-7409-8cb8-fc7a0f69cbc0",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737538167115_road.jpg",
+                "mainImg": false
             }
         ],
         "termAndCond": {
             "th": [
                 {
-                    "id": "0194834a-ff4e-7244-be8d-17e8a96a7081",
-                    "description": "คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น"
+                    "id": "01948d58-631a-7409-8cb8-e78a65443076",
+                    "description": "เคี้ยวมันส์ๆ"
                 }
             ],
             "en": [
                 {
-                    "id": "0194834a-ff4e-7244-be8c-e83c51aec35d",
-                    "description": "This voucher can only be used on Saturday."
+                    "id": "01948d58-631a-7409-8cb8-ea5ce9614b11",
+                    "description": "Enjoy eating"
+                },
+                {
+                    "id": "01948d58-631a-7409-8cb8-ed847adf36df",
+                    "description": "Have fun"
                 }
             ]
         },
         "promotion": [
             {
-                "id": "0194834a-ff4e-7244-be8c-de61a53766fc",
+                "id": "01948d58-631a-7409-8cb8-f3c7347899d8",
                 "name": "ลดแรงต้อนรับปีใหม่",
-                "stockAmount": 150,
-                "sellStartedAt": "1/1/2025, 12:00:00 AM",
-                "sellExpiredAt": "2/15/2025, 12:00:00 AM",
-                "usableAt": "1/11/2025, 12:00:00 AM",
-                "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+                "stockAmount": 100,
+                "sellStartedAt": "1/1/2025, 7:00:00 AM",
+                "sellExpiredAt": "1/1/2026, 6:59:59 AM",
+                "usableAt": "1/1/2024, 7:00:00 AM",
+                "usableExpiredAt": "1/1/2026, 6:59:59 AM",
                 "promotionPrice": 199
             }
         ]

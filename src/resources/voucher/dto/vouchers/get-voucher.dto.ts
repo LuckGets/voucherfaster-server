@@ -26,34 +26,35 @@ export class GetManyVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `[{
-      "id": "019446d1-6d43-760d-9a0b-489e626e2f8d",
-      "code": "AA-101",
-      "description": "Juicy burgers with crispy french fries.",
-      "price": 300,
-      "stockAmount": 10000,
-      "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-      "title": "Burger with fries",
-      "usageExpiredTime": "12/26/2025, 12:00:00 AM",
-      "status": "ACTIVE",
-      "img": [
-        {
-          "id": "019446d1-6d44-73cf-bcdf-8b1bbd6b070f",
-          "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
-        }
-      ],
-      "promotion": [
-        {
-          "id": "019446d1-a9e0-7b83-b87e-eb59cc44bb31",
-          "name": "ลดแรงต้อนรับปีใหม่",
-          "stockAmount": 100,
-          "sellStartedAt": "1/1/2025, 12:00:00 AM",
-          "sellExpiredAt": "2/15/2025, 12:00:00 AM",
-          "usableAt": "1/11/2025, 12:00:00 AM",
-          "usableExpiredAt": "2/1/2025, 12:00:00 AM",
-          "promotionPrice": 199
-        }
-      ]
-    }]`,
+            "id": "01948d4a-de2a-73eb-9277-293247919501",
+            "stockAmount": 10000,
+            "description": "Juicy burgers with crispy french fries.",
+            "price": 300,
+            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+            "title": "Burger with fries",
+            "usableExpiredAt": "12/26/2025, 12:00:00 AM",
+            "status": "ACTIVE",
+            "tag": "Lunch",
+            "category": "All-international",
+            "img": [
+                {
+                    "id": "01948d4a-de2a-73eb-9277-550531ea1f95",
+                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
+                }
+            ],
+            "promotion": [
+                {
+                    "id": "01948d4a-de2a-73eb-9277-81c269877cae",
+                    "name": "ลดแรงต้อนรับปีใหม่",
+                    "stockAmount": 150,
+                    "sellStartedAt": "1/1/2025, 12:00:00 AM",
+                    "sellExpiredAt": "2/15/2025, 12:00:00 AM",
+                    "usableAt": "1/11/2025, 12:00:00 AM",
+                    "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+                    "promotionPrice": 199
+                }
+            ]
+        }]`,
   })
   public data: VoucherDomain[];
   @ApiProperty({
@@ -73,7 +74,7 @@ export class GetManyVoucherResponse extends CoreApiResponse {
       message ?? `${HTTPMethod.Get}:: ${VoucherPath.Base} successful.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
-    const cursor = data[data.length - 1].id;
+    let cursor = null;
     // generateVoucherReponseHATEOASLink(data.id);
     const response = new GetManyVoucherResponse(
       responseCode,
@@ -81,6 +82,9 @@ export class GetManyVoucherResponse extends CoreApiResponse {
       responseLink,
       data,
     );
+    if (data && data.length > 0) {
+      cursor = data[data.length - 1].id;
+    }
     response.cursor = cursor;
     return response;
   }
@@ -106,18 +110,32 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
     type: Object,
     example: `[
         {
-            "id": "0194834a-ff4e-7244-be8c-9a9b6964b3fa",
+            "id": "01948da7-a4e9-710f-a31a-3a1fc1a810a7",
             "stockAmount": 10000,
-            "description": "Grilled duck served with special XO sauce",
-            "price": 600,
-            "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-            "title": "Hong Kong grilled duck",
-            "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+            "description": "CRISPY BURGER",
+            "price": 30000,
+            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+            "title": "CRISPY BURGER",
+            "usableExpiredAt": "12/26/2025, 12:00:00 AM",
             "status": "ACTIVE",
+            "tag": "main courses",
+            "category": "Yok chinese restaurant",
             "img": [
                 {
-                    "id": "0194834a-ff4e-7244-be8c-c50ef50d022c",
-                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/Roast-Cantonese-Duck-2022.jpg"
+                    "id": "01948da7-a4e9-710f-a31a-4fa3793003dd",
+                    "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737543361333_rocks.jpg"
+                }
+            ],
+            "promotion": [
+                {
+                    "id": "01948da7-a4e9-710f-a31a-4adc498cfb2d",
+                    "name": "ลดแรงต้อนรับปีใหม่",
+                    "stockAmount": 100,
+                    "sellStartedAt": "1/1/2025, 7:00:00 AM",
+                    "sellExpiredAt": "1/1/2026, 6:59:59 AM",
+                    "usableAt": "1/1/2024, 7:00:00 AM",
+                    "usableExpiredAt": "1/1/2026, 6:59:59 AM",
+                    "promotionPrice": 199
                 }
             ]
         }
@@ -163,44 +181,60 @@ export class GetVoucherByIdResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "0194834a-ff4e-7244-be8c-877f5b7deb7d",
+        "id": "01948da7-a4e9-710f-a31a-3a1fc1a810a7",
         "stockAmount": 10000,
-        "description": "Juicy burgers with crispy french fries.",
-        "price": 300,
-        "saleExpiredTime": "12/26/2025, 12:00:00 AM",
-        "title": "Burger with fries",
-        "usageExpiredTime": "12/26/2025, 12:00:00 AM",
+        "description": "CRISPY BURGER",
+        "price": 30000,
+        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+        "title": "CRISPY BURGER",
+        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
         "status": "ACTIVE",
+        "tag": "main courses",
+        "category": "Yok chinese restaurant",
         "img": [
             {
-                "id": "0194834a-ff4e-7244-be8c-b1521de8c8f0",
-                "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp",
+                "id": "01948da7-a4e9-710f-a31a-4fa3793003dd",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737543361333_rocks.jpg",
                 "mainImg": true
+            },
+            {
+                "id": "01948db4-b174-7157-812e-8ac2e333b961",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737544216531_red-food-gift-card-voucher-design-template-97e81f812b13d305d852edc6d17b86e1_screen.jpg",
+                "mainImg": false
+            },
+            {
+                "id": "01948db4-b175-71d9-a975-804f8c4b8dd6",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737544216531_a872c327-e398-4e0c-95b7-9fb77fd0464a_1024.jpeg",
+                "mainImg": false
             }
         ],
         "termAndCond": {
             "th": [
                 {
-                    "id": "0194834a-ff4e-7244-be8d-17e8a96a7081",
-                    "description": "คูปองนี้สามารถใช้ได้เฉพาะในวันเสาร์เท่านั้น"
+                    "id": "01948da7-a4e9-710f-a31a-3dbf85c53202",
+                    "description": "เคี้ยวมันส์ๆ"
                 }
             ],
             "en": [
                 {
-                    "id": "0194834a-ff4e-7244-be8c-e83c51aec35d",
-                    "description": "This voucher can only be used on Saturday."
+                    "id": "01948da7-a4e9-710f-a31a-423559e46cf3",
+                    "description": "Enjoy eating"
+                },
+                {
+                    "id": "01948da7-a4e9-710f-a31a-4539b7c185a8",
+                    "description": "Have fun"
                 }
             ]
         },
         "promotion": [
             {
-                "id": "0194834a-ff4e-7244-be8c-de61a53766fc",
+                "id": "01948da7-a4e9-710f-a31a-4adc498cfb2d",
                 "name": "ลดแรงต้อนรับปีใหม่",
-                "stockAmount": 150,
-                "sellStartedAt": "1/1/2025, 12:00:00 AM",
-                "sellExpiredAt": "2/15/2025, 12:00:00 AM",
-                "usableAt": "1/11/2025, 12:00:00 AM",
-                "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+                "stockAmount": 100,
+                "sellStartedAt": "1/1/2025, 7:00:00 AM",
+                "sellExpiredAt": "1/1/2026, 6:59:59 AM",
+                "usableAt": "1/1/2024, 7:00:00 AM",
+                "usableExpiredAt": "1/1/2026, 6:59:59 AM",
                 "promotionPrice": 199
             }
         ]

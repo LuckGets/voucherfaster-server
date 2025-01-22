@@ -10,12 +10,16 @@ import { CryptoService } from '@utils/services/crypto.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
-import { UpdateAccountDto } from './dto/update-account.dto';
+import {
+  UPDATE_ACCOUNT_FILED_FILED,
+  UpdateAccountDto,
+} from './dto/update-account.dto';
 import { MailService } from '@application/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { VerifyTokenPayloadType } from 'src/common/types/token-payload.type';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
+import { ObjectHelper } from '@utils/services/object.helper';
 
 @Injectable()
 export class AccountService {
@@ -81,6 +85,12 @@ export class AccountService {
     data: UpdateAccountDto,
     file?: Express.Multer.File,
   ): Promise<NullAble<AccountDomain>> {
+    if (!file && ObjectHelper.isObjectEmpty(data)) {
+      throw ErrorApiResponse.badRequest(
+        `Atleast one updated field is required. ${UPDATE_ACCOUNT_FILED_FILED.accountImg}, ${UpdateAccountDto.updatableProperty().join(', ')}`,
+      );
+    }
+
     if (data.email) {
       data.verifiedAt = null;
     }

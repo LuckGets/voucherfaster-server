@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 
 export enum TransactionStatusEnum {
   PENDING = 'PENDING',
@@ -19,6 +20,8 @@ export class TransactionDomain {
   createdAt: Date;
   @ApiProperty({ type: Date })
   updatedAt: Date;
+  @ApiProperty({ type: Date })
+  expiredAt: Date;
   @ApiProperty({ type: Date, nullable: true })
   deletedAt?: Date;
 }

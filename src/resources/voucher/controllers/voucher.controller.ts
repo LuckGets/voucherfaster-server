@@ -41,6 +41,7 @@ import {
 import {
   VoucherCategoryDomain,
   VoucherDomain,
+  VoucherStatusEnum,
   VoucherTagDomain,
 } from '../domain/voucher.domain';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
@@ -127,22 +128,31 @@ export class VoucherController {
   // GET
   // Pagination voucher
   @ApiQuery({
-    name: 'tag',
+    name: VoucherPath.TagQuery,
     description: 'Tag name of the voucher to filter by.',
     required: false,
-    type: String, // Adjust to the correct type if needed
+    type: String,
   })
   @ApiQuery({
-    name: 'category',
+    name: VoucherPath.CategoryQuery,
     description: 'Category name of the voucher to filter by.',
     required: false,
-    type: String, // Adjust to the correct type if needed
+    type: String,
   })
   @ApiQuery({
-    name: 'cursor',
+    name: QUERY_FIELD_NAME.CURSOR,
     description: 'Cursor ID for pagination.',
     required: false,
-    type: String, // Adjust to the correct type if needed
+    type: String,
+  })
+  @ApiQuery({
+    name: VoucherPath.StatusQuery,
+    description: 'Status of the voucher.',
+    required: false,
+    enumName: 'status',
+    enum: [VoucherStatusEnum.ACTIVE, VoucherStatusEnum.INACTIVE],
+    default: VoucherStatusEnum.ACTIVE,
+    type: String,
   })
   @ApiOkResponse({
     type: () => GetManyVoucherResponse,
@@ -153,11 +163,13 @@ export class VoucherController {
     @Query(VoucherPath.TagQuery) tag: VoucherTagDomain['name'],
     @Query(VoucherPath.CategoryQuery) category: VoucherCategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherDomain['id'],
+    @Query(VoucherPath.StatusQuery) status: VoucherStatusEnum,
   ): Promise<GetManyVoucherResponse> {
     const voucherQueryList = await this.voucherService.getPaginationVoucher({
       tag,
       category,
       cursor,
+      status,
     });
     return GetManyVoucherResponse.success(voucherQueryList);
   }
@@ -177,7 +189,7 @@ export class VoucherController {
     return GetVoucherBySearchContentResponse.success(voucher, searchContent);
   }
 
-  @ApiParam({ name: 'voucherId' })
+  @ApiParam({ name: VoucherPath.VoucherIdParm })
   @ApiOkResponse({
     type: () => GetVoucherByIdResponse,
     description:
@@ -224,14 +236,7 @@ export class VoucherController {
     schema: {
       type: 'object',
       properties: {
-        mainImg: {
-          type: 'string',
-          format: 'binary',
-          description: 'Main image for the voucher',
-          maxItems: 1,
-          nullable: true,
-        },
-        voucherImg: {
+        [VOUCHER_FILE_FILED.VOUCHER_IMG]: {
           type: 'array',
           items: {
             type: 'string',
@@ -245,12 +250,6 @@ export class VoucherController {
           description: 'The requested voucher ID to add a new image.',
           nullable: false,
         },
-        deleteMainImg: {
-          type: 'boolean',
-          description:
-            'If set to true, the previous main image will be delete and not be used as a image.',
-          nullable: true,
-        },
       },
     },
   })
@@ -259,13 +258,10 @@ export class VoucherController {
       "This endpoints can be use for two cases.\n1). Add new image to the exisiting voucher. The newly added image will be marked as non-main image.\n 2).Adding new main image and move the old main image to be non-main image.\n If  provided value body's property: deleteMainImg equal true. The to-be-replace main image will be delete.",
   })
   @ApiConsumes('multipart/formdata')
+  @ApiCreatedResponse({ type: () => AddVoucherImgResponse })
   @UseGuards(AdminGuard)
   @UseInterceptors(
     FileFieldsInterceptor([
-      {
-        name: VOUCHER_FILE_FILED.MAIN_IMG,
-        maxCount: 1,
-      },
       {
         name: VOUCHER_FILE_FILED.VOUCHER_IMG,
       },
@@ -276,17 +272,15 @@ export class VoucherController {
   async addVoucherImg(
     @UploadedFiles()
     files: {
-      [VOUCHER_FILE_FILED.MAIN_IMG]?: Express.Multer.File[];
       [VOUCHER_FILE_FILED.VOUCHER_IMG]?: Express.Multer.File[];
     },
     @Body() body: AddVoucherImgDto,
   ): Promise<AddVoucherImgResponse> {
-    await this.voucherService.addVoucherImg({
+    const voucher = await this.voucherService.addVoucherImg({
       data: body,
-      mainImg: files[VOUCHER_FILE_FILED.MAIN_IMG][0],
       voucherImg: files[VOUCHER_FILE_FILED.VOUCHER_IMG],
     });
-    return AddVoucherImgResponse.success(null);
+    return AddVoucherImgResponse.success(voucher);
   }
 
   // Updage existing voucher Image.

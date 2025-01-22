@@ -9,24 +9,26 @@ export class CalculatorService {
    * @param secondeNumber The second number or string to add.
    * @returns The result of the addition.
    */
-  public static add(
-    firstNumber: number | string,
-    secondeNumber: number | string,
-  ): number {
-    const decimalA = new Decimal(firstNumber);
-    const decimalB = new Decimal(secondeNumber);
+  public static add(...number: (number | string)[]): number {
     // Use the plus() method to add the two decimals together.
     // The toNumber() method is used to convert the result to a number.
-    return decimalA.plus(decimalB).toNumber();
+    return number.reduce<number>((acc, curr) => {
+      const value = typeof curr === 'string' ? parseFloat(curr) : curr;
+      if (isNaN(value)) {
+        throw new Error(`Invalid number: ${curr}`);
+      }
+      return new Decimal(acc).plus(new Decimal(value)).toNumber();
+    }, 0);
   }
 
-  public static minus(
-    firstNumber: number | string,
-    secondeNumber: number | string,
-  ): number {
-    const decimalA = new Decimal(firstNumber);
-    const decimalB = new Decimal(secondeNumber);
-    return decimalA.minus(decimalB).toNumber();
+  public static minus(...number: (number | string)[]): number {
+    return number.reduce<number>((acc, curr) => {
+      const value = typeof curr === 'string' ? parseFloat(curr) : curr;
+      if (isNaN(value)) {
+        throw new Error(`Invalid number: ${curr}`);
+      }
+      return new Decimal(acc).minus(new Decimal(value)).toNumber();
+    }, 0);
   }
 
   /**
@@ -35,16 +37,16 @@ export class CalculatorService {
    * @param numberToMultiply The second number or string to multiply.
    * @returns The result of the multiplication as a number.
    */
-  public static multiply(
-    number: number | string,
-    numberToMultiply: number | string,
-  ): number {
-    // Convert the inputs to Decimal objects for precise arithmetic operations
-    const decimalA = new Decimal(number);
-    const decimalB = new Decimal(numberToMultiply);
+  public static multiply(...number: (number | string)[]): number {
     // Use the times() method to multiply the two decimals together
     // Convert the result to a number using toNumber() method
-    return decimalA.times(decimalB).toNumber();
+    return number.reduce<number>((acc, curr) => {
+      const value = typeof curr === 'string' ? parseFloat(curr) : curr;
+      if (isNaN(value)) {
+        throw new Error(`Invalid number: ${curr}`);
+      }
+      return new Decimal(acc).times(new Decimal(value)).toNumber();
+    }, 0);
   }
 
   public static changedayToMilliseconde(day: number): number {

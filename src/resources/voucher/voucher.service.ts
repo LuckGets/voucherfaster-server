@@ -44,6 +44,7 @@ import {
 import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promotion.dto';
 import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
 import { isUUID } from 'class-validator';
+import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 
 @Injectable()
 export class VoucherService {
@@ -83,8 +84,14 @@ export class VoucherService {
     //---------------------------------------------------------
     //---------------------------------------------------------
     const allImgBuffer: Express.Multer.File[] = [];
-    if (mainImg) allImgBuffer.push(...mainImg);
+    if (!mainImg)
+      throw ErrorApiResponse.badRequest('Main image for voucher is required.');
+
+    allImgBuffer.push(...mainImg);
     if (voucherImg && voucherImg.length > 0) allImgBuffer.push(...voucherImg);
+
+    if (allImgBuffer.length === 0)
+      throw ErrorApiResponse.badRequest('Voucher image is required.');
     // Firstly we need to upload the img to s3 and get the link back.
     const allVoucherImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
@@ -176,23 +183,49 @@ export class VoucherService {
     cursor,
     paginationOption,
     sortOption,
+    status,
   }: {
     tag?: VoucherTagDomain['name'];
     category?: VoucherCategoryDomain['name'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
+    status?: VoucherDomain['status'];
   }): Promise<VoucherDomain[]> {
-    if (cursor && !isUUID(cursor, 7))
-      throw ErrorApiResponse.conflictRequest(
-        `${cursor} is not valid data type for cursor.`,
-      );
+    let statusToQuery: VoucherStatusEnum = VoucherStatusEnum.ACTIVE;
+    if (status) {
+      if (!EnumCheckerHelper.checkEnumValue(VoucherStatusEnum, status)) {
+        const enumValue = [];
+        for (const key in VoucherStatusEnum) {
+          enumValue.push(key);
+        }
+        throw ErrorApiResponse.badRequest(
+          `${status} is not valid enumerable for status. Value provided should be one of the ${enumValue.join(', ')} value`,
+        );
+      }
+
+      statusToQuery = status;
+    }
+    if (cursor) {
+      if (!isUUID(cursor, 7))
+        throw ErrorApiResponse.conflictRequest(
+          `${cursor} is not valid data type for cursor.`,
+        );
+
+      const isVoucherExist = await this.voucherRepository.findById(cursor);
+      if (!isVoucherExist)
+        throw ErrorApiResponse.notFoundRequest(
+          `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
+        );
+    }
+
     return this.voucherRepository.findMany({
       tag,
       category,
       cursor,
       paginationOption,
       sortOption,
+      status: statusToQuery,
     });
   }
 
@@ -236,6 +269,11 @@ export class VoucherService {
         `The voucher ID: ${data.id} could not be found on this server`,
       );
 
+    if (data.status == voucher.status)
+      throw ErrorApiResponse.conflictRequest(
+        `The voucher ID: ${voucher.id} is already ${data.status}`,
+      );
+
     if (data.termAndCondTh) {
       await this.checkVoucherTermAndCondBeforeUpdate(
         data.termAndCondTh,
@@ -248,6 +286,14 @@ export class VoucherService {
         data.termAndCondEn,
         TermAndCondLangauage.EN,
       );
+    }
+
+    if (data.tagId) {
+      const tagId = await this.voucherTagRepository.findById(data.tagId);
+      if (!tagId)
+        throw ErrorApiResponse.notFoundRequest(
+          `The tag ID: ${data.tagId} could not be found on this server.`,
+        );
     }
 
     return this.voucherRepository.update(data);
@@ -431,36 +477,22 @@ export class VoucherService {
    */
   public async addVoucherImg({
     data,
-    mainImg,
     voucherImg,
   }: {
     data?: AddVoucherImgDto;
     mainImg?: Express.Multer.File;
     voucherImg?: Express.Multer.File[];
-  }): Promise<void> {
+  }): Promise<VoucherDomain> {
+    if (!voucherImg || voucherImg.length === 0)
+      throw ErrorApiResponse.notFoundRequest('voucherImg field is required.');
     const voucher = await this.voucherRepository.findById(data.voucherId);
     if (!voucher)
       throw ErrorApiResponse.notFoundRequest(
         `Voucher ID: ${data.voucherId} could not be found on this server.`,
       );
-    if (mainImg) {
-      const voucherMainImg = voucher.img.filter((item) => item.mainImg)[0];
-      const toReplacedVoucherImgDomain = {
-        id: voucherMainImg.id,
-        imgPath: voucherMainImg.imgPath,
-        mainImg: voucherMainImg.mainImg,
-      };
-      await this.updateVoucherMainImage({
-        voucherId: voucher.id,
-        toReplacedVoucherImgDomain,
-        mainImg,
-        deleteMainImg: data.deleteMainImg,
-      });
-    }
-    if (voucherImg) {
-      await this.createManyVoucherImg(voucher.id, voucherImg);
-    }
-    return;
+
+    await this.createManyVoucherImg(voucher.id, voucherImg);
+    return this.voucherRepository.findById(voucher.id);
   }
 
   /**

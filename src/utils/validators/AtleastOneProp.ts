@@ -14,8 +14,6 @@ export class AtLeastOnePropertyConstraint
     const properties = args.constraints[0] as string[];
     const object = args.object as Function;
 
-    console.log('Argument: ', args);
-    console.log('Object', object);
     return properties.some((property) => {
       const value = object[property];
       return !!value;

@@ -73,13 +73,12 @@ export class OrderService {
     const { items, totalPrice, updateStockAmountInfo } =
       await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(data);
 
-    const { createOrderData, allOrderItemsId } =
-      await this.prepareCreateOrderData({
-        accountId,
-        items,
-        totalPrice,
-        updateStockAmountInfo,
-      });
+    const createOrderData = await this.prepareCreateOrderData({
+      accountId,
+      items,
+      totalPrice,
+      updateStockAmountInfo,
+    });
 
     const order =
       await this.orderRepository.createOrderAndTransaction(createOrderData);
@@ -261,7 +260,7 @@ export class OrderService {
     typeOfOrderItem: string;
   }): Promise<any> {
     // Query the database to check if the order item exists
-    const item = await dbQueryFunc(orderItem.id);
+    const item: AnyItemDomain = await dbQueryFunc(orderItem.id);
 
     // Throw an error if the item is not found
     if (!item) {
@@ -270,8 +269,13 @@ export class OrderService {
       );
     }
 
-    // Check if the item is out of stock
+    if (new Date(item.sellExpiredAt) < new Date())
+      throw ErrorApiResponse.conflictRequest(
+        `The voucher ID: ${item.id} was out of saled since ${item.sellExpiredAt.toLocaleString()}.`,
+      );
+
     if (item.stockAmount === 0) {
+      // Check if the item is out of stock
       throw ErrorApiResponse.conflictRequest(
         `The ${typeOfOrderItem} ID:${item.id} is now out of stock.`,
       );
@@ -309,10 +313,7 @@ export class OrderService {
     accountId: AccountDomain['id'];
     totalPrice: number;
     updateStockAmountInfo: UpdateStockAmountInfo;
-  }): Promise<{
-    createOrderData: CreateOrderAndTransactionInput;
-    allOrderItemsId: OrderItemDomain['id'][];
-  }> {
+  }): Promise<CreateOrderAndTransactionInput> {
     const usableDaysAfterPurchased =
       await this.usableDaysService.getCurrentUsableDaysAfterPurchased();
     if (!usableDaysAfterPurchased) {
@@ -326,6 +327,7 @@ export class OrderService {
       accountId,
       usableDaysAfterPurchasedId: usableDaysAfterPurchased.id,
       updateStockAmountInfo,
+      transaction: null,
     };
 
     const allOrderItemsId: OrderItemDomain['id'][] = [];
@@ -387,18 +389,22 @@ export class OrderService {
     );
 
     // Add all of the generated code to the order items
+    createOrderDataWithAssignCode.transaction = {
+      id: String(this.uuidService.make()),
+      status: TransactionStatusEnum.PENDING,
+    };
 
-    return { createOrderData: createOrderDataWithAssignCode, allOrderItemsId };
+    return createOrderDataWithAssignCode;
   }
 
   private async generateCodeForOrderItem(
     numsOfItems: number,
   ): Promise<OrderItemDomain['code'][]> {
-    const unqiueCode = new Set<string>();
+    const uniqueCode = new Set<string>();
 
-    while (unqiueCode.size < numsOfItems) {
+    while (uniqueCode.size < numsOfItems) {
       {
-        const needed = CalculatorService.minus(numsOfItems, unqiueCode.size);
+        const needed = CalculatorService.minus(numsOfItems, uniqueCode.size);
 
         const batch = this.randomCodeGeneratorService.generateMany(needed);
 
@@ -409,10 +415,10 @@ export class OrderService {
           (code) => !exisitingCode.includes(code),
         );
 
-        newUniqueFilteredBatch.forEach((code) => unqiueCode.add(code));
+        newUniqueFilteredBatch.forEach((code) => uniqueCode.add(code));
       }
 
-      return Array.from(unqiueCode);
+      return Array.from(uniqueCode);
     }
   }
 
@@ -519,14 +525,12 @@ export class OrderService {
   // -------------------------------------------------------------------- //
   async processPaymentWithOrderId(
     payload: ProcessPaymentDto,
-    user: HttpRequestWithUser['user'],
     order: OrderDomain,
   ): Promise<OrderDomain> {
     try {
       const { orderId, paymentToken } = payload;
       const orderAndTransaction = await this.checkOrderAndTransaction(
         orderId,
-        user,
         order,
       );
 
@@ -563,7 +567,6 @@ export class OrderService {
 
   async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
-    user: HttpRequestWithUser['user'],
     order: OrderDomain,
   ): Promise<OrderDomain> {
     if (!order.account.verifiedAt)
@@ -580,6 +583,16 @@ export class OrderService {
         `Order ID: ${order.id} does not have any transaction.`,
       );
 
+    // If transaction have been expired.
+    // throw error
+
+    if (
+      new Date(order.transaction.expiredAt) > new Date() &&
+      order.transaction.status === TransactionStatusEnum.PENDING
+    )
+      throw ErrorApiResponse.conflictRequest(
+        `Transaction of order ID: ${orderId} has expired at ${order.transaction.expiredAt.toLocaleString()}.`,
+      );
     if (
       order.transaction.status === TransactionStatusEnum.SUCCESS ||
       order.transaction.paymentId

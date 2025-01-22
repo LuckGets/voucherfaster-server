@@ -18,25 +18,39 @@ import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { AccountMapper } from '../../account/prisma-relational/account.mapper';
 import { RoleEnum } from '@resources/account/types/account.type';
+import { TimeAdderHelper } from '@utils/services/time-adder.helper';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultQrcodeImgPathToWaitForUpload: string = 'WAITFORUPLOAD';
   private defaultOrderItemLimitPaginationForFindMany: number = 1;
 
+  private voucherCategoryIncludeQuery: Prisma.VoucherInclude = {
+    voucherTag: {
+      include: {
+        voucherCategory: true,
+      },
+    },
+  };
+
+  private voucherImgIncludeQuery: Prisma.VoucherInclude = {
+    VoucherImg: {
+      where: {
+        mainImg: true,
+      },
+      select: {
+        id: true,
+        imgPath: true,
+        mainImg: true,
+      },
+    },
+  };
+
   private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {
       include: {
-        VoucherImg: {
-          where: {
-            mainImg: true,
-          },
-          select: {
-            id: true,
-            imgPath: true,
-            mainImg: true,
-          },
-        },
+        ...this.voucherImgIncludeQuery,
+        ...this.voucherCategoryIncludeQuery,
       },
     },
   };
@@ -44,20 +58,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private orderItemPromotionIncludeQuery: Prisma.OrderItemPromotionInclude = {
     voucherPromotion: {
       include: {
-        voucher: {
-          include: {
-            VoucherImg: {
-              where: {
-                mainImg: true,
-              },
-              select: {
-                id: true,
-                imgPath: true,
-                mainImg: true,
-              },
-            },
-          },
-        },
+        ...this.orderItemVoucherIncludeQuery,
       },
     },
   };
@@ -75,9 +76,18 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             mainImg: true,
           },
         },
+        voucher: {
+          include: {
+            ...this.voucherCategoryIncludeQuery,
+          },
+        },
         PackageRewardVoucher: {
           include: {
-            voucher: true,
+            voucher: {
+              include: {
+                ...this.voucherCategoryIncludeQuery,
+              },
+            },
           },
         },
       },
@@ -188,6 +198,15 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           },
         });
 
+      const transactionExpireTime =
+        await this.prismaService.transactionExpireTime.findFirst({
+          where: {
+            deletedAt: {
+              equals: null,
+            },
+          },
+        });
+
       if (!transactionSystem)
         throw ErrorApiResponse.conflictRequest('Transaction system not found.');
 
@@ -202,6 +221,12 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
               updateStockAmountInfo,
             );
 
+          const currentDate = new Date(Date.now());
+          const transactionExpiredAt = TimeAdderHelper.addTime(
+            currentDate,
+            transactionExpireTime.number,
+            transactionExpireTime.unit,
+          );
           // Create order and transaction
           const createOrderPromise = tx.order.create({
             data: {
@@ -212,6 +237,8 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
                 create: {
                   transactionSystemId: transactionSystem.id,
                   status: 'PENDING',
+                  createdAt: currentDate,
+                  expiredAt: transactionExpiredAt,
                 },
               },
             },

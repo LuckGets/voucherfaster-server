@@ -52,6 +52,7 @@ export type CreateOrderAndTransactionInput = {
   accountId: AccountDomain['id'];
   usableDaysAfterPurchasedId: UsableDaysAfterPurchasedDomain['id'];
   updateStockAmountInfo: UpdateStockAmountInfo;
+  transaction: Pick<TransactionDomain, 'status' | 'id'>;
   voucherIdList?: CreateOrderVoucherIdList;
   promotionIdList?: CreateOrderPromotionIdList;
   packageIdList?: CreateOrderPackageIdList;

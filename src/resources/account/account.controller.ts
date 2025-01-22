@@ -30,6 +30,7 @@ import {
 } from './dto/change-password.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  UPDATE_ACCOUNT_FILED_FILED,
   UpdateAccountDto,
   UpdateAccountResponse,
 } from './dto/update-account.dto';
@@ -115,7 +116,7 @@ export class AccountController {
     schema: {
       type: 'object',
       properties: {
-        accountImage: {
+        [UPDATE_ACCOUNT_FILED_FILED.accountImg]: {
           type: 'string',
           format: 'binary',
           description: 'Account image.',
@@ -151,7 +152,10 @@ export class AccountController {
     groups: [RoleEnum.Me],
   })
   @UseGuards(AccessTokenAuthGuard)
-  @UseInterceptors(FileInterceptor('accountImage'), UnlinkFileInterceptor)
+  @UseInterceptors(
+    FileInterceptor(UPDATE_ACCOUNT_FILED_FILED.accountImg),
+    UnlinkFileInterceptor,
+  )
   @Patch(AccountPath.Update)
   async update(
     @Req() req: HttpRequestWithUser,

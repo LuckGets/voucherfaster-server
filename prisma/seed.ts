@@ -28,6 +28,7 @@ import {
 } from './seeds-data/order.seed';
 import { accounts } from './seeds-data/account.seed';
 import {
+  transactionExpireTime,
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
@@ -134,6 +135,11 @@ const seed = async (): Promise<void> => {
       prisma.orderItemPackage.createMany,
       orderItemsPackage,
       'order-items-package',
+    ),
+    seedingFunc(
+      prisma.transactionExpireTime.create,
+      transactionExpireTime,
+      'transaction-expire-time',
     ),
   ]);
 };

@@ -1,25 +1,20 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { NullAble } from '@utils/types/common.type';
-import { IsPasswordValid } from '@utils/validators/PasswordFormat';
-import {
-  IsEmail,
-  IsOptional,
-  IsPhoneNumber,
-  IsString,
-  IsUrl,
-} from 'class-validator';
+import { IsEmail, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { GenerateAccountResponseHATEOASLink } from 'src/common/HATEOASLinks';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { AccountDomain } from '../domain/account.domain';
 import { IsEmptyValue } from '@utils/validators/IsEmptyValue';
-import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
 
 type UpdateAccountResponseType = AccountDomain;
 
-@AtLeastOneProperty(['email', 'phone', 'fullname'])
+export const UPDATE_ACCOUNT_FILED_FILED = {
+  accountImg: 'accountImage',
+};
+
 export class UpdateAccountDto {
   @ApiProperty({ type: String, required: false })
   @IsEmail()
@@ -41,6 +36,10 @@ export class UpdateAccountDto {
   photo?: NullAble<string>;
   @IsEmptyValue()
   verifiedAt?: NullAble<Date>;
+
+  public static updatableProperty(): Array<keyof UpdateAccountDto> {
+    return ['email', 'phone', 'fullname'];
+  }
 }
 
 export class UpdateAccountResponse extends CoreApiResponse {

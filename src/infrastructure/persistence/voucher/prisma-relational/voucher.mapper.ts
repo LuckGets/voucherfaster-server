@@ -3,6 +3,7 @@ import {
   VoucherCategory,
   VoucherImg,
   VoucherPromotion,
+  VoucherTag,
   VoucherTermAndCondEN,
   VoucherTermAndCondTh,
 } from '@prisma/client';
@@ -14,6 +15,7 @@ import {
   VoucherTagDomain,
   VoucherTermAndCondDomain,
 } from '@resources/voucher/domain/voucher.domain';
+import { ObjectHelper } from '@utils/services/object.helper';
 import { plainToInstance } from 'class-transformer';
 
 type AllVoucherInformation = Voucher & {
@@ -21,6 +23,9 @@ type AllVoucherInformation = Voucher & {
   VoucherTermAndCondTh?: Partial<VoucherTermAndCondTh>[];
   VoucherImg?: Partial<VoucherImg>[];
   VoucherPromotion?: Partial<VoucherPromotion>[];
+  voucherTag?: Partial<VoucherTag> & {
+    voucherCategory?: Partial<VoucherCategory>;
+  };
 };
 
 type VoucherCategoryInformation = VoucherCategory & {
@@ -33,22 +38,41 @@ type VoucherCategoryInformation = VoucherCategory & {
 // type VoucherPromotionInformation = VoucherPromotion
 
 export class VoucherMapper {
-  public static toDomain(voucherEntity: AllVoucherInformation): VoucherDomain {
+  public static toDomain(
+    voucherEntity: AllVoucherInformation,
+    options: { allInfo: boolean },
+  ): VoucherDomain {
     const voucherDomain = new VoucherDomain();
+
+    if (ObjectHelper.isObjectEmpty(voucherEntity)) return null;
+
+    if (ObjectHelper.isObjectEmpty(voucherEntity.voucherTag))
+      throw new Error(`VoucherTag is empty in voucher ID: ${voucherEntity.id}`);
+    if (ObjectHelper.isObjectEmpty(voucherEntity.voucherTag.voucherCategory))
+      throw new Error(
+        `Voucher category is empty in voucher ID: ${voucherEntity.id}`,
+      );
+    if (voucherEntity.VoucherImg.length === 0)
+      throw new Error(
+        `Voucher image is empty in voucher ID: ${voucherEntity.id}`,
+      );
+
     voucherDomain.id = voucherEntity.id;
     voucherDomain.stockAmount = voucherEntity.stockAmount;
     voucherDomain.description = voucherEntity.description;
     voucherDomain.price = voucherEntity.price.toNumber();
-    voucherDomain.saleExpiredTime = voucherEntity.saleExpiredTime;
+    voucherDomain.sellExpiredAt = voucherEntity.sellExpiredAt;
     voucherDomain.title = voucherEntity.title;
-    voucherDomain.usageExpiredTime = voucherEntity.usageExpiredTime;
+    voucherDomain.usableExpiredAt = voucherEntity.usableExpiredAt;
     voucherDomain.status = VoucherStatusEnum[voucherEntity.status];
-    if (voucherEntity.VoucherImg) {
-      voucherDomain.img = voucherEntity.VoucherImg.map((item) => {
-        const img: VoucherDomain['img'][0] = { ...item };
-        return img;
-      });
-    }
+
+    voucherDomain.tag = voucherEntity.voucherTag.name;
+    voucherDomain.category = voucherEntity.voucherTag.voucherCategory.name;
+
+    voucherDomain.img = voucherEntity.VoucherImg.map((item) => {
+      const img: VoucherDomain['img'][0] = { ...item };
+      return img;
+    });
     if (
       voucherEntity.VoucherTermAndCondEN &&
       voucherEntity.VoucherTermAndCondTh
@@ -75,39 +99,25 @@ export class VoucherMapper {
       voucherDomain.promotion = voucherEntity.VoucherPromotion.map(
         VoucherPromotionMapper.toDomain,
       );
+    } else {
+      voucherDomain.promotion = [];
+    }
+
+    if (options.allInfo) {
+      ObjectHelper.findEmptyFieldAndThrowError(
+        voucherDomain,
+        VoucherDomain.requiredFieldForDetail(),
+        'Voucher',
+      );
+    } else if (!options.allInfo) {
+      ObjectHelper.findEmptyFieldAndThrowError(
+        voucherDomain,
+        VoucherDomain.requiredFieldForList(),
+        'Voucher',
+      );
     }
     return voucherDomain;
   }
-
-  // public static separateVoucherAndPackageToDomain(
-  //   voucherAndPackageEntity: (AllVoucherInformation & {
-  //     PackageVoucher: Partial<PackageVoucher>[];
-  //   })[],
-  // ): {
-  //   voucher: NullAble<VoucherDomain[]>;
-  //   package: NullAble<PackageVoucherDomain[]>;
-  // } {
-  //   if (!voucherAndPackageEntity || voucherAndPackageEntity.length < 0)
-  //     return { voucher: [], package: [] };
-  //   const { mappedVoucherList, packageVoucher } =
-  //     voucherAndPackageEntity.reduce(
-  //       (acc, curr) => {
-  //         const { PackageVoucher, ...data } = curr;
-  //         if (PackageVoucher && PackageVoucher.length > 0) {
-  //           acc.packageVoucher.push(PackageVoucher);
-  //         }
-  //         acc.mappedVoucherList.push(
-  //           VoucherMapper.toDomain(data as AllVoucherInformation),
-  //         );
-  //         return acc;
-  //       },
-  //       {
-  //         mappedVoucherList: [],
-  //         packageVoucher: [],
-  //       },
-  //     );
-  //   return { voucher: mappedVoucherList, package: packageVoucher };
-  // }
 }
 
 export class VoucherCategoryMapper {

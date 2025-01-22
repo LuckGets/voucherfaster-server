@@ -1,16 +1,46 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
+import {
+  PackageImgDomain,
+  PackageVoucherDomain,
+} from '@resources/package/domain/package-voucher.domain';
 import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
+  VoucherCategoryDomain,
   VoucherDomain,
   VoucherImgDomain,
 } from '@resources/voucher/domain/voucher.domain';
 
+export type OrderItemDetailPromotionField = {
+  name: VoucherPromotionDomain['name'];
+};
+
+export type OrderItemDetailPackageField = {
+  name: PackageVoucherDomain['title'];
+  reward: boolean;
+};
+
 export class OrderItemDetails {
-  title: string;
+  id:
+    | VoucherDomain['id']
+    | VoucherPromotionDomain['id']
+    | PackageVoucherDomain['id'];
+  title: VoucherDomain['title'];
   price: number;
-  usageExpiredTime: Date | string;
-  img: Partial<VoucherImgDomain> | Partial<PackageVoucherDomain>;
+  category: VoucherCategoryDomain['name'];
+  usableExpiredAt: Date | string;
+  img: VoucherImgDomain['imgPath'] | PackageImgDomain['imgPath'];
+  promotion?: OrderItemDetailPromotionField;
+  package?: OrderItemDetailPackageField;
+
+  public static getVoucherRequiredFields(): string[] {
+    return ['id', 'title', 'price', 'category', 'usageExpiredTime', 'img'];
+  }
+  public static getPromotionRequiredFields(): string[] {
+    return [...this.getVoucherRequiredFields(), 'promotion'];
+  }
+  public static getPackageRequiredFields(): string[] {
+    return [...this.getVoucherRequiredFields(), 'package'];
+  }
 }
 
 export class OrderItemDomain {

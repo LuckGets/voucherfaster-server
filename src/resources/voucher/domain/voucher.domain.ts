@@ -33,23 +33,65 @@ export class VoucherDomain {
   @ApiProperty({ type: () => Number })
   price: number;
   @ApiProperty({ type: () => Date })
-  usageExpiredTime: Date;
+  usableExpiredAt: Date;
   @ApiProperty({ type: () => Object })
   termAndCond?: {
     th: VoucherTermAndCondDomain[];
     en: VoucherTermAndCondDomain[];
   };
   @ApiProperty({ type: () => Date })
-  saleExpiredTime: Date;
+  sellExpiredAt: Date;
   @ApiProperty({
     type: () => Object,
     example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
   })
   img?: Partial<VoucherImgDomain>[];
   promotion?: Partial<VoucherPromotionDomain>[];
+  category: VoucherCategoryDomain['name'];
+  tag: VoucherTagDomain['name'];
+
+  public static requiredFieldForDetail(): Array<keyof VoucherDomain> {
+    return [
+      'id',
+      'title',
+      'description',
+      'price',
+      'status',
+      'category',
+      'tag',
+      'price',
+      'promotion',
+      'img',
+      'stockAmount',
+      'termAndCond',
+      'usableExpiredAt',
+      'sellExpiredAt',
+    ];
+  }
+
+  public static requiredFieldForList(): Array<keyof VoucherDomain> {
+    return [
+      'id',
+      'title',
+      'description',
+      'price',
+      'status',
+      'category',
+      'tag',
+      'price',
+      'promotion',
+      'img',
+      'stockAmount',
+      'usableExpiredAt',
+      'sellExpiredAt',
+    ];
+  }
 }
 
-export type VoucherDomainCreateInput = Omit<VoucherDomain, 'img'> & {
+export type VoucherDomainCreateInput = Omit<
+  VoucherDomain,
+  'img' | 'tag' | 'category'
+> & {
   tagId: VoucherTagDomain['id'];
 };
 

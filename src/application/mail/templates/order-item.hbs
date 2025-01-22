@@ -1,40 +1,66 @@
-<html lang='en'>
+{{!-- <html lang='en'>
   <head>
     <meta charset='UTF-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-    <title>{{title}}</title>
+    <title>{{ownerName}}</title>
   </head>
-  <body style='margin:0;font-family: Arial, Helvetica, sans-serif;'>
-    <table style='border:0;width:100%'>
-      <tr style='background:#eeeeee'>
-        <td
-          style='padding:20px;color:#808080;text-align:center;font-size:40px;font-weight:600'
-        >
-          {{app_name}}
-        </td>
-      </tr>
-      <tr>
-        <td
-          style='padding:20px;color:black;font-size:32px;font-weight:100;text-align:center'
-        >
-          {{item_name}}<br />
-        </td>
-      </tr>
-      <tr>
-        <td style='text-align:center'>
-          <img src='{{qrcode_path}}' />
-        </td>
-      </tr>
-      <tr>
-        <td style='text-align:center'>
-          <p>voucher code: {{item_code}}</p>
-        </td>
-      </tr>
-      <tr>
-        <td style='text-align:center'>
-          <p>Expired time: {{expired_time}}</p>
-        </td>
-      </tr>
-    </table>
+  <body style='margin:0;font-family: Arial, Helvetica, sans-serif;'> --}}
+ <div style="font-family: Arial, sans-serif; text-align: center; max-width: 400px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+  <h1 style="font-size: 22px; color: #333; margin-bottom: 5px;">{{item_name}}</h1>
+
+  {{#if promotion_voucher}}
+  <h2 style="font-size: 18px; color: #555; margin: 5px 0;">{{promotion_name}}</h2>
+  <p style="font-size: 14px; color: #777; margin: 5px 0;">Promotion</p>
+  {{/if}}
+
+    <p style="font-size: 14px; color: #555; margin-top: 20px;">{{voucher_category}}</p>
+      <div style='margin: 20px 0;'>
+        <img
+          src='{{item_img}}'
+          alt='Voucher Image'
+          style='max-width: 100%; height: auto; border-radius: 8px;'
+        />
+      </div>
+
+      <h3 style='color: #333; margin: 0 0 10px;'>{{item_name}}</h3>
+      <div style="margin: 20px 0;">
+        <img src="{{qrcode_path}}" alt="QR Code" style="max-width: 200px; height: auto;">
+      </div>
+      {{!-- <p style='margin: 5px 0; font-size: 14px; color: #666;'>Order Number:
+        {{orderNumber}}</p> --}}
+      <p style='margin: 5px 0; font-size: 14px; color: #666;'>Voucher REF:
+        {{item_code}}</p>
+      <p style='margin: 5px 0; font-size: 14px; color: #666;'>No/Total:
+        {{number_total}}</p>
+      {{#if reward_voucher}}
+        <p style='margin: 5px 0; font-size: 14px; color: #666;'>Free voucher
+         </p>
+      {{/if}}
+      <div>
+        <p>Expired:</p>
+        <p>
+          <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M7 14C7 13.4477 7.44772 13 8 13C8.55229 13 9 13.4477 9 14C9 14.5523 8.55229 15 8 15C7.44772 15 7 14.5523 7 14Z" fill="#0F0F0F"></path> <path d="M8 17C7.44772 17 7 17.4477 7 18C7 18.5523 7.44772 19 8 19C8.55229 19 9 18.5523 9 18C9 17.4477 8.55229 17 8 17Z" fill="#0F0F0F"></path> <path d="M11 14C11 13.4477 11.4477 13 12 13C12.5523 13 13 13.4477 13 14C13 14.5523 12.5523 15 12 15C11.4477 15 11 14.5523 11 14Z" fill="#0F0F0F"></path> <path d="M12 17C11.4477 17 11 17.4477 11 18C11 18.5523 11.4477 19 12 19C12.5523 19 13 18.5523 13 18C13 17.4477 12.5523 17 12 17Z" fill="#0F0F0F"></path> <path d="M15 14C15 13.4477 15.4477 13 16 13C16.5523 13 17 13.4477 17 14C17 14.5523 16.5523 15 16 15C15.4477 15 15 14.5523 15 14Z" fill="#0F0F0F"></path> <path d="M16 17C15.4477 17 15 17.4477 15 18C15 18.5523 15.4477 19 16 19C16.5523 19 17 18.5523 17 18C17 17.4477 16.5523 17 16 17Z" fill="#0F0F0F"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M6 2C6 1.44772 6.44772 1 7 1C7.55228 1 8 1.44772 8 2V3H16V2C16 1.44772 16.4477 1 17 1C17.5523 1 18 1.44772 18 2V3H19C20.6569 3 22 4.34315 22 6V20C22 21.6569 20.6569 23 19 23H5C3.34315 23 2 21.6569 2 20V6C2 4.34315 3.34315 3 5 3H6V2ZM16 5V6C16 6.55228 16.4477 7 17 7C17.5523 7 18 6.55228 18 6V5H19C19.5523 5 20 5.44772 20 6V9H4V6C4 5.44772 4.44772 5 5 5H6V6C6 6.55228 6.44772 7 7 7C7.55228 7 8 6.55228 8 6V5H16ZM4 11V20C4 20.5523 4.44772 21 5 21H19C19.5523 21 20 20.5523 20 20V11H4Z" fill="#0F0F0F"></path> </g></svg>
+          {{!-- <img src="calendar-icon.png" alt="Calendar Icon" style="width: 16px; height: 16px;"> --}}
+            {{expired_date}}
+        </p>
+        <p>
+          <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12 7V12L9.5 10.5M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+          {{!-- <img src="clock-icon.png" alt="Clock Icon" style="width: 16px; height: 16px;"> --}}
+            {{expired_time}}
+        </p>
+</div>
+
+      <a
+        style='background-color: #000; color: #fff; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 4px;'
+        href='{{qrcode_url}}'
+      >
+        Use Voucher
+      </a>
+
+      <footer style='margin-top: 20px; font-size: 12px; color: #999;'>
+        Voucher faster : Make your Voucher Management Easier.
+      </footer>
+    {{!-- </div>
+
   </body>
-</html>
+</html> --}}

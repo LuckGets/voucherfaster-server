@@ -3,7 +3,7 @@ import { TransactionDomain } from '@resources/transaction/domain/transaction.dom
 
 export type UpdateTransactionData = Omit<
   TransactionDomain,
-  'transactionSystem' | 'createdAt' | 'updatedAt'
+  'transactionSystem' | 'createdAt' | 'updatedAt' | 'expiredAt'
 >;
 
 export type OrderIdsAndTransactions = {

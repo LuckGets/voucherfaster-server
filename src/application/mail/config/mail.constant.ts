@@ -1,3 +1,5 @@
+import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+
 export const VERIFY_EMAIL_CONSTANT = {
   title: "Confirm the email you've registed with Voucher Faster",
   actionTitle: 'Confirm Email',
@@ -17,7 +19,9 @@ export const CHANGE_PASSWORD_CONSTANT = {
 } as const;
 
 export const MAIL_ORDER_ITEM_CONSTANT = {
-  title: 'Thanks you for purchasing with voucher-faster.',
+  generateTitle(ownerName: string, orderCode: OrderItemDomain['code']) {
+    return `E-voucher delivery from ${ownerName} (Ref: ${orderCode})`;
+  },
   actionTitle: 'Change password',
   firstText: 'As the user has requested to changing the password in platform',
   secondText:
