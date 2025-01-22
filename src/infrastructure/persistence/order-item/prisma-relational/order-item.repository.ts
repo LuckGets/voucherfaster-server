@@ -12,14 +12,23 @@ export class OrderItemRelationPrismaORMRepository
 {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
+  private voucherIncludeQuery: Prisma.VoucherInclude = {
+    VoucherImg: {
+      where: {
+        mainImg: true,
+      },
+    },
+    voucherTag: {
+      include: {
+        voucherCategory: true,
+      },
+    },
+  };
+
   private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {
       include: {
-        VoucherImg: {
-          where: {
-            mainImg: true,
-          },
-        },
+        ...this.voucherIncludeQuery,
       },
     },
   };
@@ -29,11 +38,7 @@ export class OrderItemRelationPrismaORMRepository
       include: {
         voucher: {
           include: {
-            VoucherImg: {
-              where: {
-                mainImg: true,
-              },
-            },
+            ...this.voucherIncludeQuery,
           },
         },
       },
@@ -43,10 +48,23 @@ export class OrderItemRelationPrismaORMRepository
   private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
     package: {
       include: {
-        PackageRewardVoucher: true,
+        PackageRewardVoucher: {
+          include: {
+            voucher: {
+              include: {
+                ...this.voucherIncludeQuery,
+              },
+            },
+          },
+        },
         PackageImg: {
           where: {
             mainImg: true,
+          },
+        },
+        voucher: {
+          include: {
+            ...this.voucherIncludeQuery,
           },
         },
       },
@@ -127,6 +145,7 @@ export class OrderItemRelationPrismaORMRepository
         );
       },
     );
+
     return allUpdatedOrderItem.map(OrderItemMapper.toDomain);
   }
   async update(data: UpdateOrderItemDto): Promise<OrderItemDomain> {

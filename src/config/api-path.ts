@@ -31,11 +31,14 @@ export const VoucherPath = {
   UpdateVoucher: ':voucherId',
   SearchVoucher: 'search/:search',
   SearchVoucherParam: 'search',
+  VoucherImageIdParam: 'imageId',
   AddVoucherImg: ':voucherId/images',
   UpdateVoucherImg: ':voucherId/images/:imageId',
+  DeleteVoucherImgById: ':voucherId/images/:imageId',
   TagQuery: 'tag',
   CategoryQuery: 'category',
   StatusQuery: 'status',
+  SellDateQuery: 'sell-date',
 } as const;
 
 export const VoucherCategoryPath = {

@@ -26,6 +26,7 @@ export class TransactionMapper {
       );
     transaction.paymentId = transactionEntity.paymentId;
     transaction.transactionSystem = transactionEntity.transactionSystem?.system;
+    transaction.expiredAt = transactionEntity.expiredAt;
     transaction.createdAt = transactionEntity.createdAt;
     transaction.updatedAt = transactionEntity.updatedAt;
     transaction.deletedAt = transactionEntity.deletedAt;

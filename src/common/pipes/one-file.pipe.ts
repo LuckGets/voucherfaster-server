@@ -1,4 +1,4 @@
-import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
+import { PipeTransform, BadRequestException } from '@nestjs/common';
 
 /**
  * Factory function to create a pipe that ensures at least one of the specified file fields is present.
@@ -7,10 +7,12 @@ import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
  */
 export function AtLeastOneFilePipe(requiredFields: string[]): PipeTransform {
   return {
-    transform(files: any) {
+    transform(files: Record<string, Express.Multer.File[]>) {
       const hasAtLeastOne = requiredFields?.some((field) => {
-        console.log(files);
-        return files && files[field] && files[field].length > 0;
+        console.log('files:', files);
+        console.log('fields:', field);
+        console.log('files[field]:', files[field]);
+        return files[field] && files[field].length > 0;
       });
 
       if (!hasAtLeastOne) {

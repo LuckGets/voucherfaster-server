@@ -45,32 +45,23 @@ export class VoucherMapper {
     const voucherDomain = new VoucherDomain();
 
     if (ObjectHelper.isObjectEmpty(voucherEntity)) return null;
-
-    if (ObjectHelper.isObjectEmpty(voucherEntity.voucherTag))
-      throw new Error(`VoucherTag is empty in voucher ID: ${voucherEntity.id}`);
-    if (ObjectHelper.isObjectEmpty(voucherEntity.voucherTag.voucherCategory))
-      throw new Error(
-        `Voucher category is empty in voucher ID: ${voucherEntity.id}`,
-      );
-    if (voucherEntity.VoucherImg.length === 0)
-      throw new Error(
-        `Voucher image is empty in voucher ID: ${voucherEntity.id}`,
-      );
-
     voucherDomain.id = voucherEntity.id;
     voucherDomain.stockAmount = voucherEntity.stockAmount;
     voucherDomain.description = voucherEntity.description;
     voucherDomain.price = voucherEntity.price.toNumber();
+    voucherDomain.usableAt = voucherEntity.usableAt;
+    voucherDomain.usableExpiredAt = voucherEntity.usableExpiredAt;
+    voucherDomain.sellStartedAt = voucherEntity.sellStartedAt;
     voucherDomain.sellExpiredAt = voucherEntity.sellExpiredAt;
     voucherDomain.title = voucherEntity.title;
     voucherDomain.usableExpiredAt = voucherEntity.usableExpiredAt;
     voucherDomain.status = VoucherStatusEnum[voucherEntity.status];
 
-    voucherDomain.tag = voucherEntity.voucherTag.name;
-    voucherDomain.category = voucherEntity.voucherTag.voucherCategory.name;
+    voucherDomain.tag = voucherEntity.voucherTag?.name;
+    voucherDomain.category = voucherEntity.voucherTag?.voucherCategory?.name;
 
-    voucherDomain.img = voucherEntity.VoucherImg.map((item) => {
-      const img: VoucherDomain['img'][0] = { ...item };
+    voucherDomain.img = voucherEntity.VoucherImg?.map((item) => {
+      const img: VoucherDomain['img'][number] = { ...item };
       return img;
     });
     if (
@@ -78,13 +69,13 @@ export class VoucherMapper {
       voucherEntity.VoucherTermAndCondTh
     ) {
       voucherDomain.termAndCond = {
-        th: voucherEntity.VoucherTermAndCondTh.map((item) => {
+        th: voucherEntity.VoucherTermAndCondTh?.map((item) => {
           const termAndCond = new VoucherTermAndCondDomain();
           termAndCond.id = item.id;
           termAndCond.description = item.description;
           return termAndCond;
         }),
-        en: voucherEntity.VoucherTermAndCondEN.map((item) => {
+        en: voucherEntity.VoucherTermAndCondEN?.map((item) => {
           const termAndCond = new VoucherTermAndCondDomain();
           termAndCond.id = item.id;
           termAndCond.description = item.description;
@@ -96,7 +87,7 @@ export class VoucherMapper {
       voucherEntity.VoucherPromotion &&
       voucherEntity.VoucherPromotion.length > 0
     ) {
-      voucherDomain.promotion = voucherEntity.VoucherPromotion.map(
+      voucherDomain.promotion = voucherEntity.VoucherPromotion?.map(
         VoucherPromotionMapper.toDomain,
       );
     } else {

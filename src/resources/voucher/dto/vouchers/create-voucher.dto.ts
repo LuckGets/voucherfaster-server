@@ -5,11 +5,9 @@ import {
   IsArray,
   IsDate,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsPositive,
   IsString,
-  Validate,
   ValidateNested,
 } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
@@ -17,7 +15,6 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { VoucherDomain } from '../../domain/voucher.domain';
 import { AuthPath } from 'src/config/api-path';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
-import { CreateVoucherPromotionDto } from '../voucher-promotion/create-promotion.dto';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 
 type CreateVoucherDataType = Omit<VoucherDomain, 'img'>;
@@ -47,7 +44,7 @@ class CreatePromotionNestedInVoucherDto {
   @ApiProperty({ type: Date })
   sellExpiredAt: Date;
   @ApiProperty({ type: Date })
-  @IsDate()
+  @IsDateGreaterThan('sellStartedAt')
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usableAt: Date;
@@ -75,15 +72,25 @@ export const createVoucherFormDataDocumentation: ApiBodyOptions = {
       },
       price: { type: 'number', example: 500, description: 'Voucher price' },
       stockAmount: { type: 'number', example: 500 },
-      usageExpiredTime: {
+      usableAt: {
         type: 'string',
         format: 'date-time',
         example: '2024-12-31T23:59:59Z',
       },
-      saleExpiredTime: {
+      usableExpiredAt: {
+        type: 'string',
+        format: 'date-time',
+        example: '2025-12-31T23:59:59Z',
+      },
+      sellStartedAt: {
         type: 'string',
         format: 'date-time',
         example: '2024-12-25T23:59:59Z',
+      },
+      sellExpiredTime: {
+        type: 'string',
+        format: 'date-time',
+        example: '2025-02-25T23:59:59Z',
       },
       tagId: { type: 'string', example: 'tag123' },
       termAndCondTh: {
@@ -176,10 +183,19 @@ export class CreateVoucherDto {
   @Transform(({ value }) => Number(value))
   @ApiProperty({ type: Number })
   stockAmount: number;
-  @IsFutureDate()
+  @IsDateGreaterThan('sellStartedAt')
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  usableAt: Date;
+  @IsDateGreaterThan('usableAt')
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usableExpiredAt: Date;
+  @IsFutureDate()
+  @Transform(({ value }) => new Date(value))
+  @IsNotEmpty()
+  sellStartedAt: Date;
+  @IsDateGreaterThan('sellStartedAt')
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   sellExpiredAt: Date;
@@ -231,53 +247,44 @@ export class CreateVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "01948da7-a4e9-710f-a31a-3a1fc1a810a7",
+        "id": "01948e7f-845f-774d-ad8d-29e5f496eacd",
         "stockAmount": 10000,
         "description": "CRISPY BURGER",
         "price": 30000,
+        "usableAt": "12/25/2025, 12:00:00 AM",
+        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
+        "sellStartedAt": "10/24/2025, 12:00:00 AM",
         "sellExpiredAt": "12/26/2025, 12:00:00 AM",
         "title": "CRISPY BURGER",
-        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
         "status": "ACTIVE",
         "tag": "main courses",
         "category": "Yok chinese restaurant",
         "img": [
             {
-                "id": "01948da7-a4e9-710f-a31a-4fa3793003dd",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737543361333_rocks.jpg",
+                "id": "01948e7f-8460-717e-b372-509aebfcf5f3",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737557508730_rocks.jpg",
                 "mainImg": true
             }
         ],
         "termAndCond": {
             "th": [
                 {
-                    "id": "01948da7-a4e9-710f-a31a-3dbf85c53202",
+                    "id": "01948e7f-8460-717e-b372-4339444a35eb",
                     "description": "เคี้ยวมันส์ๆ"
                 }
             ],
             "en": [
                 {
-                    "id": "01948da7-a4e9-710f-a31a-423559e46cf3",
+                    "id": "01948e7f-8460-717e-b372-4752ec43a770",
                     "description": "Enjoy eating"
                 },
                 {
-                    "id": "01948da7-a4e9-710f-a31a-4539b7c185a8",
+                    "id": "01948e7f-8460-717e-b372-487aeb43ca87",
                     "description": "Have fun"
                 }
             ]
         },
-        "promotion": [
-            {
-                "id": "01948da7-a4e9-710f-a31a-4adc498cfb2d",
-                "name": "ลดแรงต้อนรับปีใหม่",
-                "stockAmount": 100,
-                "sellStartedAt": "1/1/2025, 7:00:00 AM",
-                "sellExpiredAt": "1/1/2026, 6:59:59 AM",
-                "usableAt": "1/1/2024, 7:00:00 AM",
-                "usableExpiredAt": "1/1/2026, 6:59:59 AM",
-                "promotionPrice": 199
-            }
-        ]
+        "promotion": []
     }`,
   })
   public data: CreateVoucherDataType;

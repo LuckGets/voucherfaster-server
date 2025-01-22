@@ -9,7 +9,6 @@ import {
   Post,
   Query,
   SerializeOptions,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -18,10 +17,7 @@ import { VoucherPath, VoucherPromotionPath } from 'src/config/api-path';
 import { VoucherService } from '../voucher.service';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { RoleEnum } from '@resources/account/types/account.type';
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-} from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   CreateVoucherDto,
   createVoucherFormDataDocumentation,
@@ -32,6 +28,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -41,6 +38,7 @@ import {
 import {
   VoucherCategoryDomain,
   VoucherDomain,
+  VoucherImgDomain,
   VoucherStatusEnum,
   VoucherTagDomain,
 } from '../domain/voucher.domain';
@@ -76,6 +74,8 @@ import {
   GetManyVoucherPromotionResponse,
   GetVoucherPromotionByIdResponse,
 } from '../dto/voucher-promotion/get-promotion.dto';
+import { ErrorApiResponse } from 'src/common/core-api-response';
+import { DeleteVoucherImgByIdResponse } from '../dto/voucher-img/delete-voucher-img.dto';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
@@ -164,12 +164,14 @@ export class VoucherController {
     @Query(VoucherPath.CategoryQuery) category: VoucherCategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherDomain['id'],
     @Query(VoucherPath.StatusQuery) status: VoucherStatusEnum,
+    @Query(VoucherPath.SellDateQuery) sellDate: string,
   ): Promise<GetManyVoucherResponse> {
     const voucherQueryList = await this.voucherService.getPaginationVoucher({
       tag,
       category,
       cursor,
       status,
+      sellDate,
     });
     return GetManyVoucherResponse.success(voucherQueryList);
   }
@@ -255,7 +257,7 @@ export class VoucherController {
   })
   @ApiOperation({
     description:
-      "This endpoints can be use for two cases.\n1). Add new image to the exisiting voucher. The newly added image will be marked as non-main image.\n 2).Adding new main image and move the old main image to be non-main image.\n If  provided value body's property: deleteMainImg equal true. The to-be-replace main image will be delete.",
+      'Add new images to the voucher. All image adding in this endpoint will be count as non-main image.',
   })
   @ApiConsumes('multipart/formdata')
   @ApiCreatedResponse({ type: () => AddVoucherImgResponse })
@@ -276,36 +278,86 @@ export class VoucherController {
     },
     @Body() body: AddVoucherImgDto,
   ): Promise<AddVoucherImgResponse> {
-    const voucher = await this.voucherService.addVoucherImg({
+    const voucherImgList = await this.voucherService.addVoucherImg({
       data: body,
       voucherImg: files[VOUCHER_FILE_FILED.VOUCHER_IMG],
     });
-    return AddVoucherImgResponse.success(voucher);
+    return AddVoucherImgResponse.success(voucherImgList, body.voucherId);
   }
 
   // Updage existing voucher Image.
 
   @ApiBearerAuth()
   @ApiConsumes('multipart/formdata')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        [VOUCHER_FILE_FILED.VOUCHER_IMG]: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description: 'image to replaced the old one.',
+          nullable: true,
+        },
+        voucherId: {
+          type: 'string',
+          description: 'The requested voucher ID to add a new image.',
+          nullable: false,
+        },
+        voucherImgId: {
+          type: 'string',
+          description: 'The requested voucher image ID to update.',
+          nullable: false,
+        },
+      },
+    },
+  })
   @ApiOkResponse({
     type: () => UpdateVoucherImgResponse,
   })
   @UseGuards(AdminGuard)
   @UseInterceptors(
-    FileInterceptor(VOUCHER_FILE_FILED.VOUCHER_IMG),
+    FileFieldsInterceptor([
+      {
+        name: VOUCHER_FILE_FILED.VOUCHER_IMG,
+        maxCount: 1,
+      },
+    ]),
     UnlinkFileInterceptor,
   )
   @Patch(VoucherPath.UpdateVoucherImg)
   async updateVoucherImg(
     @Body() body: UpdateVoucherImgDto,
-    @UploadedFile()
-    file: Express.Multer.File,
+    @UploadedFiles()
+    file: {
+      [VOUCHER_FILE_FILED.VOUCHER_IMG]?: Express.Multer.File[];
+    },
   ): Promise<UpdateVoucherImgResponse> {
+    if (!file || !file[VOUCHER_FILE_FILED.VOUCHER_IMG])
+      throw ErrorApiResponse.notFoundRequest(
+        `Field ${VOUCHER_FILE_FILED.VOUCHER_IMG} require file to process the request.`,
+      );
+
     const voucherImg = await this.voucherService.updateSpecificVoucherImg(
       body,
-      file,
+      file[VOUCHER_FILE_FILED.VOUCHER_IMG][0],
     );
     return UpdateVoucherImgResponse.success(voucherImg, body.voucherImgId);
+  }
+
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ type: () => DeleteVoucherImgByIdResponse })
+  @UseGuards(AdminGuard)
+  @Delete(VoucherPath.DeleteVoucherImgById)
+  async deleteVoucherImg(
+    @Param(VoucherPath.VoucherIdParm) voucherId: VoucherDomain['id'],
+    @Param(VoucherPath.VoucherImageIdParam) imageId: VoucherImgDomain['id'],
+  ): Promise<DeleteVoucherImgByIdResponse> {
+    await this.voucherService.deleteVoucherImgById(voucherId, imageId);
+    return DeleteVoucherImgByIdResponse.success(imageId);
   }
 
   // -------------------------------------------------------------------- //

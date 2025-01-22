@@ -13,22 +13,20 @@ import {
   VoucherTag,
 } from '@prisma/client';
 import {
+  OrderItemDetailPackageField,
+  OrderItemDetailPromotionField,
   OrderItemDetails,
   OrderItemDomain,
-  OrderItemPackageDomain,
-  OrderItemPromotionDomain,
 } from '@resources/order/domain/order-item.domain';
-import { VoucherPromotionMapper } from '../../voucher/prisma-relational/voucher.mapper';
-import { PackageVoucherMapper } from '../../package/prisma-relational/mapper/package.mapper';
 import { ObjectHelper } from '@utils/services/object.helper';
 
 type NestedVoucherTagAndCategory = Partial<VoucherTag> & {
-  voucherCategory?: Partial<VoucherCategory>;
+  voucherCategory: Partial<VoucherCategory>;
 };
 
 type VoucherDetailAndImg = Voucher & {
-  VoucherImg?: Partial<VoucherImg>;
-  voucherTag?: NestedVoucherTagAndCategory;
+  VoucherImg: Partial<VoucherImg>[];
+  voucherTag: NestedVoucherTagAndCategory;
 };
 
 export type OrderItemAndDetails = OrderItem & {
@@ -43,7 +41,7 @@ export type OrderItemAndDetails = OrderItem & {
   OrderItemPackage?: OrderItemPackage & {
     package?: PackageVoucher & {
       voucher?: VoucherDetailAndImg;
-      PackageImg?: Partial<PackageImg>;
+      PackageImg?: Partial<PackageImg>[];
       PackageRewardVoucher?: Partial<PackageRewardVoucher> & {
         voucher?: VoucherDetailAndImg;
       };
@@ -126,7 +124,9 @@ export class OrderItemVoucherMapper {
     // Map additional fields
     if (ObjectHelper.isObjectEmpty(orderItemVoucher.voucher.VoucherImg))
       throw new Error(`VoucherImg is empty`);
-    orderItemDetail.img = orderItemVoucher.voucher.VoucherImg?.imgPath;
+    orderItemDetail.img = orderItemVoucher.voucher.VoucherImg?.filter(
+      (item) => item.mainImg === true,
+    )[0].imgPath;
 
     // Map additional fields
     orderItemDetail.category =
@@ -134,12 +134,6 @@ export class OrderItemVoucherMapper {
     orderItemDetail.promotion = null;
     orderItemDetail.package = null;
 
-    // Check for missing fields
-    ObjectHelper.findEmptyFieldAndThrowError(
-      orderItemDetail,
-      requiredFields,
-      orderItemVoucher.id,
-    );
     return orderItemDetail;
   }
 }
@@ -186,20 +180,25 @@ export class OrderItemPromotionMapper {
 
     // Map the voucher image
     orderItemDetail.img =
-      orderItemPromotion.voucherPromotion?.voucher?.VoucherImg?.imgPath;
+      orderItemPromotion.voucherPromotion?.voucher?.VoucherImg?.filter(
+        (item) => item.mainImg === true,
+      )[0].imgPath;
 
     // Map the category
     orderItemDetail.category =
       orderItemPromotion.voucherPromotion?.voucher?.voucherTag?.voucherCategory?.name;
 
     // Map the promotion
-    orderItemDetail.promotion.name = orderItemPromotion.voucherPromotion?.name;
+    const promotionField: OrderItemDetailPromotionField = {
+      name: orderItemPromotion.voucherPromotion?.name,
+    };
+    orderItemDetail.promotion = { ...promotionField };
 
     // Check for missing fields
     ObjectHelper.findEmptyFieldAndThrowError(
       orderItemDetail,
       requiredFields,
-      orderItemPromotion.id,
+      orderItemPromotion.voucherPromotion.name,
     );
 
     return orderItemDetail;
@@ -229,8 +228,11 @@ export class OrderItemPackageMapper {
     const orderItemDetail = new OrderItemDetails();
     // Map the id and package details
     orderItemDetail.id = orderItemPackage.voucherId;
-    orderItemDetail.package.name = orderItemPackage.package.title;
-    orderItemDetail.package.reward = orderItemPackage.rewardVoucher;
+    const packageField: OrderItemDetailPackageField = {
+      name: orderItemPackage.package?.title,
+      reward: orderItemPackage.rewardVoucher,
+    };
+    orderItemDetail.package = { ...packageField };
 
     // Determine title and category based on reward voucher presence
     if (orderItemPackage.rewardVoucher) {
@@ -252,13 +254,15 @@ export class OrderItemPackageMapper {
     if (ObjectHelper.isObjectEmpty(orderItemPackage.package.PackageImg)) {
       throw new Error(`PackageImg is empty`);
     }
-    orderItemDetail.img = orderItemPackage.package.PackageImg?.imgPath;
+    orderItemDetail.img = orderItemPackage.package.PackageImg?.filter(
+      (item) => item.mainImg === true,
+    )[0].imgPath;
 
     // Check for any missing required fields
     ObjectHelper.findEmptyFieldAndThrowError(
       orderItemDetail,
       requiredFields,
-      orderItemPackage.package.id,
+      orderItemPackage.package.title,
     );
 
     return orderItemDetail;

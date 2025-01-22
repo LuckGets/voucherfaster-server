@@ -6,6 +6,7 @@ import { AuthPath } from 'src/config/api-path';
 import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
 import {
   IsBoolean,
+  IsDate,
   IsOptional,
   IsPositive,
   IsString,
@@ -102,10 +103,20 @@ export class UpdateVoucherDto {
   @Transform(({ value }) => Number(value))
   stockAmount?: number;
   @ApiProperty({ type: Date })
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  @IsOptional()
+  usableAt?: Date;
+  @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
   usableExpiredAt?: Date;
+  @ApiProperty({ type: Date })
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  @IsOptional()
+  sellStartedAt?: Date;
   @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
@@ -138,7 +149,9 @@ export class UpdateVoucherDto {
       'description',
       'price',
       'stockAmount',
+      'usableAt',
       'usableExpiredAt',
+      'sellStartedAt',
       'sellExpiredAt',
       'tagId',
       'termAndCondTh',
@@ -167,63 +180,44 @@ export class UpdateVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "01948d58-6319-76a8-bf42-bbd3135c0822",
-        "stockAmount": 1,
+        "id": "01948e7f-845f-774d-ad8d-29e5f496eacd",
+        "stockAmount": 10000,
         "description": "CRISPY BURGER",
         "price": 30000,
-        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
-        "title": "HOMHOM",
+        "usableAt": "12/25/2025, 12:00:00 AM",
         "usableExpiredAt": "12/26/2025, 12:00:00 AM",
+        "sellStartedAt": "8/26/2025, 12:00:00 AM",
+        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+        "title": "CRISPY BURGER",
         "status": "ACTIVE",
-        "tag": "Lunch",
-        "category": "All-international",
+        "tag": "main courses",
+        "category": "Yok chinese restaurant",
         "img": [
             {
-                "id": "01948d58-631a-7409-8cb8-f560ad5ff124",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737538167115_rocks.jpg",
+                "id": "01948e7f-8460-717e-b372-509aebfcf5f3",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737557508730_rocks.jpg",
                 "mainImg": true
-            },
-            {
-                "id": "01948d58-631a-7409-8cb8-f870d27cc8ce",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737538167115_cute-dog.jpg",
-                "mainImg": false
-            },
-            {
-                "id": "01948d58-631a-7409-8cb8-fc7a0f69cbc0",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737538167115_road.jpg",
-                "mainImg": false
             }
         ],
         "termAndCond": {
             "th": [
                 {
-                    "id": "01948d58-631a-7409-8cb8-e78a65443076",
+                    "id": "01948e7f-8460-717e-b372-4339444a35eb",
                     "description": "เคี้ยวมันส์ๆ"
                 }
             ],
             "en": [
                 {
-                    "id": "01948d58-631a-7409-8cb8-ea5ce9614b11",
+                    "id": "01948e7f-8460-717e-b372-4752ec43a770",
                     "description": "Enjoy eating"
                 },
                 {
-                    "id": "01948d58-631a-7409-8cb8-ed847adf36df",
+                    "id": "01948e7f-8460-717e-b372-487aeb43ca87",
                     "description": "Have fun"
                 }
             ]
         },
-        "promotion": [
-            {
-                "id": "01948d58-631a-7409-8cb8-f3c7347899d8",
-                "name": "ลดแรงต้อนรับปีใหม่",
-                "stockAmount": 100,
-                "sellStartedAt": "1/1/2025, 7:00:00 AM",
-                "sellExpiredAt": "1/1/2026, 6:59:59 AM",
-                "usableAt": "1/1/2024, 7:00:00 AM",
-                "usableExpiredAt": "1/1/2026, 6:59:59 AM",
-                "promotionPrice": 199
-            }
-        ]
+        "promotion": []
     }`,
   })
   public data: VoucherDomain;

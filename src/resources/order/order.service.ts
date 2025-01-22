@@ -316,6 +316,11 @@ export class OrderService {
   }): Promise<CreateOrderAndTransactionInput> {
     const usableDaysAfterPurchased =
       await this.usableDaysService.getCurrentUsableDaysAfterPurchased();
+    if (!accountId)
+      throw ErrorApiResponse.internalServerError(
+        `Could not find account before creating order.`,
+      );
+
     if (!usableDaysAfterPurchased) {
       throw ErrorApiResponse.conflictRequest(
         `Could not find the after-purchased usable days. Please recheck before try again.`,
@@ -401,7 +406,6 @@ export class OrderService {
     numsOfItems: number,
   ): Promise<OrderItemDomain['code'][]> {
     const uniqueCode = new Set<string>();
-
     while (uniqueCode.size < numsOfItems) {
       {
         const needed = CalculatorService.minus(numsOfItems, uniqueCode.size);
@@ -416,6 +420,8 @@ export class OrderService {
         );
 
         newUniqueFilteredBatch.forEach((code) => uniqueCode.add(code));
+        console.log('batch', batch);
+        console.log('code', uniqueCode);
       }
 
       return Array.from(uniqueCode);
@@ -525,25 +531,21 @@ export class OrderService {
   // -------------------------------------------------------------------- //
   async processPaymentWithOrderId(
     payload: ProcessPaymentDto,
-    order: OrderDomain,
   ): Promise<OrderDomain> {
     try {
       const { orderId, paymentToken } = payload;
-      const orderAndTransaction = await this.checkOrderAndTransaction(
-        orderId,
-        order,
-      );
+      const orderAndTransaction = await this.checkOrderAndTransaction(orderId);
 
-      const transaction =
-        await this.transactionService.makePaymentAndUpdateTransaction({
-          transactionId: orderAndTransaction.transaction.id,
-          token: paymentToken,
-          amount: orderAndTransaction.totalPrice,
-          description: `Transaction for order ID: ${orderAndTransaction.id}`,
-        });
+      // const transaction =
+      //   await this.transactionService.makePaymentAndUpdateTransaction({
+      //     transactionId: orderAndTransaction.transaction.id,
+      //     token: paymentToken,
+      //     amount: orderAndTransaction.totalPrice,
+      //     description: `Transaction for order ID: ${orderAndTransaction.id}`,
+      //   });
 
-      if (transaction.status !== TransactionStatusEnum.SUCCESS)
-        throw ErrorApiResponse.badRequest('Transaction failed.');
+      // if (transaction.status !== TransactionStatusEnum.SUCCESS)
+      //   throw ErrorApiResponse.badRequest('Transaction failed.');
 
       const allOrderItems = [...orderAndTransaction.orderItems];
 
@@ -558,7 +560,7 @@ export class OrderService {
         new OrderSuccessEvent(orderAndTransaction.account.email, allOrderItems),
       );
 
-      return orderAndTransaction;
+      return this.orderRepository.findById(orderAndTransaction.id);
     } catch (err) {
       console.error(err);
       throw ErrorApiResponse.conflictRequest(err);
@@ -567,44 +569,45 @@ export class OrderService {
 
   async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
-    order: OrderDomain,
   ): Promise<OrderDomain> {
-    if (!order.account.verifiedAt)
-      throw ErrorApiResponse.conflictRequest(
-        `The Order ID: ${order.id} created by un-verified account. Please verify account before making transaction.`,
-      );
-    if (!order.account.email || !order.id)
-      throw ErrorApiResponse.internalServerError(
-        `The account ID : ${order.account.id} does not have valid information.`,
-      );
+    const order = await this.orderRepository.findById(orderId);
 
-    if (!order.transaction || Object.keys(order.transaction).length === 0)
-      throw ErrorApiResponse.conflictRequest(
-        `Order ID: ${order.id} does not have any transaction.`,
-      );
+    // if (!order.account.verifiedAt)
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `The Order ID: ${order.id} created by un-verified account. Please verify account before making transaction.`,
+    //   );
+    // if (!order.account.email || !order.id)
+    //   throw ErrorApiResponse.internalServerError(
+    //     `The account ID : ${order.account.id} does not have valid information.`,
+    //   );
 
-    // If transaction have been expired.
-    // throw error
+    // if (!order.transaction || Object.keys(order.transaction).length === 0)
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `Order ID: ${order.id} does not have any transaction.`,
+    //   );
 
-    if (
-      new Date(order.transaction.expiredAt) > new Date() &&
-      order.transaction.status === TransactionStatusEnum.PENDING
-    )
-      throw ErrorApiResponse.conflictRequest(
-        `Transaction of order ID: ${orderId} has expired at ${order.transaction.expiredAt.toLocaleString()}.`,
-      );
-    if (
-      order.transaction.status === TransactionStatusEnum.SUCCESS ||
-      order.transaction.paymentId
-    )
-      throw ErrorApiResponse.conflictRequest(
-        `Transaction of order ID: ${orderId} has already been processed.`,
-      );
+    // // If transaction have been expired.
+    // // throw error
 
-    if (order.transaction.deletedAt)
-      throw ErrorApiResponse.conflictRequest(
-        `Transaction of order ID: ${order} has been deleted at ${order.transaction.deletedAt.toLocaleString()}.`,
-      );
+    // if (
+    //   new Date(order.transaction.expiredAt) < new Date() &&
+    //   order.transaction.status === TransactionStatusEnum.PENDING
+    // )
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `Transaction of order ID: ${orderId} has expired at ${order.transaction.expiredAt.toLocaleString()}.`,
+    //   );
+    // if (
+    //   order.transaction.status === TransactionStatusEnum.SUCCESS ||
+    //   order.transaction.paymentId
+    // ) {
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `Transaction of order ID: ${orderId} has already been processed.`,
+    //   );
+    // }
+    // if (order.transaction.deletedAt)
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `Transaction of order ID: ${order} has been deleted at ${order.transaction.deletedAt.toLocaleString()}.`,
+    //   );
 
     return order;
   }

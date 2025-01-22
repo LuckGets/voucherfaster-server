@@ -497,6 +497,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         ...this.orderItemAndUsableDaysIncludeQuery,
       },
     });
+    if (!order) return null;
     const findedAccount = await this.prismaService.account.findUnique({
       where: { id: order.accountId },
     });

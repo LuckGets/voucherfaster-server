@@ -32,6 +32,8 @@ export class VoucherDomain {
   )
   @ApiProperty({ type: () => Number })
   price: number;
+  @ApiProperty({ type: Date })
+  usableAt: Date;
   @ApiProperty({ type: () => Date })
   usableExpiredAt: Date;
   @ApiProperty({ type: () => Object })
@@ -39,6 +41,8 @@ export class VoucherDomain {
     th: VoucherTermAndCondDomain[];
     en: VoucherTermAndCondDomain[];
   };
+  @ApiProperty({ type: () => Date })
+  sellStartedAt: Date;
   @ApiProperty({ type: () => Date })
   sellExpiredAt: Date;
   @ApiProperty({

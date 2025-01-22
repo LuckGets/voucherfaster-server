@@ -26,7 +26,6 @@ export class OrderOwnerGuard implements CanActivate {
         return false;
       const orderId = params[OrderPath.OrderIdParam];
       const order = await this.orderService.getOrderById(orderId);
-
       if (!order)
         throw ErrorApiResponse.notFoundRequest(
           `This order ID could not be found on this server.`,
@@ -35,12 +34,13 @@ export class OrderOwnerGuard implements CanActivate {
         throw ErrorApiResponse.conflictRequest(
           `Order ID: ${order.id} has been deleted at ${order.deletedAt.toLocaleString()}.`,
         );
-      if (order.account.id !== user.accountId && user.role !== RoleEnum.Admin)
+      if (order.account.id !== user?.accountId && user?.role !== RoleEnum.Admin)
         throw ErrorApiResponse.unauthorizedRequest();
 
       req['order'] = order;
       return true;
     } catch (err) {
+      console.error(err);
       this.logger.error(
         `Request could not be proceed due to the Error : ${err.message}`,
       );

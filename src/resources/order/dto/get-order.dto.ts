@@ -9,7 +9,7 @@ import { HTTPMethod } from 'src/common/http.type';
 export class GetOrderByIdReponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
-    example: HttpStatus.CREATED,
+    example: HttpStatus.OK,
   })
   public HTTPStatusCode: number;
   @ApiProperty({
@@ -62,7 +62,7 @@ export class GetOrderByIdReponse extends CoreApiResponse {
   ): GetOrderByIdReponse {
     const responseMessage =
       message ?? `${HTTPMethod.Get}:: ${OrderPath.Base}/${data.id} successful.`;
-    const responseCode = statusCode ?? HttpStatus.CREATED;
+    const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
     return new GetOrderByIdReponse(

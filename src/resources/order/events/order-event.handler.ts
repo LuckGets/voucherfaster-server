@@ -121,7 +121,7 @@ export class OrderEventHandler {
     const emailTransporter: MailTransporter =
       await this.mailerService.getTransporter();
 
-    let count: 1;
+    let count: number = 1;
     const total = orderItem.length;
     const orderItemListForMail: OrderItemDetailForMail[] = orderItem.map(
       (item) => {

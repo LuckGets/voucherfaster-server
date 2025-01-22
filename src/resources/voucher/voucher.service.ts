@@ -36,6 +36,7 @@ import {
 import {
   AddVoucherImgDto,
   UpdateVoucherImgDto,
+  VOUCHER_FILE_FILED,
 } from './dto/voucher-img/voucher-img.dto';
 import {
   VoucherPromotionCreateInput,
@@ -45,6 +46,8 @@ import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promot
 import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
+import { ProductDomainHelper } from '@resources/account/dto/product.helper';
+import { ObjectHelper } from '@utils/services/object.helper';
 
 @Injectable()
 export class VoucherService {
@@ -79,6 +82,25 @@ export class VoucherService {
       throw ErrorApiResponse.notFoundRequest(
         'The tag ID provided could not be found on this server.',
       );
+    // Extract the term and condition from data
+    const { termAndCondTh, termAndCondEn, promotion, ...restData } = data;
+    if (!ObjectHelper.isObjectEmpty(promotion)) {
+      if (promotion.sellStartedAt < restData.sellStartedAt)
+        throw ErrorApiResponse.badRequest(
+          `Promotion should not sell earlier than voucher.`,
+        );
+
+      if (promotion.sellExpiredAt > restData.sellExpiredAt)
+        throw ErrorApiResponse.badRequest(
+          `Promotion should stop selling before or the same time as the voucher.`,
+        );
+
+      if (promotion.usableAt < restData.usableAt)
+        throw ErrorApiResponse.badRequest(
+          `Promotion should be usable the same time or later than voucher.`,
+        );
+    }
+
     // ---------------------------------------------------------
     // ------------------ CREATE VOUCHER PART  ------------------
     //---------------------------------------------------------
@@ -105,9 +127,6 @@ export class VoucherService {
       ),
     );
     // ------- SECOND PART : SET UP INFORMATION -------
-
-    // Extract the term and condition from data
-    const { termAndCondTh, termAndCondEn, promotion, ...restData } = data;
 
     // Set up the voucher information before store in database
     const voucherData: VoucherDomainCreateInput = {
@@ -184,6 +203,7 @@ export class VoucherService {
     paginationOption,
     sortOption,
     status,
+    sellDate,
   }: {
     tag?: VoucherTagDomain['name'];
     category?: VoucherCategoryDomain['name'];
@@ -191,6 +211,7 @@ export class VoucherService {
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
     status?: VoucherDomain['status'];
+    sellDate?: string;
   }): Promise<VoucherDomain[]> {
     let statusToQuery: VoucherStatusEnum = VoucherStatusEnum.ACTIVE;
     if (status) {
@@ -215,10 +236,12 @@ export class VoucherService {
       const isVoucherExist = await this.voucherRepository.findById(cursor);
       if (!isVoucherExist)
         throw ErrorApiResponse.notFoundRequest(
-          `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
+          `Voucher ID: ${cursor} does not exist on this server.`,
         );
     }
 
+    if (sellDate) {
+    }
     return this.voucherRepository.findMany({
       tag,
       category,
@@ -295,6 +318,8 @@ export class VoucherService {
           `The tag ID: ${data.tagId} could not be found on this server.`,
         );
     }
+
+    ProductDomainHelper.checkUsableAndSellTime(data, voucher, 'voucher');
 
     return this.voucherRepository.update(data);
   }
@@ -482,7 +507,7 @@ export class VoucherService {
     data?: AddVoucherImgDto;
     mainImg?: Express.Multer.File;
     voucherImg?: Express.Multer.File[];
-  }): Promise<VoucherDomain> {
+  }): Promise<VoucherImgDomain[]> {
     if (!voucherImg || voucherImg.length === 0)
       throw ErrorApiResponse.notFoundRequest('voucherImg field is required.');
     const voucher = await this.voucherRepository.findById(data.voucherId);
@@ -491,8 +516,7 @@ export class VoucherService {
         `Voucher ID: ${data.voucherId} could not be found on this server.`,
       );
 
-    await this.createManyVoucherImg(voucher.id, voucherImg);
-    return this.voucherRepository.findById(voucher.id);
+    return this.createManyVoucherImg(voucher.id, voucherImg);
   }
 
   /**
@@ -505,10 +529,19 @@ export class VoucherService {
     data: UpdateVoucherImgDto,
     file: Express.Multer.File,
   ): Promise<VoucherImgDomain> {
-    const voucherImg = await this.voucherImgRepository.findById(data.voucherId);
+    const voucher = await this.voucherRepository.findById(data.voucherId);
+
+    if (!voucher)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${data.voucherImgId} could not be found on this server.`,
+      );
+
+    const voucherImg = voucher.img.find(
+      (item) => item.id === data.voucherImgId,
+    );
     if (!voucherImg)
       throw ErrorApiResponse.notFoundRequest(
-        `Voucher image ID: ${data.voucherImgId} could not be found on this server.`,
+        `Voucher image ID: ${data.voucherImgId} could not be found with the voucher ID: ${voucher.id}.`,
       );
     const imageLink = await this.mediaService.uploadFile({
       file: file.buffer,
@@ -526,51 +559,6 @@ export class VoucherService {
   }
 
   /**
-   *
-   * @param voucherId
-   * @param toReplacedVoucherImgDomain
-   * @param mainImg
-   * @param boolean
-   * @returns VoucherImgDomain
-   */
-  private async updateVoucherMainImage({
-    voucherId,
-    toReplacedVoucherImgDomain,
-    mainImg,
-    deleteMainImg = false,
-  }: {
-    voucherId: VoucherDomain['id'];
-    toReplacedVoucherImgDomain: Pick<
-      VoucherImgDomain,
-      'id' | 'imgPath' | 'mainImg'
-    >;
-    mainImg: Express.Multer.File;
-    deleteMainImg?: boolean;
-  }): Promise<VoucherImgDomain> {
-    const mainImageLink = await this.mediaService.uploadFile({
-      file: mainImg.buffer,
-      fileName: mainImg.filename,
-      filePath: mainImg.path,
-      mimeType: mainImg.mimetype,
-      bucketDir: s3BucketDirectory.voucherImg,
-    });
-    const mainImgToUpdate: VoucherImgCreateInput = {
-      id: String(this.uuidService.make()),
-      imgPath: mainImageLink,
-      mainImg: true,
-      voucherId: voucherId,
-    };
-    const voucherImg = await this.voucherImgRepository.updateNewMainImgVoucher({
-      mainImgId: toReplacedVoucherImgDomain.id,
-      data: mainImgToUpdate,
-      deleteMainImg,
-    });
-    if (deleteMainImg) {
-      await this.mediaService.deleteFile(toReplacedVoucherImgDomain.imgPath);
-    }
-    return voucherImg;
-  }
-  /**
    * @param Express.Multer.File[]
    * @param voucherId
    * @returns null
@@ -582,7 +570,7 @@ export class VoucherService {
   private async createManyVoucherImg(
     voucherId: VoucherDomain['id'],
     data: Express.Multer.File[],
-  ): Promise<void> {
+  ): Promise<VoucherImgDomain[]> {
     const voucherImgLink = await Promise.all(
       data.map((item) => {
         return this.mediaService.uploadFile({
@@ -604,6 +592,43 @@ export class VoucherService {
     });
 
     return this.voucherImgRepository.createMany(voucherImgToUpdate);
+  }
+
+  public async deleteVoucherImgById(
+    voucherId: VoucherDomain['id'],
+    imgId: VoucherImgDomain['id'],
+  ): Promise<void> {
+    if (!voucherId || !isUUID(voucherId))
+      throw ErrorApiResponse.badRequest(
+        `${voucherId} is not valid data type for this request.`,
+      );
+
+    if (!imgId || !isUUID(imgId))
+      throw ErrorApiResponse.badRequest(
+        `${imgId} is not valid data type for this request.`,
+      );
+    const voucher = await this.voucherRepository.findById(voucherId);
+
+    if (!voucher)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${voucherId} could not be found on this server.`,
+      );
+
+    const voucherImg = voucher.img.find((item) => item.id === imgId);
+
+    if (!voucherImg)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher image ID: ${imgId} could not be found with the voucher ID: ${voucher.id}.`,
+      );
+
+    if (voucherImg.mainImg)
+      throw ErrorApiResponse.conflictRequest(
+        `This ID is the main image and can not be delete. Please update the image instead.`,
+      );
+
+    await this.voucherImgRepository.deleteById(imgId);
+    await this.mediaService.deleteFile(voucherImg.imgPath);
+    return;
   }
 
   // -------------------------------------------------------------------- //
@@ -690,48 +715,12 @@ export class VoucherService {
       }
     }
 
-    // If the request data want to change the promotion start selling date and stop selling date
-    // should check together if start-selling is greater or not.
-    // if greater, than it could not proceed any further.
-    if (data.sellStartedAt && data.sellExpiredAt) {
-      if (data.sellStartedAt > data.sellExpiredAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The updated promotion start-selling date :: ${data.sellStartedAt} should not be greater than the update promotion stop-selling date: ${data.sellExpiredAt}`,
-        );
-      }
-    }
+    ProductDomainHelper.checkUsableAndSellTime(
+      data,
+      isVoucherPromotionExist,
+      'promotion',
+    );
 
-    if (data.sellExpiredAt) {
-      if (data.sellExpiredAt < isVoucherPromotionExist.sellStartedAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The updated promotion stop-selling date :: ${data.sellExpiredAt} should not be earlier than the existing start date: ${isVoucherPromotionExist.sellStartedAt}`,
-        );
-      }
-    }
-
-    if (data.usableAt) {
-      if (data.usableAt < isVoucherPromotionExist.sellStartedAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The updated voucher usable date :: ${data.usableAt} should not be earlier than the start selling date: ${isVoucherPromotionExist.sellStartedAt}`,
-        );
-      }
-    }
-
-    if (data.usableAt && data.usableExpiredAt) {
-      if (data.usableAt > data.usableExpiredAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The voucher usable date :: ${data.usableAt} should not be greater than the usable expired date: ${data.usableExpiredAt}`,
-        );
-      }
-    }
-
-    if (data.usableExpiredAt) {
-      if (data.usableExpiredAt < isVoucherPromotionExist.usableAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The new voucher usable expired date :: ${data.usableExpiredAt} should not be earlier than the existing usable date: ${isVoucherPromotionExist.usableAt}`,
-        );
-      }
-    }
     return this.voucherPromotionRepository.updatePromotion(data);
   }
 

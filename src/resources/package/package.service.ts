@@ -21,6 +21,7 @@ import {
 } from './domain/package-voucher-term-cond.domain';
 import { UpdatePackageVoucherDto } from './dto/update-package.dto';
 import { PackageImgRepository } from 'src/infrastructure/persistence/package/package-img.repository';
+import { ProductDomainHelper } from '@resources/account/dto/product.helper';
 
 @Injectable()
 export class PackageVoucherService {
@@ -176,6 +177,8 @@ export class PackageVoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `Package ID: ${data.id} could not be found.`,
       );
+
+    ProductDomainHelper.checkUsableAndSellTime(data, isPackageExist, 'package');
 
     return this.packageVoucherRepository.updatePackageVoucher(data);
   }

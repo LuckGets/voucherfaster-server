@@ -128,6 +128,22 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       },
     },
   };
+
+  private generateWhereQuery(): Prisma.VoucherWhereInput {
+    const currentDate = new Date();
+    return {
+      AND: [
+        {
+          sellStartedAt: {
+            lte: currentDate,
+          },
+          sellExpiredAt: {
+            gt: currentDate,
+          },
+        },
+      ],
+    };
+  }
   /**
    * We need to
    * creating a voucher
@@ -219,6 +235,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     // for using as prisma where query
     const whereQueryOption: Prisma.VoucherWhereInput = {
       status,
+      ...this.generateWhereQuery(),
     };
 
     // Voucher Join query
@@ -265,6 +282,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           mode: 'insensitive',
         },
         status,
+        ...this.generateWhereQuery(),
       },
       include: voucherJoinQuery,
     });
@@ -290,6 +308,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           in: tagListFromCategories.map((item) => item.id),
         },
         status: voucherStatus,
+        ...this.generateWhereQuery(),
       },
       include: voucherJoinQuery,
     });
@@ -327,6 +346,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
             in: voucherTagList ? voucherTagList.map((item) => item.id) : [],
           },
           status: VoucherStatusEnum.ACTIVE,
+          ...this.generateWhereQuery(),
         },
         include: voucherJoinQuery,
       });

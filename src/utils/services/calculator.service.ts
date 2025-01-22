@@ -22,13 +22,25 @@ export class CalculatorService {
   }
 
   public static minus(...number: (number | string)[]): number {
-    return number.reduce<number>((acc, curr) => {
-      const value = typeof curr === 'string' ? parseFloat(curr) : curr;
-      if (isNaN(value)) {
-        throw new Error(`Invalid number: ${curr}`);
+    let result: number;
+    for (let i = 0; i < number.length; i++) {
+      let value = number[i];
+
+      if (typeof value === 'string') {
+        value = parseFloat(value);
+        if (isNaN(value)) {
+          throw new Error(`Invalid number: ${value}`);
+        }
       }
-      return new Decimal(acc).minus(new Decimal(value)).toNumber();
-    }, 0);
+
+      if (i === 0) {
+        result = value;
+        continue;
+      }
+      result = new Decimal(result).minus(new Decimal(value)).toNumber();
+    }
+
+    return result;
   }
 
   /**
@@ -46,7 +58,7 @@ export class CalculatorService {
         throw new Error(`Invalid number: ${curr}`);
       }
       return new Decimal(acc).times(new Decimal(value)).toNumber();
-    }, 0);
+    }, 1);
   }
 
   public static changedayToMilliseconde(day: number): number {

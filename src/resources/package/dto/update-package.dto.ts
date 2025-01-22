@@ -71,12 +71,22 @@ export class UpdatePackageVoucherDto {
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
-  startedAt?: Date;
+  usableAt?: Date;
   @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
   @IsOptional()
-  expiredAt?: Date;
+  usableExpiredAt?: Date;
+  @ApiProperty({ type: Date })
+  @IsFutureDate()
+  @Transform(({ value }) => new Date(value))
+  @IsOptional()
+  sellStartedAt?: Date;
+  @ApiProperty({ type: Date })
+  @IsFutureDate()
+  @Transform(({ value }) => new Date(value))
+  @IsOptional()
+  sellExpiredAt?: Date;
   @ApiProperty({ type: () => [TermAndCondUpdateDto] })
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value,

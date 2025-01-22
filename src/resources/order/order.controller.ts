@@ -116,24 +116,13 @@ export class OrderController {
   @ApiBearerAuth()
   @ApiBody({ type: () => ProcessPaymentDto })
   @ApiOkResponse({ type: () => OrderSuccessAfterPaymentResponse })
-  @UseGuards(AccessTokenAuthGuard, OrderOwnerGuard)
+  @UseGuards(AccessTokenAuthGuard)
   @Patch(OrderPath.ProcessPayment)
   async processPaymentWithOrderId(
-    @Req() req: HttpRequestWithUserAndOrder,
     @Body() body: ProcessPaymentDto,
   ): Promise<OrderSuccessAfterPaymentResponse> {
-    if (
-      ObjectHelper.isObjectEmpty(req.order) ||
-      !(req.order instanceof OrderDomain)
-    )
-      throw ErrorApiResponse.internalServerError(
-        `The request did not have the order property. Please contact developer to fix the issue.`,
-      );
-
-    const updatedOrder = await this.orderService.processPaymentWithOrderId(
-      body,
-      req.order,
-    );
+    const updatedOrder =
+      await this.orderService.processPaymentWithOrderId(body);
     return OrderSuccessAfterPaymentResponse.success(updatedOrder);
   }
 }

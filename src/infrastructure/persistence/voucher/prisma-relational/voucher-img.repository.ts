@@ -20,6 +20,16 @@ export class VoucherImgRelationalPrismaORMRepository
       },
     });
   }
+
+  findByIds(idList: VoucherImgDomain['id'][]): Promise<VoucherImgDomain[]> {
+    return this.prismaService.voucherImg.findMany({
+      where: {
+        id: {
+          in: idList,
+        },
+      },
+    });
+  }
   findManyByVoucherId(
     voucherId: VoucherDomain['id'],
   ): Promise<NullAble<VoucherImgDomain[]>> {
@@ -66,12 +76,16 @@ export class VoucherImgRelationalPrismaORMRepository
   ): Promise<NullAble<VoucherImgDomain>> {
     return this.prismaService.voucherImg.update({ data, where: { id } });
   }
-  async createMany(dataList: VoucherImgCreateInput[]): Promise<void> {
+  async createMany(
+    dataList: VoucherImgCreateInput[],
+  ): Promise<VoucherImgDomain[]> {
     await this.prismaService.voucherImg.createMany({ data: dataList });
-    const voucher = await this.prismaService.voucher.findUnique({
-      where: {
-        id: dataList[0].voucherId,
-      },
+    return this.findByIds(dataList.map((item) => item.id));
+  }
+
+  async deleteById(id: VoucherImgDomain['id']): Promise<void> {
+    await this.prismaService.voucherImg.delete({
+      where: { id },
     });
     return;
   }

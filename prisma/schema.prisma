@@ -92,7 +92,9 @@ model Voucher {
   stockAmount          Int                    @map("stock_amount") @db.Integer()
   tagId                String                 @map("tag_id") @db.Uuid
   voucherTag           VoucherTag             @relation(fields: [tagId], references: [id])
+  usableAt             DateTime               @map("usable_started_at") @db.Timestamptz(3)
   usableExpiredAt      DateTime               @map("usage_expired_at") @db.Timestamptz(3)
+  sellStartedAt        DateTime               @map("sell_started_at") @db.Timestamptz(3)
   sellExpiredAt        DateTime               @map("sale_expired_at") @db.Timestamptz(3)
   createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime               @updatedAt() @map("updated_at") @db.Timestamptz(3)

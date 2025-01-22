@@ -26,34 +26,25 @@ export class GetManyVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `[{
-            "id": "01948d4a-de2a-73eb-9277-293247919501",
+            "id": "01948e4f-ceee-779e-bb82-d5509924f01f",
             "stockAmount": 10000,
-            "description": "Juicy burgers with crispy french fries.",
-            "price": 300,
-            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
-            "title": "Burger with fries",
+            "description": "Spicy and hot tofu.",
+            "price": 210,
+            "usableAt": "1/1/2025, 12:00:00 AM",
             "usableExpiredAt": "12/26/2025, 12:00:00 AM",
+            "sellStartedAt": "12/26/2024, 12:00:00 AM",
+            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+            "title": "Mapo tofu",
             "status": "ACTIVE",
-            "tag": "Lunch",
-            "category": "All-international",
+            "tag": "main courses",
+            "category": "Yok chinese restaurant",
             "img": [
                 {
-                    "id": "01948d4a-de2a-73eb-9277-550531ea1f95",
-                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
+                    "id": "01948e4f-ceee-779e-bb83-007291c47fb0",
+                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/กะเพาะปลาน้ำแดง.jpg"
                 }
             ],
-            "promotion": [
-                {
-                    "id": "01948d4a-de2a-73eb-9277-81c269877cae",
-                    "name": "ลดแรงต้อนรับปีใหม่",
-                    "stockAmount": 150,
-                    "sellStartedAt": "1/1/2025, 12:00:00 AM",
-                    "sellExpiredAt": "2/15/2025, 12:00:00 AM",
-                    "usableAt": "1/11/2025, 12:00:00 AM",
-                    "usableExpiredAt": "2/1/2025, 12:00:00 AM",
-                    "promotionPrice": 199
-                }
-            ]
+            "promotion": []
         }]`,
   })
   public data: VoucherDomain[];
@@ -110,31 +101,33 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
     type: Object,
     example: `[
         {
-            "id": "01948da7-a4e9-710f-a31a-3a1fc1a810a7",
+            "id": "01948e4f-ceee-779e-bb82-aff619243c99",
             "stockAmount": 10000,
-            "description": "CRISPY BURGER",
-            "price": 30000,
-            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
-            "title": "CRISPY BURGER",
+            "description": "Juicy burgers with crispy french fries.",
+            "price": 300,
+            "usableAt": "1/1/2025, 12:00:00 AM",
             "usableExpiredAt": "12/26/2025, 12:00:00 AM",
+            "sellStartedAt": "12/26/2024, 12:00:00 AM",
+            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
+            "title": "Burger with fries",
             "status": "ACTIVE",
-            "tag": "main courses",
-            "category": "Yok chinese restaurant",
+            "tag": "Lunch",
+            "category": "All-international",
             "img": [
                 {
-                    "id": "01948da7-a4e9-710f-a31a-4fa3793003dd",
-                    "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737543361333_rocks.jpg"
+                    "id": "01948e4f-ceee-779e-bb82-d856ec856bda",
+                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp"
                 }
             ],
             "promotion": [
                 {
-                    "id": "01948da7-a4e9-710f-a31a-4adc498cfb2d",
+                    "id": "01948e4f-ceee-779e-bb83-048c2c7462fa",
                     "name": "ลดแรงต้อนรับปีใหม่",
-                    "stockAmount": 100,
-                    "sellStartedAt": "1/1/2025, 7:00:00 AM",
-                    "sellExpiredAt": "1/1/2026, 6:59:59 AM",
-                    "usableAt": "1/1/2024, 7:00:00 AM",
-                    "usableExpiredAt": "1/1/2026, 6:59:59 AM",
+                    "stockAmount": 150,
+                    "sellStartedAt": "1/1/2025, 12:00:00 AM",
+                    "sellExpiredAt": "2/15/2025, 12:00:00 AM",
+                    "usableAt": "1/11/2025, 12:00:00 AM",
+                    "usableExpiredAt": "2/1/2025, 12:00:00 AM",
                     "promotionPrice": 199
                 }
             ]
@@ -181,63 +174,44 @@ export class GetVoucherByIdResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-        "id": "01948da7-a4e9-710f-a31a-3a1fc1a810a7",
+        "id": "01948e7f-845f-774d-ad8d-29e5f496eacd",
         "stockAmount": 10000,
         "description": "CRISPY BURGER",
         "price": 30000,
+        "usableAt": "12/25/2025, 12:00:00 AM",
+        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
+        "sellStartedAt": "10/24/2025, 12:00:00 AM",
         "sellExpiredAt": "12/26/2025, 12:00:00 AM",
         "title": "CRISPY BURGER",
-        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
         "status": "ACTIVE",
         "tag": "main courses",
         "category": "Yok chinese restaurant",
         "img": [
             {
-                "id": "01948da7-a4e9-710f-a31a-4fa3793003dd",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737543361333_rocks.jpg",
+                "id": "01948e7f-8460-717e-b372-509aebfcf5f3",
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737557508730_rocks.jpg",
                 "mainImg": true
-            },
-            {
-                "id": "01948db4-b174-7157-812e-8ac2e333b961",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737544216531_red-food-gift-card-voucher-design-template-97e81f812b13d305d852edc6d17b86e1_screen.jpg",
-                "mainImg": false
-            },
-            {
-                "id": "01948db4-b175-71d9-a975-804f8c4b8dd6",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737544216531_a872c327-e398-4e0c-95b7-9fb77fd0464a_1024.jpeg",
-                "mainImg": false
             }
         ],
         "termAndCond": {
             "th": [
                 {
-                    "id": "01948da7-a4e9-710f-a31a-3dbf85c53202",
+                    "id": "01948e7f-8460-717e-b372-4339444a35eb",
                     "description": "เคี้ยวมันส์ๆ"
                 }
             ],
             "en": [
                 {
-                    "id": "01948da7-a4e9-710f-a31a-423559e46cf3",
+                    "id": "01948e7f-8460-717e-b372-4752ec43a770",
                     "description": "Enjoy eating"
                 },
                 {
-                    "id": "01948da7-a4e9-710f-a31a-4539b7c185a8",
+                    "id": "01948e7f-8460-717e-b372-487aeb43ca87",
                     "description": "Have fun"
                 }
             ]
         },
-        "promotion": [
-            {
-                "id": "01948da7-a4e9-710f-a31a-4adc498cfb2d",
-                "name": "ลดแรงต้อนรับปีใหม่",
-                "stockAmount": 100,
-                "sellStartedAt": "1/1/2025, 7:00:00 AM",
-                "sellExpiredAt": "1/1/2026, 6:59:59 AM",
-                "usableAt": "1/1/2024, 7:00:00 AM",
-                "usableExpiredAt": "1/1/2026, 6:59:59 AM",
-                "promotionPrice": 199
-            }
-        ]
+        "promotion": []
     }`,
   })
   public data: NullAble<VoucherDomain>;

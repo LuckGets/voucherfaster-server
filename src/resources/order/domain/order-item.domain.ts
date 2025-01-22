@@ -32,8 +32,8 @@ export class OrderItemDetails {
   promotion?: OrderItemDetailPromotionField;
   package?: OrderItemDetailPackageField;
 
-  public static getVoucherRequiredFields(): string[] {
-    return ['id', 'title', 'price', 'category', 'usageExpiredTime', 'img'];
+  public static getVoucherRequiredFields(): Array<keyof OrderItemDetails> {
+    return ['id', 'title', 'price', 'category', 'usableExpiredAt', 'img'];
   }
   public static getPromotionRequiredFields(): string[] {
     return [...this.getVoucherRequiredFields(), 'promotion'];

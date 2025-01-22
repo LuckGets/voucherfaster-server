@@ -205,11 +205,15 @@ export abstract class VoucherImgRepository {
     data: VoucherImgCreateInput;
     deleteMainImg: boolean;
   }): Promise<VoucherImgDomain>;
-  abstract createMany(dataList: VoucherImgCreateInput[]): Promise<void>;
+  abstract createMany(
+    dataList: VoucherImgCreateInput[],
+  ): Promise<VoucherImgDomain[]>;
   abstract updateVoucherImg(
     id: VoucherImgDomain['id'],
     data: VoucherImgUpdateInput,
   ): Promise<VoucherImgDomain>;
+
+  abstract deleteById(id: VoucherImgDomain['id']): Promise<void>;
 }
 
 export abstract class VoucherPromotionRepository {
