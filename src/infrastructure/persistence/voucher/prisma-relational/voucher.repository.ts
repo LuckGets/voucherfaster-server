@@ -22,6 +22,7 @@ import {
   UpdateVoucherDto,
 } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { VoucherPromotionCreateInput } from '@resources/voucher/domain/voucher-promotion.domain';
+import { PaginationSellDateQueryEnum } from '@resources/voucher/dto/vouchers/get-voucher.dto';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(
@@ -129,20 +130,35 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     },
   };
 
-  private generateWhereQuery(): Prisma.VoucherWhereInput {
+  private generateWhereQuery(
+    sellDate: PaginationSellDateQueryEnum,
+  ): Prisma.VoucherWhereInput {
     const currentDate = new Date();
-    return {
-      AND: [
-        {
-          sellStartedAt: {
+    switch (sellDate) {
+      case PaginationSellDateQueryEnum.ALL:
+        return {};
+      case PaginationSellDateQueryEnum.NOW:
+        return {
+          AND: [
+            {
+              sellStartedAt: {
+                lte: currentDate,
+              },
+              sellExpiredAt: {
+                gt: currentDate,
+              },
+            },
+          ],
+        };
+      case PaginationSellDateQueryEnum.EXPIRED:
+        return {
+          sellExpiredAt: {
             lte: currentDate,
           },
-          sellExpiredAt: {
-            gt: currentDate,
-          },
-        },
-      ],
-    };
+        };
+      default:
+        return {};
+    }
   }
   /**
    * We need to
@@ -217,6 +233,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     cursor,
     sortOption,
     status,
+    sellDate,
   }: {
     tag?: VoucherTagDomain['id'];
     category?: VoucherCategoryDomain['name'];
@@ -224,6 +241,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     cursor?: VoucherDomain['id'];
     sortOption?: any;
     status: VoucherDomain['status'];
+    sellDate: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]> {
     const paginatedQueryOptiion = generatePaginationQueryOption({
       cursor,
@@ -235,7 +253,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     // for using as prisma where query
     const whereQueryOption: Prisma.VoucherWhereInput = {
       status,
-      ...this.generateWhereQuery(),
+      ...this.generateWhereQuery(sellDate),
     };
 
     // Voucher Join query
@@ -272,7 +290,13 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
 
   async findByTitle(
     title: VoucherDomain['title'],
-    status: VoucherStatus,
+    {
+      status,
+      sellDate,
+    }: {
+      status: VoucherStatus;
+      sellDate: PaginationSellDateQueryEnum;
+    },
   ): Promise<NullAble<VoucherDomain[]>> {
     const voucherJoinQuery = this.voucherJoinQuery;
     const queryVoucherListResult = await this.prismaService.voucher.findMany({
@@ -282,7 +306,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           mode: 'insensitive',
         },
         status,
-        ...this.generateWhereQuery(),
+        ...this.generateWhereQuery(sellDate),
       },
       include: voucherJoinQuery,
     });
@@ -294,6 +318,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   async findByCategory(
     categoryName: VoucherCategoryDomain['name'],
     voucherStatus: VoucherStatusEnum = VoucherStatusEnum.ACTIVE,
+    sellDate: PaginationSellDateQueryEnum,
     tagName?: VoucherTagDomain['name'],
   ): Promise<VoucherDomain[]> {
     const voucherJoinQuery = this.voucherJoinQuery;
@@ -308,7 +333,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           in: tagListFromCategories.map((item) => item.id),
         },
         status: voucherStatus,
-        ...this.generateWhereQuery(),
+        ...this.generateWhereQuery(sellDate),
       },
       include: voucherJoinQuery,
     });
@@ -317,14 +342,23 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     );
   }
 
-  async findBySearchContent(searchContent: string): Promise<VoucherDomain[]> {
+  async findBySearchContent(
+    searchContent: string,
+    {
+      sellDate,
+      status,
+    }: {
+      sellDate: PaginationSellDateQueryEnum;
+      status: VoucherDomain['status'];
+    },
+  ): Promise<VoucherDomain[]> {
     // GRAB the JOIN query
     const voucherJoinQuery = this.voucherJoinQuery;
     // Find the voucher via voucher title name first
-    const queryVoucherListResult = await this.findByTitle(
-      searchContent,
-      VoucherStatusEnum.ACTIVE,
-    );
+    const queryVoucherListResult = await this.findByTitle(searchContent, {
+      status,
+      sellDate,
+    });
     // If there is result in the query,
     // return the result
     if (queryVoucherListResult.length > 0) {
@@ -345,8 +379,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           tagId: {
             in: voucherTagList ? voucherTagList.map((item) => item.id) : [],
           },
-          status: VoucherStatusEnum.ACTIVE,
-          ...this.generateWhereQuery(),
+          status,
+          ...this.generateWhereQuery(sellDate),
         },
         include: voucherJoinQuery,
       });

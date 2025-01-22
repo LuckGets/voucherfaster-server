@@ -7,6 +7,12 @@ import { VoucherDomain } from '../../domain/voucher.domain';
 import { HTTPMethod } from 'src/common/http.type';
 import { NullAble } from '@utils/types/common.type';
 
+export enum PaginationSellDateQueryEnum {
+  NOW = 'NOW',
+  EXPIRED = 'EXPIRED',
+  ALL = 'ALL',
+}
+
 export class GetManyVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,

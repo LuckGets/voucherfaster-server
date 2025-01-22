@@ -17,6 +17,7 @@ import {
 } from '@resources/voucher/domain/voucher.domain';
 import { CreateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/create-promotion.dto';
 import { UpdateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/update-promotion.dto';
+import { PaginationSellDateQueryEnum } from '@resources/voucher/dto/vouchers/get-voucher.dto';
 import { UpdateVoucherDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
@@ -95,7 +96,16 @@ export abstract class VoucherRepository {
    * which can be
    * the voucher domain list or null
    */
-  abstract findBySearchContent(searchContent: string): Promise<VoucherDomain[]>;
+  abstract findBySearchContent(
+    searchContent: string,
+    {
+      sellDate,
+      status,
+    }: {
+      sellDate: PaginationSellDateQueryEnum;
+      status: VoucherDomain['status'];
+    },
+  ): Promise<VoucherDomain[]>;
 
   /**
    *
@@ -108,6 +118,7 @@ export abstract class VoucherRepository {
     paginationOption,
     sortOption,
     status,
+    sellDate,
   }: {
     tag?: VoucherTagDomain['name'];
     category?: VoucherCategoryDomain['name'];
@@ -115,6 +126,7 @@ export abstract class VoucherRepository {
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
     status?: VoucherDomain['status'];
+    sellDate: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]>;
 
   abstract findManyTermAndConditionWithIds(

@@ -48,6 +48,7 @@ import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductDomainHelper } from '@resources/account/dto/product.helper';
 import { ObjectHelper } from '@utils/services/object.helper';
+import { PaginationSellDateQueryEnum } from './dto/vouchers/get-voucher.dto';
 
 @Injectable()
 export class VoucherService {
@@ -213,20 +214,11 @@ export class VoucherService {
     status?: VoucherDomain['status'];
     sellDate?: string;
   }): Promise<VoucherDomain[]> {
-    let statusToQuery: VoucherStatusEnum = VoucherStatusEnum.ACTIVE;
-    if (status) {
-      if (!EnumCheckerHelper.checkEnumValue(VoucherStatusEnum, status)) {
-        const enumValue = [];
-        for (const key in VoucherStatusEnum) {
-          enumValue.push(key);
-        }
-        throw ErrorApiResponse.badRequest(
-          `${status} is not valid enumerable for status. Value provided should be one of the ${enumValue.join(', ')} value`,
-        );
-      }
+    const statusToQuery: VoucherStatusEnum =
+      this.checkVoucherStatusQuery(status);
+    const sellDateQuery: PaginationSellDateQueryEnum =
+      this.checkSellDateQuery(sellDate);
 
-      statusToQuery = status;
-    }
     if (cursor) {
       if (!isUUID(cursor, 7))
         throw ErrorApiResponse.conflictRequest(
@@ -240,8 +232,6 @@ export class VoucherService {
         );
     }
 
-    if (sellDate) {
-    }
     return this.voucherRepository.findMany({
       tag,
       category,
@@ -249,6 +239,7 @@ export class VoucherService {
       paginationOption,
       sortOption,
       status: statusToQuery,
+      sellDate: sellDateQuery,
     });
   }
 
@@ -274,9 +265,50 @@ export class VoucherService {
 
   public async getSearchedVoucher(
     searchContent: string,
+    { sellDate, status }: { sellDate: string; status: VoucherDomain['status'] },
   ): Promise<NullAble<VoucherDomain[]>> {
-    return this.voucherRepository.findBySearchContent(searchContent);
+    const sellDateQuery = this.checkSellDateQuery(sellDate);
+    const statusQuery = this.checkVoucherStatusQuery(status);
+    return this.voucherRepository.findBySearchContent(searchContent, {
+      sellDate: sellDateQuery,
+      status: statusQuery,
+    });
   }
+
+  private checkVoucherStatusQuery(
+    status: VoucherDomain['status'],
+  ): VoucherStatusEnum {
+    if (!status) {
+      return VoucherStatusEnum.ACTIVE;
+    }
+
+    if (
+      !EnumCheckerHelper.checkEnumValue(VoucherStatusEnum, status.toUpperCase())
+    ) {
+      throw ErrorApiResponse.badRequest(
+        `${status} is not valid enumerable for status. Value provided should be one of the ${EnumCheckerHelper.allEnumValue(VoucherStatusEnum).join(', ')} value`,
+      );
+    }
+    return VoucherStatusEnum[status.toUpperCase()];
+  }
+
+  private checkSellDateQuery(sellQuery: string): PaginationSellDateQueryEnum {
+    if (!sellQuery) return PaginationSellDateQueryEnum.NOW;
+
+    if (
+      !EnumCheckerHelper.checkEnumValue(
+        PaginationSellDateQueryEnum,
+        sellQuery.toUpperCase(),
+      )
+    ) {
+      throw ErrorApiResponse.badRequest(
+        `${sellQuery} is now not valid data type for finding sell date. Value provided should be one of these value: ${EnumCheckerHelper.allEnumValue(PaginationSellDateQueryEnum).join(', ')}`,
+      );
+    }
+
+    return PaginationSellDateQueryEnum[sellQuery.toUpperCase()];
+  }
+
   /**
    * Service for updating
    * existing voucher.

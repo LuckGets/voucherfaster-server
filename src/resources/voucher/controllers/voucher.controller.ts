@@ -59,6 +59,7 @@ import {
   GetManyVoucherResponse,
   GetVoucherByIdResponse,
   GetVoucherBySearchContentResponse,
+  PaginationSellDateQueryEnum,
 } from '../dto/vouchers/get-voucher.dto';
 import {
   CreateVoucherPromotionDto,
@@ -147,11 +148,24 @@ export class VoucherController {
   })
   @ApiQuery({
     name: VoucherPath.StatusQuery,
-    description: 'Status of the voucher.',
+    description: `Status of the voucher. If not provided, default will be ${VoucherStatusEnum.ACTIVE}`,
     required: false,
     enumName: 'status',
     enum: [VoucherStatusEnum.ACTIVE, VoucherStatusEnum.INACTIVE],
     default: VoucherStatusEnum.ACTIVE,
+    type: String,
+  })
+  @ApiQuery({
+    name: VoucherPath.SellDateQuery,
+    description: `Sell date of the voucher. If not provided, default will be ${VoucherStatusEnum.ACTIVE}.`,
+    required: false,
+    enumName: 'sellDate',
+    enum: [
+      PaginationSellDateQueryEnum.ALL,
+      PaginationSellDateQueryEnum.EXPIRED,
+      PaginationSellDateQueryEnum.NOW,
+    ],
+    default: PaginationSellDateQueryEnum.NOW,
     type: String,
   })
   @ApiOkResponse({
@@ -178,6 +192,28 @@ export class VoucherController {
 
   // GET
   // voucher via search content
+  @ApiQuery({
+    name: VoucherPath.StatusQuery,
+    description: `Status of the voucher. If not provided, default will be ${VoucherStatusEnum.ACTIVE}`,
+    required: false,
+    enumName: 'status',
+    enum: [VoucherStatusEnum.ACTIVE, VoucherStatusEnum.INACTIVE],
+    default: VoucherStatusEnum.ACTIVE,
+    type: String,
+  })
+  @ApiQuery({
+    name: VoucherPath.SellDateQuery,
+    description: `Sell date of the voucher. If not provided, default will be ${VoucherStatusEnum.ACTIVE}.`,
+    required: false,
+    enumName: 'sellDate',
+    enum: [
+      PaginationSellDateQueryEnum.ALL,
+      PaginationSellDateQueryEnum.EXPIRED,
+      PaginationSellDateQueryEnum.NOW,
+    ],
+    default: PaginationSellDateQueryEnum.NOW,
+    type: String,
+  })
   @ApiOkResponse({
     type: () => GetVoucherBySearchContentResponse,
     description:
@@ -186,8 +222,13 @@ export class VoucherController {
   @Get(VoucherPath.SearchVoucher)
   async getSearchVoucher(
     @Param(VoucherPath.SearchVoucherParam) searchContent: string,
+    @Query(VoucherPath.StatusQuery) status: VoucherStatusEnum,
+    @Query(VoucherPath.SellDateQuery) sellDate: string,
   ): Promise<GetVoucherBySearchContentResponse> {
-    const voucher = await this.voucherService.getSearchedVoucher(searchContent);
+    const voucher = await this.voucherService.getSearchedVoucher(
+      searchContent,
+      { sellDate, status },
+    );
     return GetVoucherBySearchContentResponse.success(voucher, searchContent);
   }
 

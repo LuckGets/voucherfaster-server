@@ -38,7 +38,7 @@ export const VoucherPath = {
   TagQuery: 'tag',
   CategoryQuery: 'category',
   StatusQuery: 'status',
-  SellDateQuery: 'sell-date',
+  SellDateQuery: 'sellDate',
 } as const;
 
 export const VoucherCategoryPath = {
