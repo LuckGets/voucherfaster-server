@@ -21,6 +21,10 @@ export abstract class OwnerRepository {
    */
   abstract findOwnerInformation(): Promise<OwnerDomain>;
 
+  abstract findOwnerPasswordForRedeem(): Promise<
+    OwnerDomain['passwordForRedeem']
+  >;
+
   /**
    * @abstract
    * @returns OwnerDomain
@@ -44,6 +48,10 @@ export abstract class OwnerRepository {
   abstract updateOwnerInformation(
     data: Partial<OwnerDomain>,
   ): Promise<OwnerDomain>;
+
+  abstract updateOwnerPasswordForRedeem(
+    newPassword: OwnerDomain['passwordForRedeem'],
+  ): Promise<boolean>;
 
   abstract createManyOwnerImg(
     payload: CreateOwnerImgDataType[],

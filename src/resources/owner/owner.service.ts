@@ -8,7 +8,10 @@ import {
   OwnerImgDomain,
   OwnerImgTypeEnum,
 } from './domain/owner.domain';
-import { UpdateOwnerInformationDto } from './dto/update-owner.dto';
+import {
+  UpdateOwnerInformationDto,
+  UpdateOwnerPasswordForRedeem,
+} from './dto/update-owner.dto';
 import { CryptoService } from '@utils/services/crypto.service';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/all-config.type';
@@ -20,22 +23,28 @@ import { UUIDService } from '@utils/services/uuid.service';
 @Injectable()
 export class OwnerService {
   private encryptKey: string;
+  private hashSaltRound: number;
   constructor(
     private ownerRepository: OwnerRepository,
     private configService: ConfigService<AllConfigType>,
+    private cryptoService: CryptoService,
     private uuidService: UUIDService,
     private mediaService: MediaService,
   ) {
     this.encryptKey = this.configService.getOrThrow('mail.encryptKey', {
       infer: true,
     });
+
+    this.hashSaltRound = this.configService.getOrThrow('auth.bcryptSaltRound', {
+      infer: true,
+    });
   }
 
-  getOwnerInformation(): Promise<OwnerDomain> {
+  public getOwnerInformation(): Promise<OwnerDomain> {
     return this.ownerRepository.findOwnerInformation();
   }
 
-  async getEmailInformation(): Promise<
+  public async getEmailInformation(): Promise<
     Pick<OwnerDomain, 'emailForSendNotification' | 'passwordForEmail'>
   > {
     const ownerEmailInfo = await this.ownerRepository.findEmailInformation();
@@ -51,7 +60,9 @@ export class OwnerService {
     return { ...ownerEmailInfo, passwordForEmail: password };
   }
 
-  updateInformation(data: UpdateOwnerInformationDto): Promise<OwnerDomain> {
+  public updateInformation(
+    data: UpdateOwnerInformationDto,
+  ): Promise<OwnerDomain> {
     return this.ownerRepository.updateOwnerInformation(data);
   }
 
@@ -88,7 +99,7 @@ export class OwnerService {
     return this.ownerRepository.createManyOwnerImg(createOwnerImgData);
   }
 
-  async updateOwnerImage(
+  public async updateOwnerImage(
     image: Express.Multer.File,
     imageId: OwnerImgDomain['id'],
   ): Promise<OwnerImgDomain> {
@@ -109,6 +120,23 @@ export class OwnerService {
     return this.ownerRepository.updateOwnerImgById(imageId, uploadedImgPath);
   }
 
+  public async updateOwnerResetPasswordForRedeem(
+    body: UpdateOwnerPasswordForRedeem,
+  ) {
+    const { oldPassword, newPassword } = body;
+    const isPasswordCorrect = await this.checkPasswordForRedeem(oldPassword);
+    if (!isPasswordCorrect)
+      throw ErrorApiResponse.unauthorizedRequest(
+        'Old password is not correct.',
+      );
+
+    const hashedNewPassword = await this.cryptoService.hash(
+      newPassword,
+      this.hashSaltRound,
+    );
+    return this.ownerRepository.updateOwnerPasswordForRedeem(hashedNewPassword);
+  }
+
   async deleteOwnerImageById(imageId: OwnerImgDomain['id']): Promise<void> {
     const isImageExist = await this.ownerRepository.findImageById(imageId);
 
@@ -119,5 +147,13 @@ export class OwnerService {
 
     await this.mediaService.deleteFile(isImageExist.imgPath);
     return this.ownerRepository.deleteOwnerImgById(imageId);
+  }
+
+  private async checkPasswordForRedeem(
+    password: OwnerDomain['passwordForRedeem'],
+  ): Promise<boolean> {
+    const ownerPassword =
+      await this.ownerRepository.findOwnerPasswordForRedeem();
+    return this.cryptoService.compare(password, ownerPassword);
   }
 }

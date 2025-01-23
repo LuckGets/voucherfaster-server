@@ -34,6 +34,15 @@ export class OwnerRelationalPrismaORMRepository implements OwnerRepository {
     return OwnerMapper.toDomain(emailInfo, { passwordForEmail: true });
   }
 
+  async findOwnerPasswordForRedeem(): Promise<
+    OwnerDomain['passwordForRedeem']
+  > {
+    const passwordInfo = await this.prismaService.owner.findFirst({
+      select: { passwordForRedeem: true },
+    });
+    return passwordInfo.passwordForRedeem;
+  }
+
   /**
    * @param imageId id of the image that you want to find
    * @returns `OwnerImgDomain` if found or `null` if not found
@@ -59,6 +68,18 @@ export class OwnerRelationalPrismaORMRepository implements OwnerRepository {
       where: { id: owner.id },
     });
     return OwnerMapper.toDomain(updatedInfo);
+  }
+
+  async updateOwnerPasswordForRedeem(
+    newPassword: OwnerDomain['passwordForRedeem'],
+  ): Promise<boolean> {
+    const owner = await this.prismaService.owner.findFirst();
+    await this.prismaService.owner.update({
+      data: { passwordForRedeem: newPassword },
+      where: { id: owner.id },
+    });
+
+    return true;
   }
 
   // -------------------------------------------------------------------- //

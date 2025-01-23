@@ -10,10 +10,12 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
 import { UUIDService } from '@utils/services/uuid.service';
+import ownerConfig from './config/owner.config';
 
 @Module({
   imports: [
     ConfigModule.forFeature(mailConfig),
+    ConfigModule.forFeature(ownerConfig),
     MulterModule.register({
       storage: diskStorage({
         destination: MULTER_UPLOAD_CONSTANT.DIRECTORY,

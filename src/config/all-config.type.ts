@@ -6,6 +6,7 @@ import { ClientConfig } from './client/client-config.type';
 import { AccountConfig } from '@resources/account/config/account-config.type';
 import { MediaConfig } from '@application/media/s3/media-s3.config';
 import { PaymentConfig } from 'src/infrastructure/payment/config/payment-config.type';
+import { OwnerConfig } from '@resources/owner/config/owner-config.type';
 
 export enum AllConfigTypeEnum {
   App = 'app',
@@ -16,6 +17,7 @@ export enum AllConfigTypeEnum {
   Account = 'account',
   Media = 'media',
   Payment = 'payment',
+  Owner = 'owner',
 }
 
 export type AllConfigType = {
@@ -27,4 +29,5 @@ export type AllConfigType = {
   account: AccountConfig;
   media: MediaConfig;
   payment: PaymentConfig;
+  owner: OwnerConfig;
 };

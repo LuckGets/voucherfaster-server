@@ -6,6 +6,8 @@ import { AuthPath, OwnerPath } from 'src/config/api-path';
 import { OwnerDomain, OwnerImgDomain } from '../domain/owner.domain';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { Match } from '@utils/validators/Match';
+import { NotMatch } from '@utils/validators/NotMatch';
 
 export class UpdateOwnerInformationDto {
   @ApiProperty({ type: String })
@@ -16,6 +18,20 @@ export class UpdateOwnerInformationDto {
   @IsOptional()
   @IsString()
   colorCode?: string;
+}
+
+export class UpdateOwnerPasswordForRedeem {
+  @ApiProperty({ type: String })
+  @IsString()
+  oldPassword: string;
+  @ApiProperty({ type: String })
+  @IsString()
+  @NotMatch('oldPassword')
+  newPassword: string;
+  @ApiProperty({ type: String })
+  @IsString()
+  @Match('newPassword')
+  confirmNewPassword: string;
 }
 
 export class UpdateOwnerInformationResponse extends CoreApiResponse {

@@ -56,6 +56,14 @@ export class OrderItemDomain {
   updatedAt?: Date;
   @ApiProperty({ type: () => OrderItemDetails })
   detail: OrderItemDetails;
+
+  public static waitForUploadQrCodeImagePath(): string {
+    return 'WAITFORUPLOAD';
+  }
+
+  public static defaultQrCodeImagePath(): string {
+    return 'd22pq9rbvhh9yl.cloudfront.net/qrcode-img/order-item-ID:019488cd-a13d-764f-be0d-0f1db340e5f9';
+  }
 }
 
 export class OrderItemVoucherDomain {

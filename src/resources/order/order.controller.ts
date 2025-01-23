@@ -23,10 +23,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { CreateOrderDto, CreateOrderResponse } from './dto/create-order.dto';
-import {
-  HttpRequestWithUser,
-  HttpRequestWithUserAndOrder,
-} from 'src/common/http.type';
+import { HttpRequestWithUser } from 'src/common/http.type';
 import { OrderDomain } from './domain/order.domain';
 import {
   GetOrderByIdReponse,
@@ -42,8 +39,6 @@ import {
   ProcessPaymentDto,
 } from './dto/transactions/process-payment.dto';
 import { OrderOwnerGuard } from 'src/common/guards/order-owner.guard';
-import { ErrorApiResponse } from 'src/common/core-api-response';
-import { ObjectHelper } from '@utils/services/object.helper';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {

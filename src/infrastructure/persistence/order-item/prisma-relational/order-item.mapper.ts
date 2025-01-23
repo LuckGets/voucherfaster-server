@@ -236,9 +236,15 @@ export class OrderItemPackageMapper {
     // Determine title and category based on reward voucher presence
     if (rewardVoucher) {
       const { PackageRewardVoucher } = orderItemPackage.package;
-      const rewardVoucher = PackageRewardVoucher.filter((item) => {
+      const rewardVoucherList = PackageRewardVoucher.filter((item) => {
         return item.rewardVoucherId === orderItemPackage.voucherId;
-      })[0];
+      });
+      if (rewardVoucherList.length > 1) {
+        throw new Error(
+          `Multiple same reward vouchers ID: ${orderItemPackage.voucherId} found for order-item ID: ${orderItemPackage.id}`,
+        );
+      }
+      const rewardVoucher = rewardVoucherList[0];
       const { title, voucherTag } = rewardVoucher.voucher;
       orderItemDetail.title = title;
       orderItemDetail.category = voucherTag.voucherCategory.name;
