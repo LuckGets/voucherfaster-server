@@ -9,7 +9,12 @@ import {
   PackageVoucherCreateInput,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
+import {
+  PackageSellDateQueryEnum,
+  PackageStatusQueryEnum,
+} from '@resources/package/dto/get-package.dto';
 import { UpdatePackageVoucherDto } from '@resources/package/dto/update-package.dto';
+import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 
 @Injectable()
@@ -34,8 +39,14 @@ export abstract class PackageVoucherRepository {
    */
   abstract findManyPackageVoucher({
     cursor,
+    category,
+    status,
+    sellDate,
   }: {
     cursor?: PackageVoucherDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    status?: PackageStatusQueryEnum;
+    sellDate?: PackageSellDateQueryEnum;
   }): Promise<PackageVoucherDomain[]>;
 
   abstract findPackageVoucherById(

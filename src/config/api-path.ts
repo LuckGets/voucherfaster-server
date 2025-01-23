@@ -73,7 +73,9 @@ export const PackageVoucherPath = {
   CreatePackageImage: '/images',
   UpdatePackageImage: '/images/:imageId',
   DeletePackageImage: '/images/:imageId',
-  GetPackageQueryCursor: 'cursor',
+  GetPackageCategoryQuery: 'category',
+  GetPackageSellDateQuery: 'sellDate',
+  GetPackageStatusQuery: 'status',
 } as const;
 
 export const UsableDaysPath = {

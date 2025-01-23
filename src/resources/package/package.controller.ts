@@ -25,6 +25,7 @@ import {
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
@@ -36,6 +37,8 @@ import { PackageVoucherService } from './package.service';
 import {
   GetPackageVoucherByIdResponse,
   GetPaginationPackageVoucherResponse,
+  PackageSellDateQueryEnum,
+  PackageStatusQueryEnum,
 } from './dto/get-package.dto';
 import { PackageVoucherDomain } from './domain/package-voucher.domain';
 import { DeletePackageVoucherByIdResponse } from './dto/delete-package.dto';
@@ -52,6 +55,10 @@ import {
   UpdatePackageVoucherImgResponse,
 } from './dto/images/update-package-image.dto';
 import { DeletePackageVoucherImgResponse } from './dto/images/delete-package-image.dto';
+import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
+import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
+import { ObjectHelper } from '@utils/services/object.helper';
+import { ErrorApiResponse } from 'src/common/core-api-response';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
@@ -84,10 +91,15 @@ export class PackageVoucherController {
     },
     @Body() body: CreatePackageVoucherDto,
   ): Promise<CreatePackageVoucherResponse> {
+    if (ObjectHelper.isObjectEmpty(files))
+      throw ErrorApiResponse.badRequest(
+        'This endpoint required attached file to process.',
+      );
+
     const createPackage = await this.packageVoucherService.createPackageVoucher(
       {
         data: body,
-        mainImg: files[PACKAGE_FILE_FIELD.MAIN_IMG][0],
+        mainImg: files[PACKAGE_FILE_FIELD.MAIN_IMG],
         packageImg: files[PACKAGE_FILE_FIELD.PACKAGE_IMG],
       },
     );
@@ -95,18 +107,57 @@ export class PackageVoucherController {
   }
 
   @ApiQuery({
-    name: PackageVoucherPath.GetPackageQueryCursor,
+    name: QUERY_FIELD_NAME.CURSOR,
     description:
       'The last ID of the previous page package list. Provided the package ID to find the next page.',
+  })
+  @ApiQuery({
+    name: PackageVoucherPath.GetPackageSellDateQuery,
+    description: `Sell date of the package voucher. If not provided, default will be ${PackageSellDateQueryEnum.NOW}.`,
+    required: false,
+    enumName: 'sellDate',
+    enum: [
+      PackageSellDateQueryEnum.ALL,
+      PackageSellDateQueryEnum.EXPIRED,
+      PackageSellDateQueryEnum.NOW,
+    ],
+    default: PackageSellDateQueryEnum.NOW,
+    type: String,
+  })
+  @ApiQuery({
+    name: PackageVoucherPath.GetPackageStatusQuery,
+    description: `Status of the voucher. If not provided, default will be ${PackageStatusQueryEnum.ACTIVE}`,
+    required: false,
+    enumName: 'status',
+    enum: [PackageStatusQueryEnum.ACTIVE, PackageStatusQueryEnum.DELETED],
+    default: PackageStatusQueryEnum.ACTIVE,
+    type: String,
+  })
+  @ApiQuery({
+    name: PackageVoucherPath.GetPackageCategoryQuery,
+    description: 'Category name of the voucher to filter by.',
+    required: false,
+    type: String,
   })
   @ApiOkResponse({ type: () => GetPaginationPackageVoucherResponse })
   @Get()
   async getPaginationPackageVoucher(
-    @Query(PackageVoucherPath.GetPackageQueryCursor)
+    @Query(QUERY_FIELD_NAME.CURSOR)
     cursor: PackageVoucherDomain['id'],
+    @Query(PackageVoucherPath.GetPackageCategoryQuery)
+    category: VoucherCategoryDomain['name'],
+    @Query(PackageVoucherPath.GetPackageStatusQuery)
+    status: PackageStatusQueryEnum,
+    @Query(PackageVoucherPath.GetPackageSellDateQuery)
+    sellDate: PackageSellDateQueryEnum,
   ): Promise<GetPaginationPackageVoucherResponse> {
     const packageVoucherQueryList =
-      await this.packageVoucherService.getAllPackageVoucher({ cursor });
+      await this.packageVoucherService.getAllPackageVoucher({
+        cursor,
+        category,
+        status,
+        sellDate,
+      });
     return GetPaginationPackageVoucherResponse.success(packageVoucherQueryList);
   }
 
@@ -116,7 +167,7 @@ export class PackageVoucherController {
   async getPackageVoucherById(
     @Param(PackageVoucherPath.PackageParamId)
     packageId: PackageVoucherDomain['id'],
-  ) {
+  ): Promise<GetPackageVoucherByIdResponse> {
     const packageVoucher =
       await this.packageVoucherService.getPackageVoucherById(packageId);
     console.log(packageVoucher);
@@ -126,6 +177,7 @@ export class PackageVoucherController {
   @ApiBody({ type: UpdatePackageVoucherDto })
   @ApiParam({ name: PackageVoucherPath.PackageParamId })
   @ApiOkResponse({ type: () => UpdatePackageVoucherResponse })
+  @UseGuards(AdminGuard)
   @Patch(PackageVoucherPath.UpdatePackage)
   async updatePackageVoucher(
     @Body() body: UpdatePackageVoucherDto,
@@ -153,8 +205,33 @@ export class PackageVoucherController {
   // -------------------------------------------------------------------- //
 
   @ApiBearerAuth()
-  @ApiCreatedResponse({ type: () => DeletePackageVoucherByIdResponse })
+  @ApiCreatedResponse({ type: () => CreatePackageVoucherImgResponse })
   @ApiConsumes('multipart/formdata')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        [PACKAGE_FILE_FIELD.PACKAGE_IMG]: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description: 'Additional images for the voucher',
+          nullable: false,
+        },
+        packageId: {
+          type: 'string',
+          description: 'The requested voucher ID to add a new image.',
+          nullable: false,
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    description:
+      'Add new images to the package voucher. All image adding in this endpoint will be count as non-main image.',
+  })
   @SerializeOptions({ groups: [RoleEnum.Admin] })
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -171,6 +248,9 @@ export class PackageVoucherController {
     files: { [PACKAGE_FILE_FIELD.PACKAGE_IMG]: Express.Multer.File[] },
     @Body() body: CreatePackageVoucherImgDto,
   ): Promise<CreatePackageVoucherImgResponse> {
+    if (ObjectHelper.isObjectEmpty(files))
+      throw ErrorApiResponse.badRequest('This endpoint required file value.');
+
     const packageImg = await this.packageVoucherService.createPackageImg(
       body.packageId,
       files[PACKAGE_FILE_FIELD.PACKAGE_IMG],
@@ -179,13 +259,35 @@ export class PackageVoucherController {
   }
 
   @ApiBearerAuth()
-  @ApiCreatedResponse({ type: () => DeletePackageVoucherByIdResponse })
+  @ApiCreatedResponse({ type: () => UpdatePackageVoucherImgResponse })
   @ApiConsumes('multipart/formdata')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        [PACKAGE_FILE_FIELD.PACKAGE_IMG]: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description: 'Additional images for the voucher',
+          nullable: false,
+        },
+        packageImgId: {
+          type: 'string',
+          description: 'The requested voucher ID to add a new image.',
+          nullable: false,
+        },
+      },
+    },
+  })
   @SerializeOptions({ groups: [RoleEnum.Admin] })
   @UseInterceptors(
     FileFieldsInterceptor([
       {
         name: PACKAGE_FILE_FIELD.PACKAGE_IMG,
+        maxCount: 1,
       },
     ]),
     UnlinkFileInterceptor,
@@ -199,12 +301,21 @@ export class PackageVoucherController {
     },
     @Body() body: UpdatePackageVoucherImgDto,
   ): Promise<UpdatePackageVoucherImgResponse> {
+    if (ObjectHelper.isObjectEmpty(files))
+      throw ErrorApiResponse.badRequest('This endpoint required file value.');
+
+    if (files[PACKAGE_FILE_FIELD.PACKAGE_IMG].length === 0)
+      throw ErrorApiResponse.badRequest(
+        `The ${PACKAGE_FILE_FIELD.PACKAGE_IMG} field required file value.`,
+      );
+
     const updatedPackageImg = await this.packageVoucherService.updatePackageImg(
       body.packageImgId,
       files[PACKAGE_FILE_FIELD.PACKAGE_IMG][0],
     );
     return UpdatePackageVoucherImgResponse.success(updatedPackageImg);
   }
+
   @ApiBearerAuth()
   @ApiParam({ name: PackageVoucherPath.ImageIdParam })
   @ApiNoContentResponse({ type: () => DeletePackageVoucherImgResponse })

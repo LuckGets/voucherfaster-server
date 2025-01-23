@@ -19,7 +19,9 @@ import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { RequiredWith } from '@utils/validators/RequiredWith';
 import { NotPresentWith } from '@utils/validators/NotPresentWith';
 import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
+import { plainArrayTransformer } from '@utils/transformer/plainArrayTransformer';
 
+@AtLeastOneProperty(TermAndCondUpdateDto.updatAbleField())
 export class TermAndCondUpdateDto {
   @ApiProperty({ type: String, required: false })
   @IsUUID(7)
@@ -57,26 +59,10 @@ export class TermAndCondUpdateDto {
   @RequiredWith('id')
   @NotPresentWith(['description', 'updatedDescription'])
   inactive?: boolean;
-}
 
-function transformUpdateTermAndCond(data: string): TermAndCondUpdateDto[] {
-  if (typeof data === 'string') {
-    try {
-      const parsed = JSON.parse(data);
-      console.log(parsed);
-      if (!Array.isArray(parsed)) {
-        throw new BadRequestException(
-          'Expected an array for term and condition',
-        );
-      }
-      return parsed.map((item) => plainToInstance(TermAndCondUpdateDto, item));
-    } catch (error) {
-      throw new BadRequestException(
-        'Invalid JSON format for term and condition',
-      );
-    }
+  public static updatAbleField(): Array<keyof TermAndCondUpdateDto> {
+    return ['id', 'description', 'inactive', 'updatedDescription'];
   }
-  return data;
 }
 
 @AtLeastOneProperty(UpdateVoucherDto.updatAbleField())
@@ -129,13 +115,13 @@ export class UpdateVoucherDto {
   @ApiProperty({ type: () => [TermAndCondUpdateDto] })
   @IsOptional()
   @ValidateNested({ each: true })
-  @Transform(({ value }) => transformUpdateTermAndCond(value))
+  @Transform(({ value }) => plainArrayTransformer(value, TermAndCondUpdateDto))
   @Type(() => TermAndCondUpdateDto)
   termAndCondTh?: TermAndCondUpdateDto[];
   @ApiProperty({ type: () => [TermAndCondUpdateDto] })
   @IsOptional()
   @ValidateNested({ each: true })
-  @Transform(({ value }) => transformUpdateTermAndCond(value))
+  @Transform(({ value }) => plainArrayTransformer(value, TermAndCondUpdateDto))
   @Type(() => TermAndCondUpdateDto)
   termAndCondEn?: TermAndCondUpdateDto[];
   @ApiProperty({ type: String, enum: VoucherStatusEnum })

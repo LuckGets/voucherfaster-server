@@ -165,11 +165,17 @@ export enum TermAndCondLangauage {
  * of one voucher
  */
 export class VoucherTermAndCondDomain {
+  @ApiProperty({ type: String })
   id: string;
+  @ApiProperty({ type: String })
   description: string;
+  @ApiProperty({ type: String })
   voucherId: string;
+  @ApiProperty({ type: Date })
   createdAt: Date;
+  @ApiProperty({ type: Date })
   updatedAt: Date;
+  @ApiProperty({ type: Date })
   inactiveAt?: Date;
 }
 /**

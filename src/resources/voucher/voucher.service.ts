@@ -46,7 +46,7 @@ import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promot
 import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
-import { ProductDomainHelper } from '@resources/account/dto/product.helper';
+import { ProductDomainHelper } from 'src/common/product.helper';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { PaginationSellDateQueryEnum } from './dto/vouchers/get-voucher.dto';
 
@@ -77,6 +77,8 @@ export class VoucherService {
     mainImg: Express.Multer.File[],
     voucherImg: Express.Multer.File[],
   ): Promise<VoucherDomain> {
+    if (!mainImg)
+      throw ErrorApiResponse.badRequest('Main image for voucher is required.');
     // Check first if voucher tag exists or no
     const isTagExists = await this.voucherTagRepository.findById(data.tagId);
     if (!isTagExists)
@@ -107,10 +109,9 @@ export class VoucherService {
     //---------------------------------------------------------
     //---------------------------------------------------------
     const allImgBuffer: Express.Multer.File[] = [];
-    if (!mainImg)
-      throw ErrorApiResponse.badRequest('Main image for voucher is required.');
 
     allImgBuffer.push(...mainImg);
+
     if (voucherImg && voucherImg.length > 0) allImgBuffer.push(...voucherImg);
 
     if (allImgBuffer.length === 0)
@@ -293,20 +294,11 @@ export class VoucherService {
   }
 
   private checkSellDateQuery(sellQuery: string): PaginationSellDateQueryEnum {
-    if (!sellQuery) return PaginationSellDateQueryEnum.NOW;
-
-    if (
-      !EnumCheckerHelper.checkEnumValue(
-        PaginationSellDateQueryEnum,
-        sellQuery.toUpperCase(),
-      )
-    ) {
-      throw ErrorApiResponse.badRequest(
-        `${sellQuery} is now not valid data type for finding sell date. Value provided should be one of these value: ${EnumCheckerHelper.allEnumValue(PaginationSellDateQueryEnum).join(', ')}`,
-      );
-    }
-
-    return PaginationSellDateQueryEnum[sellQuery.toUpperCase()];
+    return EnumCheckerHelper.getEnumValueOrThrow(
+      PaginationSellDateQueryEnum,
+      sellQuery,
+      PaginationSellDateQueryEnum.NOW,
+    );
   }
 
   /**
@@ -323,11 +315,8 @@ export class VoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `The voucher ID: ${data.id} could not be found on this server`,
       );
-
-    if (data.status == voucher.status)
-      throw ErrorApiResponse.conflictRequest(
-        `The voucher ID: ${voucher.id} is already ${data.status}`,
-      );
+    ProductDomainHelper.checkUpdateData(data, voucher, 'voucher');
+    ProductDomainHelper.checkUsableAndSellTime(data, voucher, 'voucher');
 
     if (data.termAndCondTh) {
       await this.checkVoucherTermAndCondBeforeUpdate(
@@ -351,8 +340,6 @@ export class VoucherService {
         );
     }
 
-    ProductDomainHelper.checkUsableAndSellTime(data, voucher, 'voucher');
-
     return this.voucherRepository.update(data);
   }
 
@@ -362,16 +349,22 @@ export class VoucherService {
     lang: TermAndCondLangauage,
   ) {
     const actionMap = new Map<string, TermAndCondUpdateDto>();
-    const allTermAndCondId = data.map((item) => {
-      if (actionMap.get(item.id)) {
+    const allTermAndCondId = [];
+    data.forEach((item) => {
+      if (item.id && actionMap.get(item.id)) {
         throw ErrorApiResponse.conflictRequest(
           `Please provide only one action per term and condition ID as ID: ${item.id} is duplicate in request.`,
         );
       }
       actionMap.set(item.id, item);
-
-      return item.id;
+      if (item.id) {
+        allTermAndCondId.push(item.id);
+      }
     });
+    // If there is no id provided,
+    // return
+    if (allTermAndCondId.length < 1) return;
+
     const termAndCondList =
       await this.voucherRepository.findManyTermAndConditionWithIds(
         allTermAndCondId,

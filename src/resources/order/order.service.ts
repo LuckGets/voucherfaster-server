@@ -4,6 +4,7 @@ import {
   CreateOrderPromotionIdList,
   CreateOrderVoucherIdList,
   OrderRepository,
+  PackageList,
   UpdateStockAmountEachInfo,
   UpdateStockAmountInfo,
 } from 'src/infrastructure/persistence/order/order.repository';
@@ -32,19 +33,38 @@ import {
 import { ProcessPaymentDto } from './dto/transactions/process-payment.dto';
 import { TransactionService } from '@resources/transaction/transaction.service';
 import { ORDER_EVENT_CONSTANT, OrderSuccessEvent } from './events/order.events';
-import { HttpRequestWithUser } from 'src/common/http.type';
-import { RoleEnum } from '@resources/account/types/account.type';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
   promotions: VoucherPromotionDomain[];
-  packages: PackageVoucherDomain[];
+  packages: PackageItemInfo[];
+};
+
+type PackageItemInfo = {
+  packageId: PackageVoucherDomain['id'];
+  voucherId: VoucherDomain['id'];
+  reward: boolean;
 };
 
 type AnyItemDomain =
   | VoucherDomain
   | VoucherPromotionDomain
   | PackageVoucherDomain;
+
+interface ItemMapping {
+  vouchers: {
+    item: VoucherDomain;
+    arrayElement: VoucherDomain;
+  };
+  promotions: {
+    item: VoucherPromotionDomain;
+    arrayElement: VoucherPromotionDomain;
+  };
+  packages: {
+    item: PackageVoucherDomain;
+    arrayElement: PackageItemInfo;
+  };
+}
 
 @Injectable()
 export class OrderService {
@@ -80,9 +100,11 @@ export class OrderService {
       updateStockAmountInfo,
     });
 
-    const order =
-      await this.orderRepository.createOrderAndTransaction(createOrderData);
-    return order;
+    console.log('create order data package', createOrderData.packageIdList);
+
+    // const order =
+    //   await this.orderRepository.createOrderAndTransaction(createOrderData);
+    return new OrderDomain();
   }
 
   // There are going to have the
@@ -122,15 +144,16 @@ export class OrderService {
             ),
             typeOfOrderItem: 'Voucher',
           });
-          itemPrice =
-            this.findEachItemDataAndMutateTotalSumAndData<VoucherDomain>({
+          itemPrice = this.findEachItemDataAndMutateTotalSumAndData<'vouchers'>(
+            {
               currentSum: itemPrice,
               itemInfoArr: allItemsInfo.vouchers,
               updateStockAmountInfo: updateStockAmountInfo.vouchers,
               itemInfo: voucher,
               itemAmount: item.amount,
               itemPrice: voucher.price,
-            });
+            },
+          );
           break;
         }
         case 'promotion': {
@@ -142,16 +165,14 @@ export class OrderService {
             typeOfOrderItem: 'Promotion',
           });
           itemPrice =
-            this.findEachItemDataAndMutateTotalSumAndData<VoucherPromotionDomain>(
-              {
-                currentSum: itemPrice,
-                itemInfoArr: allItemsInfo.promotions,
-                updateStockAmountInfo: updateStockAmountInfo.promotions,
-                itemInfo: promotion,
-                itemAmount: item.amount,
-                itemPrice: promotion.promotionPrice,
-              },
-            );
+            this.findEachItemDataAndMutateTotalSumAndData<'promotions'>({
+              currentSum: itemPrice,
+              itemInfoArr: allItemsInfo.promotions,
+              updateStockAmountInfo: updateStockAmountInfo.promotions,
+              itemInfo: promotion,
+              itemAmount: item.amount,
+              itemPrice: promotion.promotionPrice,
+            });
           break;
         }
         case 'package': {
@@ -162,17 +183,16 @@ export class OrderService {
             ),
             typeOfOrderItem: 'Package voucher',
           });
-          itemPrice =
-            this.findEachItemDataAndMutateTotalSumAndData<PackageVoucherDomain>(
-              {
-                currentSum: itemPrice,
-                itemInfoArr: allItemsInfo.packages,
-                updateStockAmountInfo: updateStockAmountInfo.packages,
-                itemInfo: packageVoucher,
-                itemAmount: item.amount,
-                itemPrice: packageVoucher.price,
-              },
-            );
+          itemPrice = this.findEachItemDataAndMutateTotalSumAndData<'packages'>(
+            {
+              currentSum: itemPrice,
+              itemInfoArr: allItemsInfo.packages,
+              updateStockAmountInfo: updateStockAmountInfo.packages,
+              itemInfo: packageVoucher,
+              itemAmount: item.amount,
+              itemPrice: packageVoucher.price,
+            },
+          );
           break;
         }
         default:
@@ -196,7 +216,9 @@ export class OrderService {
     return { items: allItemsInfo, totalPrice, updateStockAmountInfo };
   }
 
-  private findEachItemDataAndMutateTotalSumAndData<T extends AnyItemDomain>({
+  private findEachItemDataAndMutateTotalSumAndData<
+    K extends keyof ItemMapping,
+  >({
     itemPrice,
     itemAmount,
     currentSum,
@@ -207,13 +229,38 @@ export class OrderService {
     itemPrice: number;
     itemAmount: number;
     currentSum: number;
-    itemInfoArr: T[];
+    itemInfoArr: ItemMapping[K]['arrayElement'][];
     updateStockAmountInfo: UpdateStockAmountEachInfo[];
-    itemInfo: T;
+    itemInfo: ItemMapping[K]['item'];
   }): number {
     const totalPriceOfItmes = CalculatorService.multiply(itemPrice, itemAmount);
     currentSum = CalculatorService.add(currentSum, totalPriceOfItmes);
-    itemInfoArr.push(...Array(itemAmount).fill(itemInfo));
+    if (itemInfo instanceof PackageVoucherDomain && itemInfoArr) {
+      const rewardsVoucherArr: PackageItemInfo[] = [];
+      // console.log(itemInfo.rewardVouchers);
+      for (const item of itemInfo.rewardVouchers) {
+        const packageRewardArr: PackageItemInfo[] = Array(
+          CalculatorService.multiply(itemAmount, item.amount),
+        ).fill({
+          packageId: itemInfo.id,
+          voucherId: item.voucherId,
+          reward: true,
+        });
+        rewardsVoucherArr.push(...packageRewardArr);
+      }
+
+      delete itemInfo.rewardVouchers;
+      const quotaVoucherArr: PackageItemInfo[] = Array(
+        CalculatorService.multiply(itemAmount, itemInfo.quotaAmount),
+      ).fill({
+        packageId: itemInfo.id,
+        voucherId: itemInfo.quotaVoucherId,
+        reward: false,
+      });
+      itemInfoArr.push(...quotaVoucherArr, ...rewardsVoucherArr);
+    } else {
+      itemInfoArr.push(...Array(itemAmount).fill(itemInfo));
+    }
 
     // Finding if any items is duplicate
     const isIndexItemExist = updateStockAmountInfo.findIndex(
@@ -284,7 +331,7 @@ export class OrderService {
     // Check if the available stock is less than the required amount
     if (item.stockAmount < orderItem.amount) {
       throw ErrorApiResponse.conflictRequest(
-        `The ${typeOfOrderItem} ID:${item.id} only have ${item.stockAmount} which not enough for making order.`,
+        `The ${typeOfOrderItem} ID:${item.id} only have ${item.stockAmount} in stock and not enough for making order.`,
       );
     }
 
@@ -364,23 +411,26 @@ export class OrderService {
     if (items.packages && items.packages.length > 0) {
       createOrderData.packageIdList = items.packages.reduce(
         (acc, curr) => {
-          acc.quotaList = new Array(curr.quotaAmount).fill({
-            id: String(this.uuidService.make()),
-            voucherId: curr.quotaVoucherId,
-            packageId: curr.id,
-          });
-
-          acc.quotaList.forEach((item) => allOrderItemsId.push(item.id));
-
-          acc.rewardList = curr.rewardVouchers.map((rewardVoucher) => {
-            const orderItem = {
+          if (curr.reward) {
+            const orderItem: PackageList = {
               id: String(this.uuidService.make()),
-              voucherId: rewardVoucher.voucherId,
-              packageId: curr.id,
+              packageId: curr.packageId,
+              voucherId: curr.voucherId,
+              code: null,
             };
+            console.log('CURR in reward', curr);
+            acc.rewardList.push(orderItem);
             allOrderItemsId.push(orderItem.id);
-            return orderItem;
-          });
+          } else {
+            const orderItem: PackageList = {
+              id: String(this.uuidService.make()),
+              packageId: curr.packageId,
+              voucherId: curr.voucherId,
+              code: null,
+            };
+            acc.quotaList.push(orderItem);
+            allOrderItemsId.push(orderItem.id);
+          }
           return acc;
         },
         { quotaList: [], rewardList: [] },
@@ -420,8 +470,6 @@ export class OrderService {
         );
 
         newUniqueFilteredBatch.forEach((code) => uniqueCode.add(code));
-        console.log('batch', batch);
-        console.log('code', uniqueCode);
       }
 
       return Array.from(uniqueCode);
@@ -536,16 +584,16 @@ export class OrderService {
       const { orderId, paymentToken } = payload;
       const orderAndTransaction = await this.checkOrderAndTransaction(orderId);
 
-      // const transaction =
-      //   await this.transactionService.makePaymentAndUpdateTransaction({
-      //     transactionId: orderAndTransaction.transaction.id,
-      //     token: paymentToken,
-      //     amount: orderAndTransaction.totalPrice,
-      //     description: `Transaction for order ID: ${orderAndTransaction.id}`,
-      //   });
+      const transaction =
+        await this.transactionService.makePaymentAndUpdateTransaction({
+          transactionId: orderAndTransaction.transaction.id,
+          token: paymentToken,
+          amount: orderAndTransaction.totalPrice,
+          description: `Transaction for order ID: ${orderAndTransaction.id}`,
+        });
 
-      // if (transaction.status !== TransactionStatusEnum.SUCCESS)
-      //   throw ErrorApiResponse.badRequest('Transaction failed.');
+      if (transaction.status !== TransactionStatusEnum.SUCCESS)
+        throw ErrorApiResponse.badRequest('Transaction failed.');
 
       const allOrderItems = [...orderAndTransaction.orderItems];
 
@@ -563,51 +611,56 @@ export class OrderService {
       return this.orderRepository.findById(orderAndTransaction.id);
     } catch (err) {
       console.error(err);
-      throw ErrorApiResponse.conflictRequest(err);
+      throw ErrorApiResponse.conflictRequest(err.message);
     }
   }
 
-  async checkOrderAndTransaction(
+  private async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
   ): Promise<OrderDomain> {
     const order = await this.orderRepository.findById(orderId);
 
-    // if (!order.account.verifiedAt)
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `The Order ID: ${order.id} created by un-verified account. Please verify account before making transaction.`,
-    //   );
-    // if (!order.account.email || !order.id)
-    //   throw ErrorApiResponse.internalServerError(
-    //     `The account ID : ${order.account.id} does not have valid information.`,
-    //   );
+    if (!order)
+      throw ErrorApiResponse.notFoundRequest(
+        `Order ID: ${orderId} could not be found.`,
+      );
 
-    // if (!order.transaction || Object.keys(order.transaction).length === 0)
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `Order ID: ${order.id} does not have any transaction.`,
-    //   );
+    if (!order.account.verifiedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `The Order ID: ${order.id} created by un-verified account. Please verify account before making transaction.`,
+      );
+    if (!order.account.email || !order.id)
+      throw ErrorApiResponse.internalServerError(
+        `The account ID : ${order.account.id} does not have valid information.`,
+      );
 
-    // // If transaction have been expired.
-    // // throw error
+    if (!order.transaction || Object.keys(order.transaction).length === 0)
+      throw ErrorApiResponse.conflictRequest(
+        `Order ID: ${order.id} does not have any transaction.`,
+      );
 
-    // if (
-    //   new Date(order.transaction.expiredAt) < new Date() &&
-    //   order.transaction.status === TransactionStatusEnum.PENDING
-    // )
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `Transaction of order ID: ${orderId} has expired at ${order.transaction.expiredAt.toLocaleString()}.`,
-    //   );
-    // if (
-    //   order.transaction.status === TransactionStatusEnum.SUCCESS ||
-    //   order.transaction.paymentId
-    // ) {
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `Transaction of order ID: ${orderId} has already been processed.`,
-    //   );
-    // }
-    // if (order.transaction.deletedAt)
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `Transaction of order ID: ${order} has been deleted at ${order.transaction.deletedAt.toLocaleString()}.`,
-    //   );
+    // If transaction have been expired.
+    // throw error
+
+    if (
+      new Date(order.transaction.expiredAt) < new Date() &&
+      order.transaction.status === TransactionStatusEnum.PENDING
+    )
+      throw ErrorApiResponse.conflictRequest(
+        `Transaction of order ID: ${orderId} has expired at ${order.transaction.expiredAt.toLocaleString()}.`,
+      );
+    if (
+      order.transaction.status === TransactionStatusEnum.SUCCESS ||
+      order.transaction.paymentId
+    ) {
+      throw ErrorApiResponse.conflictRequest(
+        `Transaction of order ID: ${orderId} has already been processed.`,
+      );
+    }
+    if (order.transaction.deletedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `Transaction of order ID: ${order} has been deleted at ${order.transaction.deletedAt.toLocaleString()}.`,
+      );
 
     return order;
   }

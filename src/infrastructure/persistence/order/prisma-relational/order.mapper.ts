@@ -45,7 +45,6 @@ export class OrderMapper {
     // ORDER MAPPING PART
     const orderDomain = new OrderDomain();
     orderDomain.id = order.id;
-    console.log(order.account);
     if (order.account && Object.keys(order.account).length > 0) {
       const accountDomain = new AccountDomain();
       accountDomain.id = order.account.id;

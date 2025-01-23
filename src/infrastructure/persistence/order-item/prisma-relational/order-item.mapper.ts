@@ -42,9 +42,9 @@ export type OrderItemAndDetails = OrderItem & {
     package?: PackageVoucher & {
       voucher?: VoucherDetailAndImg;
       PackageImg?: Partial<PackageImg>[];
-      PackageRewardVoucher?: Partial<PackageRewardVoucher> & {
+      PackageRewardVoucher?: (Partial<PackageRewardVoucher> & {
         voucher?: VoucherDetailAndImg;
-      };
+      })[];
     };
   };
 };
@@ -107,8 +107,6 @@ export class OrderItemVoucherMapper {
   public static toDomain(
     orderItemVoucher: OrderItemAndDetails['OrderItemVoucher'],
   ) {
-    const requiredFields: string[] =
-      OrderItemDetails.getVoucherRequiredFields();
     const orderItemDetail: OrderItemDetails = new OrderItemDetails();
     if (ObjectHelper.isObjectEmpty(orderItemVoucher.voucher))
       throw new Error(
@@ -224,37 +222,44 @@ export class OrderItemPackageMapper {
         `Voucher detail for order-item ID: ${orderItemPackage.id} is empty.`,
       );
     }
+    const { rewardVoucher } = orderItemPackage;
 
     const orderItemDetail = new OrderItemDetails();
     // Map the id and package details
     orderItemDetail.id = orderItemPackage.voucherId;
     const packageField: OrderItemDetailPackageField = {
       name: orderItemPackage.package?.title,
-      reward: orderItemPackage.rewardVoucher,
+      reward: rewardVoucher,
     };
     orderItemDetail.package = { ...packageField };
 
     // Determine title and category based on reward voucher presence
-    if (orderItemPackage.rewardVoucher) {
-      orderItemDetail.title =
-        orderItemPackage.package.PackageRewardVoucher.voucher.title;
-      orderItemDetail.category =
-        orderItemPackage.package.PackageRewardVoucher.voucher.voucherTag.voucherCategory.name;
+    if (rewardVoucher) {
+      const { PackageRewardVoucher } = orderItemPackage.package;
+      const rewardVoucher = PackageRewardVoucher.filter((item) => {
+        return item.rewardVoucherId === orderItemPackage.voucherId;
+      })[0];
+      const { title, voucherTag } = rewardVoucher.voucher;
+      orderItemDetail.title = title;
+      orderItemDetail.category = voucherTag.voucherCategory.name;
     } else {
-      orderItemDetail.title = orderItemPackage.package.voucher.title;
-      orderItemDetail.category =
-        orderItemPackage.package.voucher.voucherTag.voucherCategory.name;
+      const { title, voucherTag } = orderItemPackage.package.voucher;
+      orderItemDetail.title = title;
+      orderItemDetail.category = voucherTag.voucherCategory.name;
     }
+
+    const { price, usableExpiredAt, PackageImg, title } =
+      orderItemPackage.package;
 
     // Map price and usage expiration time
-    orderItemDetail.price = orderItemPackage.package.packagePrice.toNumber();
-    orderItemDetail.usableExpiredAt = orderItemPackage.package.usableExpiredAt;
+    orderItemDetail.price = price.toNumber();
+    orderItemDetail.usableExpiredAt = usableExpiredAt;
 
     // Validate and map the image path
-    if (ObjectHelper.isObjectEmpty(orderItemPackage.package.PackageImg)) {
+    if (ObjectHelper.isObjectEmpty(PackageImg)) {
       throw new Error(`PackageImg is empty`);
     }
-    orderItemDetail.img = orderItemPackage.package.PackageImg?.filter(
+    orderItemDetail.img = PackageImg?.filter(
       (item) => item.mainImg === true,
     )[0].imgPath;
 
@@ -262,7 +267,7 @@ export class OrderItemPackageMapper {
     ObjectHelper.findEmptyFieldAndThrowError(
       orderItemDetail,
       requiredFields,
-      orderItemPackage.package.title,
+      title,
     );
 
     return orderItemDetail;

@@ -15,7 +15,10 @@ import { Prisma } from '@prisma/client';
 import { AllOrderInformation, OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
-import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
+import {
+  TransactionDomain,
+  TransactionStatusEnum,
+} from '@resources/transaction/domain/transaction.domain';
 import { AccountMapper } from '../../account/prisma-relational/account.mapper';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { TimeAdderHelper } from '@utils/services/time-adder.helper';
@@ -236,7 +239,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
               Transaction: {
                 create: {
                   transactionSystemId: transactionSystem.id,
-                  status: 'PENDING',
+                  status: TransactionStatusEnum.PENDING,
                   createdAt: currentDate,
                   expiredAt: transactionExpiredAt,
                 },
@@ -270,6 +273,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           await tx.orderItem.createMany({
             data: allOrderItems,
           });
+
           await Promise.all([
             vouchers.length > 0
               ? tx.orderItemVoucher.createMany({ data: vouchers })
@@ -298,6 +302,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       }
       return OrderMapper.toDomain(orderAndTransaction);
     } catch (err) {
+      console.error(err);
       throw ErrorApiResponse.internalServerError(err.message);
     }
   }
@@ -514,7 +519,9 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     transactionStatus?: TransactionDomain['status'];
   }): Promise<OrderDomain[]> {
     const paginationQuery = generatePaginationQueryOption({ cursor });
-    const queryTransactionStatus = transactionStatus ?? 'SUCCESS';
+    const queryTransactionStatus =
+      TransactionStatusEnum[transactionStatus.toUpperCase()] ??
+      TransactionStatusEnum.SUCCESS;
     const ordersList = await this.prismaService.order.findMany({
       ...paginationQuery,
       where: {

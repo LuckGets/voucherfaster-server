@@ -1,10 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { Expose } from 'class-transformer';
+import { PackageVoucherTermAndCondDomain } from './package-voucher-term-cond.domain';
+import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 
 export class PackageVoucherDomain {
   @ApiProperty({ type: String })
   id: string;
+  @ApiProperty({ type: String })
+  category: VoucherCategoryDomain['name'];
   @ApiProperty({ type: String })
   quotaVoucherId: string;
   @ApiProperty({ type: Number })
@@ -19,6 +23,11 @@ export class PackageVoucherDomain {
   images: Pick<PackageImgDomain, 'id' | 'mainImg' | 'imgPath'>[];
   @ApiProperty({ type: String })
   title: string;
+  @ApiProperty({ type: () => Object })
+  termAndCond?: {
+    th: PackageVoucherTermAndCondDomain[];
+    en: PackageVoucherTermAndCondDomain[];
+  };
   @ApiProperty({ type: Date })
   sellStartedAt: Date;
   @ApiProperty({ type: Date })
@@ -34,6 +43,29 @@ export class PackageVoucherDomain {
   @ApiProperty({ type: Date })
   @Expose({ groups: [RoleEnum.Admin] })
   deletedAt?: Date;
+
+  public static getRequiredFieldForList(): Array<keyof PackageVoucherDomain> {
+    return [
+      'id',
+      'category',
+      'images',
+      'price',
+      'quotaAmount',
+      'quotaVoucherId',
+      'sellExpiredAt',
+      'sellStartedAt',
+      'stockAmount',
+      'title',
+      'rewardVouchers',
+      'usableAt',
+      'usableExpiredAt',
+      'createdAt',
+    ];
+  }
+
+  public static getRequiredFieldForDetail(): Array<keyof PackageVoucherDomain> {
+    return [...this.getRequiredFieldForList(), 'termAndCond'];
+  }
 }
 
 export type PackageVoucherCreateInput = {
@@ -75,11 +107,16 @@ export class PackageRewardVoucherDomain {
   @ApiProperty({ type: String })
   voucherId: string;
   @ApiProperty({ type: String })
+  category: VoucherCategoryDomain['name'];
+  @ApiProperty({ type: Number })
+  amount: number;
+  @ApiProperty({ type: String })
   packageId?: string;
 }
 
 export type PackageRewardVoucherCreateInput = {
   id: string;
   rewardVoucherId: string;
+  amount: number;
   packageId: string;
 };

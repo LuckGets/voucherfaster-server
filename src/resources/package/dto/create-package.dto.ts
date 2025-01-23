@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
@@ -10,17 +10,27 @@ import {
   IsPositive,
   IsString,
   IsUUID,
+  ValidateNested,
 } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
-import { IsFutureDate } from '@utils/validators/IsFutureDate';
+import { plainArrayTransformer } from '@utils/transformer/plainArrayTransformer';
 
 export const PACKAGE_FILE_FIELD = {
   MAIN_IMG: 'mainImg',
   PACKAGE_IMG: 'packageImg',
 } as const;
+
+export class CreateRewardVoucherDto {
+  @ApiProperty({ type: String })
+  @IsUUID(7)
+  voucherId: VoucherDomain['id'];
+  @ApiProperty({ type: Number })
+  @IsPositive()
+  amount: number;
+}
 
 export class CreatePackageVoucherDto {
   @IsUUID(7)
@@ -38,12 +48,14 @@ export class CreatePackageVoucherDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   price: number;
-  @ApiProperty({ type: () => [String] })
+  @ApiProperty({ type: () => [CreateRewardVoucherDto] })
   @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
+    plainArrayTransformer(value, CreateRewardVoucherDto),
   )
   @IsArray()
-  rewardVoucherId: VoucherDomain['id'][];
+  @ValidateNested({ each: true })
+  @Type(() => CreateRewardVoucherDto)
+  rewardVouchers: CreateRewardVoucherDto[];
   @ApiProperty({ type: String })
   @IsString()
   title: string;
@@ -58,7 +70,7 @@ export class CreatePackageVoucherDto {
   )
   termAndCondEn: string[];
   @ApiProperty({ type: Date })
-  @IsFutureDate()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   sellStartedAt: Date;
   @ApiProperty({ type: Date })
@@ -66,11 +78,11 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) => new Date(value))
   sellExpiredAt: Date;
   @ApiProperty({ type: Date })
-  @IsFutureDate()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   usableAt: Date;
   @ApiProperty({ type: Date })
-  @IsDateGreaterThan('usableExpiredAt')
+  @IsDateGreaterThan('usableAt')
   @Transform(({ value }) => new Date(value))
   usableExpiredAt: Date;
 }

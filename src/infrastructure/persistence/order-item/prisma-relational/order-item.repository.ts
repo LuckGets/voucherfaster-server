@@ -146,6 +146,8 @@ export class OrderItemRelationPrismaORMRepository
       },
     );
 
+    console.log('ALL updated order item', allUpdatedOrderItem);
+
     return allUpdatedOrderItem.map(OrderItemMapper.toDomain);
   }
   async update(data: UpdateOrderItemDto): Promise<OrderItemDomain> {

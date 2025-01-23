@@ -21,7 +21,7 @@ export type CreateOrderPromotionIdList = {
   code: OrderItemDomain['code'];
 }[];
 
-type PackageList = {
+export type PackageList = {
   id: string;
   voucherId: VoucherDomain['id'];
   packageId: PackageVoucherDomain['id'];

@@ -133,6 +133,7 @@ export class OrderEventHandler {
           throw new Error(
             `There is no generated qrcode for this ID: ${item.id}`,
           );
+
         const data: OrderItemDetailForMail = {
           ...item,
           qrCodeUrl: qrCodeMap.get(item.id),

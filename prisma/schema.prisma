@@ -182,7 +182,7 @@ model PackageVoucher {
   title                       String                        @db.VarChar(191)
   voucher                     Voucher                       @relation(fields: [quotaVoucherId], references: [id])
   stockAmount                 Int                           @map("stock_amount") @db.Integer()
-  packagePrice                Decimal                       @map("package_price") @db.Decimal(8, 2)
+  price                       Decimal                       @map("price") @db.Decimal(8, 2)
   quotaAmount                 Int                           @map("quota_amount") @db.SmallInt
   sellStartedAt               DateTime                      @map("sell_started_at") @db.Timestamptz(3)
   sellExpiredAt               DateTime                      @map("sell_expired_at") @db.Timestamptz(3)
@@ -239,6 +239,7 @@ model PackageImg {
 model PackageRewardVoucher {
   id              String         @id @default(uuid(7)) @db.Uuid
   rewardVoucherId String         @map("reward_voucher_id") @db.Uuid
+  amount          Int            @db.Integer()
   voucher         Voucher        @relation(fields: [rewardVoucherId], references: [id])
   packageId       String         @map("package_id") @db.Uuid
   package         PackageVoucher @relation(fields: [packageId], references: [id])

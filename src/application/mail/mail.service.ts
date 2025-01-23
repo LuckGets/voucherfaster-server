@@ -117,19 +117,20 @@ export class MailService {
   ): Promise<void> {
     const { data } = mailData;
     const title = MAIL_ORDER_ITEM_CONSTANT.generateTitle(ownerName, data.code);
+    console.log('data in mail service', data);
     const context = HandleBarContextHelper.orderItem({
       ownerName,
-      itemName: data.detail.title,
+      itemName: data.detail?.title,
       appName: this.appName,
-      itemImg: data.detail.img,
+      itemImg: data.detail?.img,
       itemCode: data.code,
       qrcodePath: data.qrcodeImagePath,
       qrcodeUrl: data.qrCodeUrl,
-      expiredDate: new Date(data.detail.usableExpiredAt),
+      expiredDate: new Date(data.detail?.usableExpiredAt),
       countNumber: data.countNumber,
       total: data.total,
-      category: data.detail.category,
-      promotion: data.detail.promotion,
+      category: data.detail?.category,
+      promotion: data.detail?.promotion,
       rewardVoucher: data.detail.package?.reward,
     });
 

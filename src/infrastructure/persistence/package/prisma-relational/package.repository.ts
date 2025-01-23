@@ -21,6 +21,12 @@ import {
 } from '@resources/package/dto/update-package.dto';
 import { TermAndCondUpdateDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { UUIDService } from '@utils/services/uuid.service';
+import { ObjectHelper } from '@utils/services/object.helper';
+import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
+import {
+  PackageSellDateQueryEnum,
+  PackageStatusQueryEnum,
+} from '@resources/package/dto/get-package.dto';
 
 export class PackageVoucherRelationalPrismaORMRepository
   implements PackageVoucherRepository
@@ -30,40 +36,71 @@ export class PackageVoucherRelationalPrismaORMRepository
     private uuidService: UUIDService,
   ) {}
 
+  private voucherCategoryInclude: Prisma.VoucherInclude = {
+    voucherTag: {
+      include: {
+        voucherCategory: {
+          select: { id: true, name: true },
+        },
+      },
+    },
+  };
+
+  private rewardVoucherIncludeQuery: Prisma.PackageRewardVoucherInclude = {
+    voucher: {
+      include: {
+        ...this.voucherCategoryInclude,
+      },
+    },
+  };
+
+  private detailIncludeQuery: Prisma.PackageVoucherInclude = {
+    voucher: {
+      include: {
+        ...this.voucherCategoryInclude,
+      },
+    },
+    PackageImg: true,
+    PackageRewardVoucher: {
+      include: {
+        ...this.rewardVoucherIncludeQuery,
+      },
+    },
+    PackageVoucherTermAndCondEN: {
+      select: {
+        id: true,
+        description: true,
+      },
+      where: {
+        inactiveAt: {
+          equals: null,
+        },
+      },
+    },
+    PackageVoucherTermAndCondTH: {
+      select: {
+        id: true,
+        description: true,
+      },
+      where: {
+        inactiveAt: {
+          equals: null,
+        },
+      },
+    },
+  };
+
   private findManyJoinQuery:
     | Prisma.PackageVoucherFindManyArgs
     | Prisma.PackageVoucherFindFirstArgs = {
     include: {
+      voucher: {
+        include: { ...this.voucherCategoryInclude },
+      },
       PackageImg: { where: { mainImg: true } },
-      PackageRewardVoucher: true,
+      PackageRewardVoucher: { include: { ...this.rewardVoucherIncludeQuery } },
     },
   };
-
-  private generateFindUniqueQuery(
-    id: PackageVoucherDomain['id'],
-  ): Prisma.PackageVoucherFindUniqueArgs {
-    return {
-      include: {
-        PackageImg: true,
-        PackageRewardVoucher: true,
-        PackageVoucherTermAndCondEN: {
-          where: {
-            inactiveAt: {
-              equals: null,
-            },
-          },
-        },
-        PackageVoucherTermAndCondTH: {
-          where: {
-            inactiveAt: {
-              equals: null,
-            },
-          },
-        },
-      },
-      where: { id },
-    };
-  }
 
   async createPackageVoucher({
     packageVoucherCreateInput,
@@ -83,7 +120,7 @@ export class PackageVoucherRelationalPrismaORMRepository
     // Process the information
     const packageVoucherData: Prisma.PackageVoucherCreateInput = {
       ...restData,
-      packagePrice: price,
+      price,
       voucher: { connect: { id: quotaVoucherId } },
     };
 
@@ -108,7 +145,10 @@ export class PackageVoucherRelationalPrismaORMRepository
             data: packageVoucherTermAndCondEN,
           }),
         ]);
-        return packageVoucher;
+        return txUnit.packageVoucher.findUnique({
+          where: { id: packageVoucher.id },
+          include: { ...this.detailIncludeQuery },
+        });
       },
     );
     return PackageVoucherMapper.toDomain(createdPackageVoucher);
@@ -116,16 +156,26 @@ export class PackageVoucherRelationalPrismaORMRepository
 
   async findManyPackageVoucher({
     cursor,
+    category,
+    status,
+    sellDate,
   }: {
-    cursor: PackageVoucherDomain['id'];
+    cursor?: PackageVoucherDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    status?: PackageStatusQueryEnum;
+    sellDate?: PackageSellDateQueryEnum;
   }): Promise<PackageVoucherDomain[]> {
     // Grab the pagination query option
     const paginateQueryOption = generatePaginationQueryOption<
       any,
       PackageVoucherDomain['id']
     >({ cursor });
+    const categoryWhereQuery: Prisma.PackageVoucherWhereInput =
+      this.generateCategoryWhereQuery(category);
     // Set the today date for query.
-    const currentDate: Date = new Date(Date.now());
+    const sellDateQuery = this.generateSellDateWhereQuery(sellDate);
+
+    const statusQuery = this.generateStatusWhereQuery(status);
     // Grab JOIN query
     const joinQuery = this.findManyJoinQuery;
     // Query the data in the database.
@@ -135,12 +185,9 @@ export class PackageVoucherRelationalPrismaORMRepository
           deletedAt: {
             equals: null,
           },
-          sellStartedAt: {
-            lte: currentDate,
-          },
-          sellExpiredAt: {
-            gt: currentDate,
-          },
+          ...sellDateQuery,
+          ...categoryWhereQuery,
+          ...statusQuery,
         },
         ...paginateQueryOption,
         ...joinQuery,
@@ -148,12 +195,91 @@ export class PackageVoucherRelationalPrismaORMRepository
     return packageVoucherQueryList.map(PackageVoucherMapper.toDomain);
   }
 
+  private generateCategoryWhereQuery(
+    category: VoucherCategoryDomain['name'],
+  ): Prisma.PackageVoucherWhereInput {
+    return category
+      ? {
+          voucher: {
+            voucherTag: {
+              voucherCategory: {
+                name: {
+                  contains: category,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+        }
+      : {};
+  }
+
+  private generateSellDateWhereQuery(
+    sellDate: PackageSellDateQueryEnum,
+  ): Prisma.PackageVoucherWhereInput {
+    const currentDate: Date = new Date(Date.now());
+    switch (sellDate) {
+      case PackageSellDateQueryEnum.NOW:
+        return {
+          AND: [
+            {
+              sellStartedAt: {
+                lte: currentDate,
+              },
+            },
+            {
+              sellExpiredAt: {
+                gt: currentDate,
+              },
+            },
+          ],
+        };
+      case PackageSellDateQueryEnum.ALL:
+        return {};
+      case PackageSellDateQueryEnum.EXPIRED:
+        return {
+          sellExpiredAt: {
+            lte: currentDate,
+          },
+        };
+      default:
+        return {};
+    }
+  }
+
+  private generateStatusWhereQuery(
+    status: PackageStatusQueryEnum,
+  ): Prisma.PackageVoucherWhereInput {
+    switch (status) {
+      case PackageStatusQueryEnum.ACTIVE:
+        return {
+          deletedAt: {
+            equals: null,
+          },
+        };
+      case PackageStatusQueryEnum.DELETED:
+        return {
+          deletedAt: {
+            not: {
+              equals: null,
+            },
+          },
+        };
+      default:
+        return {};
+    }
+  }
+
   async findPackageVoucherById(
     id: PackageVoucherDomain['id'],
   ): Promise<NullAble<PackageVoucherDomain>> {
-    const query = this.generateFindUniqueQuery(id);
     const packageVoucher = await this.prismaService.packageVoucher.findUnique({
-      ...query,
+      where: {
+        id,
+      },
+      include: {
+        ...this.detailIncludeQuery,
+      },
     });
     return PackageVoucherMapper.toDomain(packageVoucher);
   }
@@ -173,13 +299,16 @@ export class PackageVoucherRelationalPrismaORMRepository
         await this.upsertManyTermAndCond(tx, termAndCondEn, id, 'EN');
       }
 
-      if (rewardVouchers && rewardVouchers.length > 0) {
+      if (!ObjectHelper.isObjectEmpty(rewardVouchers)) {
         await this.upsertManyRewardVoucher(tx, rewardVouchers, id);
       }
 
       return tx.packageVoucher.update({
         data,
         where: { id },
+        include: {
+          ...this.detailIncludeQuery,
+        },
       });
     });
     return PackageVoucherMapper.toDomain(updatedPackage);
@@ -254,28 +383,58 @@ export class PackageVoucherRelationalPrismaORMRepository
 
   async upsertManyRewardVoucher(
     tx: Prisma.TransactionClient,
-    rewardVoucherDatas: UpdatePackageRewardVoucherDto[],
+    rewardVoucherDatas: UpdatePackageRewardVoucherDto,
     packageId: PackageVoucherDomain['id'],
   ): Promise<unknown> {
     const rewardsArr: Prisma.PackageRewardVoucherCreateManyInput[] = [];
     const removeArr: Prisma.PackageRewardVoucherDeleteArgs[] = [];
-    rewardVoucherDatas.forEach((item) => {
-      if (item.removedVoucherId) {
-        removeArr.push({ where: { id: item.removedVoucherId } });
-      } else if (item.rewardVouchersId) {
+    const updateArrPromise: Promise<unknown>[] = [];
+
+    // Extract the data.
+    const { addRewardVouchers, removedRewardIds, update } = rewardVoucherDatas;
+    if (addRewardVouchers && addRewardVouchers.length > 0) {
+      rewardVoucherDatas.addRewardVouchers.forEach((item) => {
         rewardsArr.push({
           id: String(this.uuidService.make()),
           packageId,
-          rewardVoucherId: item.rewardVouchersId,
+          rewardVoucherId: item.voucherId,
+          amount: item.amount,
         });
-      }
-    });
+      });
+    }
+    if (removedRewardIds && removedRewardIds.length > 0) {
+      removedRewardIds.forEach((item) => {
+        console.log(item);
+        removeArr.push({
+          where: {
+            id: item,
+          },
+        });
+      });
+    }
+
+    if (update && update.length > 0) {
+      updateArrPromise.push(
+        ...update.map((item) =>
+          tx.packageRewardVoucher.update({
+            where: { id: item.rewardId },
+            data: { amount: item.amount },
+          }),
+        ),
+      );
+    }
+
     if (removeArr.length > 0) {
       removeArr.forEach(
         async (item) => await tx.packageRewardVoucher.delete(item),
       );
-    } else if (rewardsArr.length > 0) {
+    }
+    if (rewardsArr.length > 0) {
       await tx.packageRewardVoucher.createMany({ data: rewardsArr });
+    }
+
+    if (updateArrPromise.length > 0) {
+      await Promise.all(updateArrPromise);
     }
     return;
   }

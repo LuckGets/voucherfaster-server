@@ -12,6 +12,7 @@ import {
 import { config } from 'dotenv';
 import { execSync } from 'child_process';
 import {
+  packageImgs,
   packageRewardVouchers,
   packages,
   packageTermAndCondEN,
@@ -115,6 +116,7 @@ const seed = async (): Promise<void> => {
       packageTermAndCondEN,
       'package-voucher-term-and-condition-EN',
     ),
+    seedingFunc(prisma.packageImg.createMany, packageImgs, 'package-image'),
     seedingFunc(prisma.ownerImg.createMany, ownerImg, 'owner-images'),
     seedingFunc(
       prisma.transaction.createMany,

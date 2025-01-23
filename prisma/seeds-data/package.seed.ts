@@ -17,7 +17,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     sellStartedAt: '2024-12-31T17:00:00.000Z',
     sellExpiredAt: '2025-01-31T17:00:00.000Z',
     stockAmount: 100,
-    packagePrice: 300,
+    price: 300,
   },
   {
     id: packageVoucherId[1],
@@ -25,7 +25,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     stockAmount: 100,
     quotaVoucherId: vouchers[5].id,
     quotaAmount: 2,
-    packagePrice: 1200,
+    price: 1200,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
     sellStartedAt: '2024-12-31T17:00:00.000Z',
@@ -38,21 +38,13 @@ export const packageRewardVouchers: Prisma.PackageRewardVoucherCreateManyInput[]
     {
       id: uuidv7(),
       packageId: packages[0].id,
+      amount: 1,
       rewardVoucherId: vouchers[0].id,
     },
     {
       id: uuidv7(),
       packageId: packages[1].id,
-      rewardVoucherId: vouchers[5].id,
-    },
-    {
-      id: uuidv7(),
-      packageId: packages[1].id,
-      rewardVoucherId: vouchers[5].id,
-    },
-    {
-      id: uuidv7(),
-      packageId: packages[1].id,
+      amount: 3,
       rewardVoucherId: vouchers[5].id,
     },
   ];
@@ -69,7 +61,7 @@ export const packageImgs: Prisma.PackageImgCreateManyInput[] = [
     id: uuidv7(),
     mainImg: true,
     imgPath: 'd22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg',
-    packageId: packages[0].id,
+    packageId: packages[1].id,
   },
 ];
 

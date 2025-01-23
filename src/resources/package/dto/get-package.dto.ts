@@ -5,6 +5,17 @@ import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { ApiProperty } from '@nestjs/swagger';
 import { AuthPath } from 'src/config/api-path';
 
+export enum PackageSellDateQueryEnum {
+  NOW = 'NOW',
+  ALL = 'ALL',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum PackageStatusQueryEnum {
+  ACTIVE = 'ACTIVE',
+  DELETED = 'DELETED',
+}
+
 export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
@@ -24,30 +35,41 @@ export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `[{
-            "id": "0194462e-a077-7616-b2d8-f8f14121ec54",
-            "name": "โปรโมชั่นแพ็คเกจ ซื้อ1แถม1",
-            "price": 300,
-            "quotaVoucherId": "019440b4-c932-72ae-b774-51d15cc52848",
-            "quotaAmount": 1,
-            "startedAt": "1/1/2025, 12:00:00 AM",
-            "expiredAt": "2/1/2025, 12:00:00 AM",
-            "createdAt": "1/8/2025, 8:50:48 PM",
-            "updatedAt": "1/8/2025, 8:50:48 PM",
-            "image": [
+            "id": "019492d8-e723-759a-bdf7-ec6256a08a07",
+            "title": "เป็ดฮ่องกงแซ่บๆ 2 แถม 1",
+            "price": 1200,
+            "stockAmount": 1,
+            "quotaVoucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
+            "quotaAmount": 2,
+            "usableAt": "1/1/2025, 12:00:00 AM",
+            "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+            "sellStartedAt": "1/1/2025, 12:00:00 AM",
+            "sellExpiredAt": "2/1/2025, 12:00:00 AM",
+            "createdAt": "1/23/2025, 6:08:03 PM",
+            "updatedAt": "1/23/2025, 7:34:45 PM",
+            "category": "Yok chinese restaurant",
+            "images": [
                 {
-                    "id": "0194462e-a078-7066-a7c3-25eb04f4ada9",
+                    "id": "019492d8-e723-759a-bdf7-fffadccccc23",
                     "mainImg": true,
-                    "path": "d22pq9rbvhh9yl.cloudfront.net/package-img/1736344247063_voucher-template-with-offer_23-2148479796.avif"
+                    "imgPath": "d22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg"
                 }
             ],
-            "rewardVoucher": [
+            "rewardVouchers": [
                 {
-                    "id": "0194462e-a078-7066-a7c3-22a08538d134",
-                    "voucherId": "019440b4-c932-72ae-b774-51d15cc52848"
+                    "id": "0194932c-1902-76b8-84b1-73935e79f729",
+                    "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
+                    "amount": 1,
+                    "category": "Yok chinese restaurant"
+                },
+                {
+                    "id": "019492d8-e723-759a-bdf7-f7321580150e",
+                    "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
+                    "amount": 1,
+                    "category": "Yok chinese restaurant"
                 }
             ]
-  }]
-        `,
+        }]`,
   })
   public data: PackageVoucherDomain[];
   public cursor: PackageVoucherDomain['id'];
@@ -96,30 +118,55 @@ export class GetPackageVoucherByIdResponse extends CoreApiResponse {
   @ApiProperty({
     type: Object,
     example: `{
-            "id": "0194462e-a077-7616-b2d8-f8f14121ec54",
-            "name": "โปรโมชั่นแพ็คเกจ ซื้อ1แถม1",
-            "price": 300,
-            "quotaVoucherId": "019440b4-c932-72ae-b774-51d15cc52848",
-            "quotaAmount": 1,
-            "startedAt": "1/1/2025, 12:00:00 AM",
-            "expiredAt": "2/1/2025, 12:00:00 AM",
-            "createdAt": "1/8/2025, 8:50:48 PM",
-            "updatedAt": "1/8/2025, 8:50:48 PM",
-            "image": [
+        "id": "019492d8-e723-759a-bdf7-ec6256a08a07",
+        "title": "เป็ดฮ่องกงแซ่บๆ 2 แถม 1",
+        "price": 1200,
+        "stockAmount": 1,
+        "quotaVoucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
+        "quotaAmount": 2,
+        "usableAt": "1/1/2025, 12:00:00 AM",
+        "usableExpiredAt": "2/1/2025, 12:00:00 AM",
+        "sellStartedAt": "1/1/2025, 12:00:00 AM",
+        "sellExpiredAt": "2/1/2025, 12:00:00 AM",
+        "createdAt": "1/23/2025, 6:08:03 PM",
+        "updatedAt": "1/23/2025, 7:34:45 PM",
+        "category": "Yok chinese restaurant",
+        "images": [
+            {
+                "id": "019492d8-e723-759a-bdf7-fffadccccc23",
+                "mainImg": true,
+                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg"
+            }
+        ],
+        "rewardVouchers": [
+            {
+                "id": "0194932c-1902-76b8-84b1-73935e79f729",
+                "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
+                "amount": 1,
+                "category": "Yok chinese restaurant"
+            },
+            {
+                "id": "019492d8-e723-759a-bdf7-f7321580150e",
+                "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
+                "amount": 1,
+                "category": "Yok chinese restaurant"
+            }
+        ],
+        "termAndCond": {
+            "en": [
                 {
-                    "id": "0194462e-a078-7066-a7c3-25eb04f4ada9",
-                    "mainImg": true,
-                    "path": "d22pq9rbvhh9yl.cloudfront.net/package-img/1736344247063_voucher-template-with-offer_23-2148479796.avif"
+                    "id": "019492d8-e723-759a-bdf8-0e46618a362d",
+                    "description": "This voucher can only be used on roasted duck dishes."
                 }
             ],
-            "rewardVoucher": [
+            "th": [
                 {
-                    "id": "0194462e-a078-7066-a7c3-22a08538d134",
-                    "voucherId": "019440b4-c932-72ae-b774-51d15cc52848"
+                    "id": "019492d8-e723-759a-bdf8-07c69dc18f5f",
+                    "description": "คูปองนี้สามารถใช้ได้เฉพาะกับจานเป็ดย่างเท่านั้น"
                 }
             ]
-  }
-        `,
+        }
+    }`,
   })
   public data: PackageVoucherDomain;
 
@@ -130,7 +177,7 @@ export class GetPackageVoucherByIdResponse extends CoreApiResponse {
     statusCode?: number,
   ): GetPackageVoucherByIdResponse {
     const responseMessage =
-      message ?? `GET :: /packages${data?.id} successfully.`;
+      message ?? `GET :: /packages${data?.id ?? ''} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
