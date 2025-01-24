@@ -1,11 +1,7 @@
 import { Body, Controller, Get, Patch, Query } from '@nestjs/common';
 import { OrderItemPath } from 'src/config/api-path';
 import { OrderItemService } from './order-item.service';
-import {
-  RedeemItemDto,
-  RedeemItemResponse,
-} from '../redeem/dto/redeem-item.dto';
-import { ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 import {
   OrderItemDomain,
@@ -21,17 +17,17 @@ export class OrderItemController {
 
   // GET
   // Pagination voucher
-  @ApiQuery({
-    name: OrderItemPath.SortQuery,
-    description:
-      'Query for sorting order-item. Can pass as many, included, field as possible',
-    required: false,
-    example: [
-      '?sort="fullname:asc", "?sort="createdAt:desc,expired:asc","?sort="fullname:desc,code:asc,createdAt:asc"',
-    ],
-    enum: ['fullname', 'code', 'createdAt', 'expired'],
-    type: String,
-  })
+  // @ApiQuery({
+  //   name: OrderItemPath.SortQuery,
+  //   description:
+  //     'Query for sorting order-item. Can pass as many, included, field as possible',
+  //   required: false,
+  //   example: [
+  //     '?sort="fullname:asc", "?sort="createdAt:desc,expired:asc","?sort="fullname:desc,code:asc,createdAt:asc"',
+  //   ],
+  //   enum: ['fullname', 'code', 'createdAt', 'expired'],
+  //   type: String,
+  // })
   @ApiQuery({
     name: OrderItemPath.CategoryQuery,
     description: 'Category name of the voucher to filter by.',
@@ -78,7 +74,7 @@ export class OrderItemController {
   })
   @Get()
   async getPaginationOrderItems(
-    @Query(OrderItemPath.SortQuery) sortOption: string,
+    // @Query(OrderItemPath.SortQuery) sortOption: string,
     @Query(OrderItemPath.CategoryQuery) category: VoucherCategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: OrderItemDomain['id'],
     @Query(OrderItemPath.StatusQuery) status: OrderItemRedeemStatusEnum,
@@ -87,7 +83,7 @@ export class OrderItemController {
     const orderItemList = await this.orderItemService.getPagination({
       cursor,
       category,
-      sortOption,
+      // sortOption,
       status,
       type,
     });

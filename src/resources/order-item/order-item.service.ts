@@ -41,11 +41,11 @@ export class OrderItemService {
     status,
     type,
   }: {
-    sortOption: string;
-    cursor: OrderItemDomain['id'];
-    category: VoucherCategoryDomain['name'];
-    status: OrderItemRedeemStatusEnum;
-    type: OrderItemTypeEnum;
+    sortOption?: string;
+    cursor?: OrderItemDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    status?: OrderItemRedeemStatusEnum;
+    type?: OrderItemTypeEnum;
   }) {
     if (cursor && !isUUID(cursor, 7))
       throw ErrorApiResponse.conflictRequest(
@@ -54,12 +54,12 @@ export class OrderItemService {
 
     const statusToQuery = this.checkStatusQuery(status);
     const typeToQuery = this.checkTypeToQuery(type);
-    const sortQuery = this.formatSortQueryOption(sortOption);
+    // const sortQuery = this.formatSortQueryOption(sortOption);
 
     return this.orderItemRepository.findMany({
       cursor,
       category,
-      sortQuery,
+      // sortQuery,
       status: statusToQuery,
       type: typeToQuery,
     });
