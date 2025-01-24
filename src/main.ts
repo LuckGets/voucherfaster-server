@@ -14,23 +14,31 @@ import { AllConfigType } from './config/all-config.type';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { HTTPMethod } from './common/http.type';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    cors: {
-      origin: ['http://localhost:3000', 'http://localhost:5173'],
-      methods: [
-        HTTPMethod.Get,
-        HTTPMethod.Post,
-        HTTPMethod.Patch,
-        HTTPMethod.Delete,
-      ],
-      credentials: true,
-    },
-  });
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService<AllConfigType>);
 
-  // useContainer for class-validator
+  const corsOption: CorsOptions = {
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      configService.getOrThrow<ConfigService<AllConfigType>>('client.domain', {
+        infer: true,
+      }),
+    ],
+    methods: [
+      HTTPMethod.Get,
+      HTTPMethod.Post,
+      HTTPMethod.Patch,
+      HTTPMethod.Delete,
+    ],
+    credentials: true,
+  };
+
+  app.enableCors(corsOption);
+
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   // Using global validation pipe
   app.useGlobalPipes(new ValidationPipe(globalPipeValidationOption));
