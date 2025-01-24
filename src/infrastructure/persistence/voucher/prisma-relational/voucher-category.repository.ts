@@ -31,7 +31,7 @@ export class VoucherCategoryRelationalPrismaORMRepository
     paginationOption?: IPaginationOption;
     sortOption?: any;
   }): Promise<VoucherCategoryDomain[]> {
-    const paginationQuery = generatePaginationQueryOption<any, null>({
+    const paginationQuery = generatePaginationQueryOption<null>({
       paginationOption,
     });
 

@@ -1,3 +1,5 @@
+import { UpdateOwnerPasswordForRedeem } from '@resources/owner/dto/update-owner.dto';
+
 export enum AccountPath {
   Name = 'account',
   Base = '/account',
@@ -96,7 +98,17 @@ export const OrderPath = {
 export const OrderItemPath = {
   Name: 'order-items',
   Base: '/order-items',
-  Redeem: '/:itemId/redeem',
+  GetBySearchContent: '/search/:search',
+  OrderItemIdParm: 'itemId',
+  SortQuery: 'sort',
+  CategoryQuery: 'category',
+  StatusQuery: 'status',
+  TypeQuery: 'type',
+};
+
+export const RedeemItemPath = {
+  Name: 'redeem',
+  Base: '/redeem',
   OrderItemIdParm: 'itemId',
 };
 
@@ -110,6 +122,8 @@ export const OwnerPath = {
   Name: 'owners',
   Base: '/owners',
   Image: '/images',
+  GetPasswordForRedeem: '/password',
+  UpdateOwnerPasswordForRedeem: '/password',
   ImageIdParam: 'imageId',
   UpdateImage: '/images/:imageId',
   DeleteImage: '/images/:imageId',
@@ -117,5 +131,5 @@ export const OwnerPath = {
 
 export const FRONTEND_PATH = {
   VERIFIY: 'confirm-email',
-  RETRIEVE_ORDER_ITEM: 'order-item',
+  REDEEM_ORDER_ITEM: 'redeem-order-item',
 };

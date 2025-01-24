@@ -16,6 +16,7 @@ import { UsableDaysModule } from './resources/usable-days/usable-days.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { OrderItemModule } from './resources/order-item/order-item.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { RedeemModule } from './resources/redeem/redeem.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TransactionModule,
     UsableDaysModule,
     OrderItemModule,
+    RedeemModule,
   ],
 })
 export class AppModule {}

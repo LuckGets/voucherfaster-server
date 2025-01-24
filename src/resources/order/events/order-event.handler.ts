@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { FRONTEND_PATH } from 'src/config/api-path';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
-import { UpdateOrderItemDto } from '@resources/order-item/dto/update.dto';
+import { UpdateOrderItemDto } from '@resources/redeem/dto/update.dto';
 import { OrderItemService } from '@resources/order-item/order-item.service';
 import { AccountDomain } from '@resources/account/domain/account.domain';
 import {
@@ -80,7 +80,7 @@ export class OrderEventHandler {
         );
 
       console.log(`Generate QRCode for OrderItem ID: ${orderItem.id}`);
-      const qrCodeUrl = `${this.frontEndDomain}/${FRONTEND_PATH.RETRIEVE_ORDER_ITEM}/${orderItem.id}`;
+      const qrCodeUrl = `${this.frontEndDomain}/${FRONTEND_PATH.REDEEM_ORDER_ITEM}/${orderItem.id}`;
       const { buffer, mimetype } =
         await this.qrCodeService.generateQRCodeAsBuffer(qrCodeUrl);
 

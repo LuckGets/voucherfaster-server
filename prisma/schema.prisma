@@ -38,6 +38,7 @@ model Account {
   deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(3)
   verifiedAt      DateTime?        @map("verified_at") @db.Timestamptz(3)
   Session         Session?
+  Order           Order[]
 
   @@map("account")
 }
@@ -256,6 +257,7 @@ model Order {
   createdAt                  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                  DateTime                 @updatedAt() @map("updated_at") @db.Timestamptz(3)
   deletedAt                  DateTime?                @map("deleted_at") @db.Timestamptz(3)
+  account                    Account                  @relation(fields: [accountId], references: [id])
   Transaction                Transaction?
   OrderItem                  OrderItem[]
 
@@ -268,11 +270,11 @@ model OrderItem {
   order              Order               @relation(fields: [orderId], references: [id])
   qrcodeImgPath      String              @map("qrcode_img_path")
   code               String              @unique @db.VarChar(40)
-  redeemedAt         DateTime?           @map("redeemed_at") @db.Timestamptz(3)
   updatedAt          DateTime            @updatedAt() @map("updated_at") @db.Timestamptz(3)
   OrderItemVoucher   OrderItemVoucher?
   OrderItemPromotion OrderItemPromotion?
   OrderItemPackage   OrderItemPackage?
+  RedeemOrderItem    RedeemedOrderItem[]
 
   @@map("order_item")
 }
@@ -308,6 +310,16 @@ model OrderItemPackage {
   voucher       Voucher        @relation(fields: [voucherId], references: [id])
 
   @@map("order_item_package")
+}
+
+model RedeemedOrderItem {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orderItemId String    @unique @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
+
+  @@map("redeemed_order_item")
 }
 
 enum TransactionStatus {

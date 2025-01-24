@@ -11,3 +11,13 @@ export const defaultPaginationOption = {
 export const QUERY_FIELD_NAME = {
   CURSOR: 'cursor',
 } as const;
+
+export const SORT_DIRECTION = {
+  ASCENSION: 'asc',
+  DESCENSION: 'desc',
+} as const;
+
+export interface ISortOption {
+  field: string;
+  direction: (typeof SORT_DIRECTION)[keyof typeof SORT_DIRECTION];
+}

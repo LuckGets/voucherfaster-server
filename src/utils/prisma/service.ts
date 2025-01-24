@@ -3,6 +3,7 @@ import { NullAble } from '@utils/types/common.type';
 import {
   defaultPaginationOption,
   IPaginationOption,
+  ISortOption,
 } from 'src/common/types/pagination.type';
 
 /**
@@ -55,21 +56,21 @@ export const utcToTimeZoneMiddleware: Prisma.Middleware = async (
  * Function for creating
  * prisma query
  */
-export function generatePaginationQueryOption<S extends object, T>({
+export function generatePaginationQueryOption<T>({
   paginationOption,
   cursor,
   sortOption,
 }: {
   paginationOption?: NullAble<IPaginationOption>;
   cursor?: NullAble<T>;
-  sortOption?: NullAble<S>;
+  sortOption?: NullAble<ISortOption[]>;
 }): IPaginationQueryArgs<T> {
   let query: IPaginationQueryArgs<T> = {};
-  if (sortOption && Object.keys(sortOption).length > 0) {
-    const [property, method] = Object.entries(sortOption)[0];
-    query['orderBy'] = {
-      [property]: method,
-    };
+  if (sortOption && sortOption.length > 0) {
+    // Convert each {field, direction} into { [field]: direction }
+    query.orderBy = sortOption.map(({ field, direction }) => ({
+      [field]: direction,
+    }));
   }
   if (cursor) {
     query = {

@@ -44,7 +44,7 @@ export const packageRewardVouchers: Prisma.PackageRewardVoucherCreateManyInput[]
     {
       id: uuidv7(),
       packageId: packages[1].id,
-      amount: 3,
+      amount: 1,
       rewardVoucherId: vouchers[5].id,
     },
   ];

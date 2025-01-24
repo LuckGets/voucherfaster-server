@@ -167,7 +167,6 @@ export class PackageVoucherRelationalPrismaORMRepository
   }): Promise<PackageVoucherDomain[]> {
     // Grab the pagination query option
     const paginateQueryOption = generatePaginationQueryOption<
-      any,
       PackageVoucherDomain['id']
     >({ cursor });
     const categoryWhereQuery: Prisma.PackageVoucherWhereInput =

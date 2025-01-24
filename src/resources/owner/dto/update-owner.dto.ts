@@ -20,20 +20,6 @@ export class UpdateOwnerInformationDto {
   colorCode?: string;
 }
 
-export class UpdateOwnerPasswordForRedeem {
-  @ApiProperty({ type: String })
-  @IsString()
-  oldPassword: string;
-  @ApiProperty({ type: String })
-  @IsString()
-  @NotMatch('oldPassword')
-  newPassword: string;
-  @ApiProperty({ type: String })
-  @IsString()
-  @Match('newPassword')
-  confirmNewPassword: string;
-}
-
 export class UpdateOwnerInformationResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
@@ -73,6 +59,72 @@ export class UpdateOwnerInformationResponse extends CoreApiResponse {
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
     return new UpdateOwnerInformationResponse(
+      responseCode,
+      responseMessage,
+      responseLink,
+      data,
+    );
+  }
+}
+
+export class UpdateOwnerPasswordForRedeem {
+  @ApiProperty({ type: String })
+  @IsString()
+  oldPassword: string;
+  @ApiProperty({ type: String })
+  @IsString()
+  @NotMatch('oldPassword')
+  newPassword: string;
+  @ApiProperty({ type: String })
+  @IsString()
+  @Match('newPassword')
+  confirmNewPassword: string;
+}
+
+export type UpdateOwnerPasswordForRedeemResponseDataType = {
+  updatedNewPassword: OwnerDomain['passwordForRedeem'];
+};
+
+export class UpdateOwnerPasswordForRedeemResponse extends CoreApiResponse {
+  @ApiProperty({
+    type: Number,
+    example: HttpStatus.OK,
+  })
+  public HTTPStatusCode: number;
+  @ApiProperty({
+    type: Number,
+    example: 'PATCH:: /owners successfully.',
+  })
+  public message: string;
+  @ApiProperty({
+    type: Object,
+    example: `{"logout": ${AuthPath.Logout}}`,
+  })
+  public links: HATEOSLink;
+  @ApiProperty({
+    type: Object,
+    example: `{
+        "id": "0194834a-ff5f-77de-b7cb-fc07ffe3b131",
+        "emailForSendNotification": "kasides12@gmail.com",
+        "colorCode": "006838",
+        "name": "Sausage"
+    }`,
+  })
+  public data: UpdateOwnerPasswordForRedeemResponseDataType;
+
+  public static success(
+    data: UpdateOwnerPasswordForRedeemResponseDataType,
+    message?: string,
+    links?: HATEOSLink,
+    statusCode?: number,
+  ): UpdateOwnerPasswordForRedeemResponse {
+    const responseMessage =
+      message ??
+      `${HTTPMethod.Patch}:: ${OwnerPath.Base}${OwnerPath.UpdateOwnerPasswordForRedeem} successful.`;
+    const responseCode = statusCode ?? HttpStatus.OK;
+    const responseLink = links;
+    // generateVoucherReponseHATEOASLink(data.id);
+    return new UpdateOwnerPasswordForRedeemResponse(
       responseCode,
       responseMessage,
       responseLink,

@@ -23,10 +23,15 @@ import {
   ApiOkResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { GetAllOwnerInformationResponse } from './dto/get-owner.dto';
+import {
+  GetAllOwnerInformationResponse,
+  GetOwnerPasswordForRedeemResponse,
+} from './dto/get-owner.dto';
 import {
   UpdateOwnerInformationDto,
   UpdateOwnerInformationResponse,
+  UpdateOwnerPasswordForRedeem,
+  UpdateOwnerPasswordForRedeemResponse,
 } from './dto/update-owner.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -57,6 +62,20 @@ export class OwnerController {
     return GetAllOwnerInformationResponse.success(ownerInfo);
   }
 
+  // NEED TO MODIFY THE LOGIC OF GETTING PASSWORD IF REALLY NEEDED TO RETRIEVE
+  // @ApiBearerAuth()
+  // @ApiOkResponse({ type: () => GetAllOwnerInformationResponse })
+  // @UseGuards(AdminGuard)
+  // @Get(OwnerPath.GetPasswordForRedeem)
+  // async getOwnerPasswordForRedeem(): Promise<GetOwnerPasswordForRedeemResponse> {
+  //   this.logger.log('Get owner password for redeem');
+  //   const ownerPasswordForRedeem =
+  //     await this.ownerService.getPasswordForRedeem();
+  //   return GetOwnerPasswordForRedeemResponse.success({
+  //     passwordForRedeem: ownerPasswordForRedeem,
+  //   });
+  // }
+
   @ApiBody({ type: () => UpdateOwnerInformationDto })
   @ApiBearerAuth()
   @ApiOkResponse({ type: () => UpdateOwnerInformationResponse })
@@ -70,6 +89,23 @@ export class OwnerController {
 
     const updatedInfo = await this.ownerService.updateInformation(body);
     return UpdateOwnerInformationResponse.success(updatedInfo);
+  }
+
+  @ApiBody({ type: () => UpdateOwnerPasswordForRedeem })
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: () => UpdateOwnerPasswordForRedeemResponse })
+  @UseGuards(AdminGuard)
+  @Patch(OwnerPath.UpdateOwnerPasswordForRedeem)
+  async updateOwnerPasswordForRedeem(
+    @Body() body: UpdateOwnerPasswordForRedeem,
+  ): Promise<UpdateOwnerPasswordForRedeemResponse> {
+    const isUpdateSucceed =
+      await this.ownerService.updateOwnerPasswordForRedeem(body);
+    if (!isUpdateSucceed)
+      throw ErrorApiResponse.badRequest('Update password failed.');
+    return UpdateOwnerPasswordForRedeemResponse.success({
+      updatedNewPassword: body.newPassword,
+    });
   }
 
   @ApiConsumes('multipart/formdata')

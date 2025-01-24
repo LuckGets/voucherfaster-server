@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { AccountDomain } from '@resources/account/domain/account.domain';
 import {
   PackageImgDomain,
   PackageVoucherDomain,
@@ -9,12 +10,15 @@ import {
   VoucherDomain,
   VoucherImgDomain,
 } from '@resources/voucher/domain/voucher.domain';
+import { OrderDomain } from './order.domain';
 
 export type OrderItemDetailPromotionField = {
+  promotionId: VoucherPromotionDomain['id'];
   name: VoucherPromotionDomain['name'];
 };
 
 export type OrderItemDetailPackageField = {
+  packageId: PackageVoucherDomain['id'];
   name: PackageVoucherDomain['title'];
   reward: boolean;
 };
@@ -43,6 +47,36 @@ export class OrderItemDetails {
   }
 }
 
+export enum OrderItemRedeemStatusEnum {
+  ALL = 'ALL',
+  REDEEMABLE = 'REDEEMABLE',
+  REDEEMED = 'REDEEMED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum OrderItemTypeEnum {
+  VOUCHER = 'VOUCHER',
+  PROMOTION = 'PROMOTION',
+  PACKAGE = 'PACKAGE',
+  ALL = 'ALL',
+}
+
+export enum OrderItemSortEnum {
+  CREATED_AT = 'createdat',
+  EXPIRED_AT = 'expired',
+  REDEEMED_AT = 'code',
+  FULLNAME = 'fullname',
+  EMAIL = 'email',
+}
+
+export const ORDER_ITEM_SORT_MAP_TO_DB = {
+  [OrderItemSortEnum.CREATED_AT]: 'updatedAt',
+  [OrderItemSortEnum.EXPIRED_AT]: 'expiredAt',
+  [OrderItemSortEnum.REDEEMED_AT]: 'code',
+  [OrderItemSortEnum.FULLNAME]: 'fullname',
+  [OrderItemSortEnum.EMAIL]: 'email',
+} as const;
+
 export class OrderItemDomain {
   @ApiProperty({ type: String })
   id: string;
@@ -50,8 +84,10 @@ export class OrderItemDomain {
   qrcodeImagePath: string;
   @ApiProperty({ type: String })
   code: string;
-  @ApiProperty({ type: Date })
-  redeemedAt?: Date;
+  @ApiProperty({ type: String })
+  order?: Pick<OrderDomain, 'account' | 'transaction' | 'usableDay' | 'id'>;
+  @ApiProperty({ type: Date, nullable: true })
+  redeemedAt?: Date | string;
   @ApiProperty({ type: Date })
   updatedAt?: Date;
   @ApiProperty({ type: () => OrderItemDetails })

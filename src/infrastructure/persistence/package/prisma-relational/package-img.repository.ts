@@ -14,10 +14,8 @@ export class PackageImgRelationalPrismaORMRepository
   async createMany(
     imgData: PackageImgCreateInput[],
   ): Promise<PackageImgDomain[]> {
-    return this.prismaService.$transaction((tx) => {
-      return Promise.all(
-        imgData.map((item) => tx.packageImg.create({ data: item })),
-      );
+    return this.prismaService.packageImg.createManyAndReturn({
+      data: imgData,
     });
   }
 

@@ -6,6 +6,7 @@ import {
   PackageImg,
   PackageRewardVoucher,
   PackageVoucher,
+  RedeemedOrderItem,
   Voucher,
   VoucherCategory,
   VoucherImg,
@@ -19,6 +20,10 @@ import {
   OrderItemDomain,
 } from '@resources/order/domain/order-item.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
+import {
+  AllOrderInformation,
+  OrderMapper,
+} from '../../order/prisma-relational/order.mapper';
 
 type NestedVoucherTagAndCategory = Partial<VoucherTag> & {
   voucherCategory: Partial<VoucherCategory>;
@@ -47,6 +52,8 @@ export type OrderItemAndDetails = OrderItem & {
       })[];
     };
   };
+  order?: Omit<AllOrderInformation, 'OrderItem'>;
+  RedeemOrderItem?: Partial<RedeemedOrderItem>;
 };
 
 export class OrderItemMapper {
@@ -61,6 +68,7 @@ export class OrderItemMapper {
    */
   public static toDomain(
     orderItemEntity: OrderItemAndDetails,
+    options: { allInfo: boolean } = { allInfo: false },
   ): OrderItemDomain {
     if (!orderItemEntity || Object.keys(orderItemEntity).length === 0)
       return null;
@@ -69,13 +77,26 @@ export class OrderItemMapper {
       OrderItemVoucher,
       OrderItemPromotion,
       OrderItemPackage,
+      order,
       ...orderItem
     } = orderItemEntity;
     const orderItemDomain = new OrderItemDomain();
     orderItemDomain.id = orderItem.id;
     orderItemDomain.qrcodeImagePath = orderItem.qrcodeImgPath;
     orderItemDomain.code = orderItem.code;
-    orderItemDomain.redeemedAt = orderItem.redeemedAt;
+
+    const { RedeemOrderItem } = orderItem;
+
+    let redeemOrderItem = RedeemOrderItem;
+
+    if (Array.isArray(RedeemOrderItem)) redeemOrderItem = RedeemOrderItem[0];
+
+    if (ObjectHelper.isObjectEmpty(redeemOrderItem)) {
+      orderItemDomain.redeemedAt = null;
+    } else {
+      orderItemDomain.redeemedAt = redeemOrderItem.updatedAt.toLocaleString();
+    }
+
     orderItemDomain.updatedAt = orderItem.updatedAt;
 
     if (OrderItemVoucher) {
@@ -90,6 +111,10 @@ export class OrderItemMapper {
       // Map to OrderItemPackageDomain
       orderItemDomain.detail =
         OrderItemPackageMapper.toDomain(OrderItemPackage);
+    }
+
+    if (!ObjectHelper.isObjectEmpty(order) && options.allInfo) {
+      orderItemDomain.order = OrderMapper.toDomain(order);
     }
     return orderItemDomain;
   }
@@ -188,6 +213,7 @@ export class OrderItemPromotionMapper {
 
     // Map the promotion
     const promotionField: OrderItemDetailPromotionField = {
+      promotionId: orderItemPromotion.voucherPromotionId,
       name: orderItemPromotion.voucherPromotion?.name,
     };
     orderItemDetail.promotion = { ...promotionField };
@@ -228,6 +254,7 @@ export class OrderItemPackageMapper {
     // Map the id and package details
     orderItemDetail.id = orderItemPackage.voucherId;
     const packageField: OrderItemDetailPackageField = {
+      packageId: orderItemPackage.packageId,
       name: orderItemPackage.package?.title,
       reward: rewardVoucher,
     };
@@ -244,8 +271,8 @@ export class OrderItemPackageMapper {
           `Multiple same reward vouchers ID: ${orderItemPackage.voucherId} found for order-item ID: ${orderItemPackage.id}`,
         );
       }
-      const rewardVoucher = rewardVoucherList[0];
-      const { title, voucherTag } = rewardVoucher.voucher;
+      const rewardVoucherInfo = rewardVoucherList[0];
+      const { title, voucherTag } = rewardVoucherInfo.voucher;
       orderItemDetail.title = title;
       orderItemDetail.category = voucherTag.voucherCategory.name;
     } else {
@@ -263,7 +290,9 @@ export class OrderItemPackageMapper {
 
     // Validate and map the image path
     if (ObjectHelper.isObjectEmpty(PackageImg)) {
-      throw new Error(`PackageImg is empty`);
+      throw new Error(
+        `PackageImg in package ID: ${orderItemPackage.packageId} is empty`,
+      );
     }
     orderItemDetail.img = PackageImg?.filter(
       (item) => item.mainImg === true,

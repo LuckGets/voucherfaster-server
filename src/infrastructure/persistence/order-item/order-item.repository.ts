@@ -1,11 +1,31 @@
-import { UpdateOrderItemDto } from '@resources/order-item/dto/update.dto';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { UpdateOrderItemDto } from '@resources/redeem/dto/update.dto';
+import {
+  OrderItemDomain,
+  OrderItemRedeemStatusEnum,
+  OrderItemTypeEnum,
+} from '@resources/order/domain/order-item.domain';
 import { NullAble } from '@utils/types/common.type';
+import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
+import { ISortOption } from 'src/common/types/pagination.type';
 
 export abstract class OrderItemRepository {
   abstract findById(
     id: OrderItemDomain['id'],
   ): Promise<NullAble<OrderItemDomain>>;
+
+  abstract findMany({
+    cursor,
+    category,
+    sortQuery,
+    status,
+    type,
+  }: {
+    cursor?: OrderItemDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    sortQuery?: ISortOption[];
+    status?: OrderItemRedeemStatusEnum;
+    type?: OrderItemTypeEnum;
+  }): Promise<OrderItemDomain[]>;
 
   abstract findManyExistingCode(
     codeList: OrderItemDomain['code'][],

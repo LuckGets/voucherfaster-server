@@ -33,6 +33,7 @@ import {
 import { ProcessPaymentDto } from './dto/transactions/process-payment.dto';
 import { TransactionService } from '@resources/transaction/transaction.service';
 import { ORDER_EVENT_CONSTANT, OrderSuccessEvent } from './events/order.events';
+import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
@@ -550,15 +551,28 @@ export class OrderService {
     cursor?: OrderDomain['id'];
     transactionStatus?: TransactionDomain['status'];
   }): Promise<OrderDomain[]> {
-    // Check the transaction status query if provided
-    if (transactionStatus) {
-      for (const key in TransactionStatusEnum) {
-        if (transactionStatus.toUpperCase() !== TransactionStatusEnum[key]) {
-          return this.orderRepository.findMany({ cursor, transactionStatus });
-        }
-      }
-    }
-    throw ErrorApiResponse.badRequest(`Invalid transaction status`);
+    const transactionStatusQuery =
+      this.checkTransactionStatus(transactionStatus);
+
+    if (cursor && !isUUID(cursor, 7))
+      throw ErrorApiResponse.conflictRequest(
+        'Provided parameter for cursor is invaid.',
+      );
+
+    return this.orderRepository.findMany({
+      cursor,
+      transactionStatus: transactionStatusQuery,
+    });
+  }
+
+  private checkTransactionStatus(
+    status: TransactionDomain['status'],
+  ): TransactionStatusEnum {
+    return EnumCheckerHelper.getEnumValueOrThrow(
+      TransactionStatusEnum,
+      status,
+      TransactionStatusEnum.SUCCESS,
+    );
   }
 
   public async deleteManyOrderWithUnsuccessTransaction(

@@ -1,4 +1,4 @@
-import { Order, UsableDaysAfterPurchased } from '@prisma/client';
+import { Account, Order, UsableDaysAfterPurchased } from '@prisma/client';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import {
@@ -11,13 +11,15 @@ import {
 } from '../../order-item/prisma-relational/order-item.mapper';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { AccountDomain } from '@resources/account/domain/account.domain';
+import { ObjectHelper } from '@utils/services/object.helper';
+import { AccountMapper } from '../../account/prisma-relational/account.mapper';
+import { RoleEnum } from '@resources/account/types/account.type';
 
 export type AllOrderInformation = Order & {
-  account?: Partial<AccountDomain>;
+  account?: Partial<Account>;
   Transaction?: TransactionAndSystem;
   OrderItem?: OrderItemAndDetails[];
-  usableDaysAfterPurchased: Partial<UsableDaysAfterPurchased>;
+  usableDaysAfterPurchased?: Pick<UsableDaysAfterPurchased, 'usableDays'>;
 };
 
 export class OrderMapper {
@@ -39,30 +41,34 @@ export class OrderMapper {
     )
       return null;
     // EXTRACT DATA
-    const { Transaction, usableDaysAfterPurchased, OrderItem, ...order } =
-      orderAndTransactionEntity;
+    const {
+      Transaction,
+      usableDaysAfterPurchased,
+      OrderItem,
+      account,
+      ...order
+    } = orderAndTransactionEntity;
 
     // ORDER MAPPING PART
     const orderDomain = new OrderDomain();
     orderDomain.id = order.id;
-    if (order.account && Object.keys(order.account).length > 0) {
-      const accountDomain = new AccountDomain();
-      accountDomain.id = order.account.id;
-      accountDomain.email = order.account.email;
-      accountDomain.fullname = order.account.fullname;
-      accountDomain.phone = order.account.phone;
-      accountDomain.verifiedAt = order.account.verifiedAt;
-      orderDomain.account = accountDomain;
+
+    if (!ObjectHelper.isObjectEmpty(account)) {
+      orderDomain.account = {
+        id: account.id,
+        email: account.email,
+        fullname: account.fullname,
+        phone: account.phone,
+        verifiedAt: account.verifiedAt,
+        role: RoleEnum[account.role.toUpperCase()],
+      };
     }
 
     orderDomain.totalPrice = order.totalPrice.toNumber();
     orderDomain.createdAt = order.createdAt;
     orderDomain.updatedAt = order.updatedAt;
 
-    if (
-      !orderAndTransactionEntity.usableDaysAfterPurchased ||
-      !orderAndTransactionEntity.usableDaysAfterPurchased.usableDays
-    ) {
+    if (ObjectHelper.isObjectEmpty(usableDaysAfterPurchased)) {
       throw ErrorApiResponse.internalServerError(
         `There is no usable day for this order. So it could not be processed.`,
       );
@@ -74,7 +80,7 @@ export class OrderMapper {
     orderDomain.usableDay = new Date(
       resetCreatedDate.getTime() +
         CalculatorService.changedayToMilliseconde(
-          orderAndTransactionEntity.usableDaysAfterPurchased?.usableDays,
+          usableDaysAfterPurchased?.usableDays,
         ),
     );
 
@@ -87,7 +93,11 @@ export class OrderMapper {
     }
 
     if (OrderItem && OrderItem.length > 0) {
-      orderDomain.orderItems = [...OrderItem.map(OrderItemMapper.toDomain)];
+      orderDomain.orderItems = [
+        ...OrderItem.map((item) =>
+          OrderItemMapper.toDomain(item, { allInfo: false }),
+        ),
+      ];
     }
 
     return orderDomain;

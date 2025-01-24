@@ -79,8 +79,9 @@ export class VoucherImgRelationalPrismaORMRepository
   async createMany(
     dataList: VoucherImgCreateInput[],
   ): Promise<VoucherImgDomain[]> {
-    await this.prismaService.voucherImg.createMany({ data: dataList });
-    return this.findByIds(dataList.map((item) => item.id));
+    return this.prismaService.voucherImg.createManyAndReturn({
+      data: dataList,
+    });
   }
 
   async deleteById(id: VoucherImgDomain['id']): Promise<void> {

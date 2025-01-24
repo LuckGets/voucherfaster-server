@@ -97,6 +97,17 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     },
   };
 
+  private accountIncludeQuery: Prisma.AccountDefaultArgs = {
+    select: {
+      id: true,
+      role: true,
+      email: true,
+      fullname: true,
+      phone: true,
+      verifiedAt: true,
+    },
+  };
+
   private orderItemAndUsableDaysIncludeQuery: Prisma.OrderInclude = {
     usableDaysAfterPurchased: {
       select: {
@@ -128,6 +139,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         transactionSystem: true,
       },
     },
+    account: this.accountIncludeQuery,
   };
 
   private findManyIncludeQuery: Prisma.OrderInclude = {
@@ -157,6 +169,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         },
       },
     },
+    account: this.accountIncludeQuery,
   };
 
   private nonDeleteWhereQuery: Prisma.OrderWhereInput = {
@@ -503,10 +516,8 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       },
     });
     if (!order) return null;
-    const findedAccount = await this.prismaService.account.findUnique({
-      where: { id: order.accountId },
-    });
-    const account = AccountMapper.toDomain(findedAccount, RoleEnum.Me);
+
+    const account = AccountMapper.toDomain(order.account, RoleEnum.Me);
 
     return OrderMapper.toDomain({ ...order, account });
   }
@@ -537,33 +548,33 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       },
     });
 
-    const accountList = await this.prismaService.account.findMany({
-      where: {
-        id: {
-          in: ordersList.map((item) => item.accountId),
-        },
-      },
-      select: {
-        id: true,
-        fullname: true,
-        email: true,
-        phone: true,
-      },
-    });
+    // const accountList = await this.prismaService.account.findMany({
+    //   where: {
+    //     id: {
+    //       in: ordersList.map((item) => item.accountId),
+    //     },
+    //   },
+    //   select: {
+    //     id: true,
+    //     fullname: true,
+    //     email: true,
+    //     phone: true,
+    //   },
+    // });
 
-    const accountMap = new Map<string, (typeof accountList)[number]>();
-    accountList.forEach((account) => accountMap.set(account.id, account));
+    // const accountMap = new Map<string, (typeof accountList)[number]>();
+    // accountList.forEach((account) => accountMap.set(account.id, account));
 
-    const allOrdersInfo: AllOrderInformation[] = ordersList.map((order) => {
-      const matchedAccount = accountMap.get(order.accountId);
-      if (!matchedAccount)
-        throw ErrorApiResponse.conflictRequest(
-          `The order ID: ${order.id} does not have matching account. Please contact developer to fix the issue.`,
-        );
-      return { ...order, account: matchedAccount };
-    });
+    // const allOrdersInfo: AllOrderInformation[] = ordersList.map((order) => {
+    //   const matchedAccount = accountMap.get(order.accountId);
+    //   if (!matchedAccount)
+    //     throw ErrorApiResponse.conflictRequest(
+    //       `The order ID: ${order.id} does not have matching account. Please contact developer to fix the issue.`,
+    //     );
+    // return { ...order, account: matchedAccount };
+    // });
 
-    return allOrdersInfo.map(OrderMapper.toDomain);
+    return ordersList.map(OrderMapper.toDomain);
   }
 
   async deleteManyOrderWithUnsuccessTransaction(

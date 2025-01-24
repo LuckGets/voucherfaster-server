@@ -81,3 +81,49 @@ export class GetAllOwnerInformationResponse extends CoreApiResponse {
     );
   }
 }
+
+type GetOwnerPasswordForRedeemResponseDataType = {
+  passwordForRedeem: OwnerDomain['passwordForRedeem'];
+};
+
+export class GetOwnerPasswordForRedeemResponse extends CoreApiResponse {
+  @ApiProperty({
+    type: Number,
+    example: HttpStatus.OK,
+  })
+  public HTTPStatusCode: number;
+  @ApiProperty({
+    type: Number,
+    example: 'GET:: /owners/password successfully.',
+  })
+  public message: string;
+  @ApiProperty({
+    type: Object,
+    example: `{"logout": ${AuthPath.Logout}}`,
+  })
+  public links: HATEOSLink;
+  @ApiProperty({
+    type: Object,
+    example: '',
+  })
+  public data: GetOwnerPasswordForRedeemResponseDataType;
+
+  public static success(
+    data: GetOwnerPasswordForRedeemResponseDataType,
+    message?: string,
+    links?: HATEOSLink,
+    statusCode?: number,
+  ): GetOwnerPasswordForRedeemResponse {
+    const responseMessage =
+      message ??
+      `${HTTPMethod.Get}:: ${OwnerPath.Base}/${OwnerPath.GetPasswordForRedeem} successful.`;
+    const responseCode = statusCode ?? HttpStatus.OK;
+    const responseLink = links;
+    return new GetOwnerPasswordForRedeemResponse(
+      responseCode,
+      responseMessage,
+      responseLink,
+      data,
+    );
+  }
+}

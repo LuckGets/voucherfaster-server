@@ -60,10 +60,24 @@ export class OwnerService {
     return { ...ownerEmailInfo, passwordForEmail: password };
   }
 
+  public async getPasswordForRedeem(): Promise<
+    OwnerDomain['passwordForRedeem']
+  > {
+    return this.ownerRepository.findOwnerPasswordForRedeem();
+  }
+
   public updateInformation(
     data: UpdateOwnerInformationDto,
   ): Promise<OwnerDomain> {
     return this.ownerRepository.updateOwnerInformation(data);
+  }
+
+  public async checkPasswordForRedeem(
+    password: OwnerDomain['passwordForRedeem'],
+  ): Promise<boolean> {
+    const ownerPassword =
+      await this.ownerRepository.findOwnerPasswordForRedeem();
+    return this.cryptoService.compare(password, ownerPassword);
   }
 
   // -------------------------------------------------------------------- //
@@ -120,7 +134,7 @@ export class OwnerService {
     return this.ownerRepository.updateOwnerImgById(imageId, uploadedImgPath);
   }
 
-  public async updateOwnerResetPasswordForRedeem(
+  public async updateOwnerPasswordForRedeem(
     body: UpdateOwnerPasswordForRedeem,
   ) {
     const { oldPassword, newPassword } = body;
@@ -147,13 +161,5 @@ export class OwnerService {
 
     await this.mediaService.deleteFile(isImageExist.imgPath);
     return this.ownerRepository.deleteOwnerImgById(imageId);
-  }
-
-  private async checkPasswordForRedeem(
-    password: OwnerDomain['passwordForRedeem'],
-  ): Promise<boolean> {
-    const ownerPassword =
-      await this.ownerRepository.findOwnerPasswordForRedeem();
-    return this.cryptoService.compare(password, ownerPassword);
   }
 }

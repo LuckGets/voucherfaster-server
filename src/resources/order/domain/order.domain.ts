@@ -13,7 +13,10 @@ export class OrderDomain {
   @ApiProperty({ type: () => Date })
   usableDay: Date;
   @ApiProperty({ type: String })
-  account: Partial<AccountDomain>;
+  account: Pick<
+    AccountDomain,
+    'id' | 'fullname' | 'email' | 'phone' | 'verifiedAt' | 'role'
+  >;
   @ApiProperty({ type: Date })
   createdAt?: Date;
   @ApiProperty({ type: Date })
