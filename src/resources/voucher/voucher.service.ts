@@ -6,8 +6,7 @@ import {
   VoucherStatusEnum,
 } from './domain/voucher.domain';
 import {
-  CreateVoucherInput,
-  VoucherDiscountRepository,
+  UpdateVoucherRepositoryInput,
   VoucherImgRepository,
   VoucherRepository,
 } from 'src/infrastructure/persistence/voucher/voucher.repository';
@@ -23,11 +22,7 @@ import {
   AddVoucherImgDto,
   UpdateVoucherImgDto,
 } from './dto/voucher-img/voucher-img.dto';
-import {
-  VoucherDiscountCreateInput,
-  VoucherDiscountStatusEnum,
-} from './domain/voucher-discount.domain';
-import { UpdateVoucherDiscountDto } from './dto/voucher-discount/update-discount.dto';
+import { VoucherDiscountCreateInput } from './domain/voucher-discount.domain';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductDomainHelper } from 'src/common/product.helper';
@@ -36,16 +31,15 @@ import {
   PaginationSellDateQueryEnum,
 } from './dto/vouchers/get-voucher.dto';
 import { ProductTypeEnum } from 'src/common/types/product.type';
-import { CreateVoucherDiscountDto } from './dto/voucher-discount/create-discount.dto';
 import { VoucherTagService } from '@resources/category/tag/voucher-tag.service';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { ObjectHelper } from '@utils/services/object.helper';
 
 @Injectable()
 export class VoucherService {
   constructor(
     private voucherRepository: VoucherRepository,
-    private voucherDiscountRepository: VoucherDiscountRepository,
     private voucherImgRepository: VoucherImgRepository,
     private voucherTagService: VoucherTagService,
     private uuidService: UUIDService,
@@ -106,7 +100,7 @@ export class VoucherService {
     // ------- SECOND PART : SET UP INFORMATION -------
 
     // Set up the voucher information before store in database
-    const voucherData: CreateVoucherInput = {
+    const voucherData = {
       ...restData,
       id: String(this.uuidService.make()),
       status: VoucherStatusEnum.ACTIVE,
@@ -315,8 +309,30 @@ export class VoucherService {
       }
     }
 
+    const { discount, ...voucherInfo } = data;
+    const updateData: UpdateVoucherRepositoryInput = { ...voucherInfo };
+
+    if (!ObjectHelper.isObjectEmpty(discount)) {
+      if (
+        ObjectHelper.isObjectEmpty(voucher.discount) ||
+        !voucher.discount.id
+      ) {
+        updateData.discount.create = {
+          id: String(this.uuidService.make()),
+          discountedPrice: discount.discountedPrice,
+        };
+      } else {
+        updateData.discount.update = {
+          ...discount,
+          currentDiscountId: voucher.discount.id,
+        };
+        if (discount.discountedPrice)
+          updateData.discount.update.newId = String(this.uuidService.make());
+      }
+    }
+
     // Update the voucher with the new data
-    return this.voucherRepository.update(data);
+    return this.voucherRepository.update(updateData);
   }
 
   // -------------------------------------------------------------------- //
@@ -473,64 +489,64 @@ export class VoucherService {
     return;
   }
 
-  // -------------------------------------------------------------------- //
-  // ------------------------- VOUCHER DISCOUNT PART -------------------- //
-  // -------------------------------------------------------------------- //
-  async createVoucherDiscount(
-    data: CreateVoucherDiscountDto,
-  ): Promise<VoucherDomain> {
-    const isVoucherExist = await this.voucherRepository.findById(
-      data.voucherId,
-    );
-    if (!isVoucherExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
-      );
+  // // -------------------------------------------------------------------- //
+  // // ------------------------- VOUCHER DISCOUNT PART -------------------- //
+  // // -------------------------------------------------------------------- //
+  // async createVoucherDiscount(
+  //   data: CreateVoucherDiscountDto,
+  // ): Promise<VoucherDomain> {
+  //   const isVoucherExist = await this.voucherRepository.findById(
+  //     data.voucherId,
+  //   );
+  //   if (!isVoucherExist)
+  //     throw ErrorApiResponse.notFoundRequest(
+  //       `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
+  //     );
 
-    if (isVoucherExist.discount.id)
-      throw ErrorApiResponse.conflictRequest(
-        `Voucher ID: ${isVoucherExist.id} already has a discount. Discount price: ${isVoucherExist.discount.discountedPrice}. If desired to update the discount information of this voucher, Please request to the update endpoint.`,
-      );
+  //   if (isVoucherExist.discount.id)
+  //     throw ErrorApiResponse.conflictRequest(
+  //       `Voucher ID: ${isVoucherExist.id} already has a discount. Discount price: ${isVoucherExist.discount.discountedPrice}. If desired to update the discount information of this voucher, Please request to the update endpoint.`,
+  //     );
 
-    this.productDomainHelper.checkUpdateData(
-      data,
-      isVoucherExist,
-      ProductTypeEnum.VOUCHER,
-    );
+  //   this.productDomainHelper.checkUpdateData(
+  //     data,
+  //     isVoucherExist,
+  //     ProductTypeEnum.VOUCHER,
+  //   );
 
-    data.id = String(this.uuidService.make());
-    return this.voucherDiscountRepository.create(data);
-  }
+  //   data.id = String(this.uuidService.make());
+  //   return this.voucherDiscountRepository.create(data);
+  // }
 
-  async updateVoucherDiscount(
-    data: UpdateVoucherDiscountDto,
-  ): Promise<VoucherDomain> {
-    // Finding voucher via ID
-    const isVoucherExist = await this.voucherRepository.findById(
-      data.voucherId,
-    );
+  // async updateVoucherDiscount(
+  //   data: UpdateVoucherDiscountDto,
+  // ): Promise<VoucherDomain> {
+  //   // Finding voucher via ID
+  //   const isVoucherExist = await this.voucherRepository.findById(
+  //     data.voucherId,
+  //   );
 
-    // If voucher ID provided in the request
-    // could not be found on the server.
-    if (!isVoucherExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
-      );
+  //   // If voucher ID provided in the request
+  //   // could not be found on the server.
+  //   if (!isVoucherExist)
+  //     throw ErrorApiResponse.notFoundRequest(
+  //       `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
+  //     );
 
-    if (!isVoucherExist.discount.id)
-      throw ErrorApiResponse.conflictRequest(
-        `Voucher ID: ${isVoucherExist.id} does not have a discount. Please request to the create endpoint first.`,
-      );
+  //   if (!isVoucherExist.discount.id)
+  //     throw ErrorApiResponse.conflictRequest(
+  //       `Voucher ID: ${isVoucherExist.id} does not have a discount. Please request to the create endpoint first.`,
+  //     );
 
-    if (data.status)
-      EnumCheckerHelper.checkEnumValue(data.status, VoucherDiscountStatusEnum);
+  //   if (data.status)
+  //     EnumCheckerHelper.checkEnumValue(data.status, VoucherDiscountStatusEnum);
 
-    this.productDomainHelper.checkUpdateData(
-      { discountedPrice: data.discountedPrice },
-      isVoucherExist,
-      ProductTypeEnum.VOUCHER,
-    );
+  //   this.productDomainHelper.checkUpdateData(
+  //     { discountedPrice: data.discountedPrice },
+  //     isVoucherExist,
+  //     ProductTypeEnum.VOUCHER,
+  //   );
 
-    return this.voucherDiscountRepository.update(data);
-  }
+  //   return this.voucherDiscountRepository.update(data);
+  // }
 }

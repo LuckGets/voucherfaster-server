@@ -6,12 +6,12 @@ import {
 } from '@resources/package/domain/package-voucher.domain';
 import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import {
-  VoucherCategoryDomain,
   VoucherDomain,
   VoucherImgDomain,
 } from '@resources/voucher/domain/voucher.domain';
 import { OrderDomain } from '../../order/domain/order.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 export type OrderItemDetailDiscountField = {
   discountId: VoucherDiscountDomain['id'] | PackageDiscountDomain['id'];
@@ -31,7 +31,7 @@ export class OrderItemDetails {
     | PackageVoucherDomain['price']
     | VoucherDiscountDomain['discountedPrice']
     | PackageDiscountDomain['discountedPrice'];
-  category: VoucherCategoryDomain['name'];
+  category: CategoryDomain['name'];
   usableExpiredAt: Date | string;
   img: VoucherImgDomain['imgPath'] | PackageImgDomain['imgPath'];
   discount?: OrderItemDetailDiscountField;
@@ -46,9 +46,6 @@ export class OrderItemDetails {
       'usableExpiredAt',
       'img',
     ];
-  }
-  public static getPromotionRequiredFields(): string[] {
-    return [...this.getVoucherRequiredFields(), 'promotion'];
   }
   public static getPackageRequiredFields(): string[] {
     return [...this.getVoucherRequiredFields(), 'package'];
@@ -92,6 +89,8 @@ export class OrderItemDomain {
   qrcodeImagePath: string;
   @ApiProperty({ type: String })
   code: string;
+  @ApiProperty({ type: Number })
+  countNumber: number;
   @ApiProperty({ type: String })
   order?: Pick<OrderDomain, 'account' | 'transaction' | 'usableDay' | 'id'>;
   @ApiProperty({ type: Date })

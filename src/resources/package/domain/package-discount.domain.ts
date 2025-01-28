@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { IsPositive, IsString, IsUUID } from 'class-validator';
 import { PackageVoucherDomain } from './package-voucher.domain';
+import { RoleEnum } from '@resources/account/types/account.type';
 
 export enum PackageDiscountStatusEnum {
   ACTIVE = 'ACTIVE',
@@ -19,6 +20,10 @@ export class PackageDiscountDomain {
   updatedAt?: Date;
   @ApiProperty({ type: () => PackageDiscountStatusEnum })
   status: PackageDiscountStatusEnum;
+
+  @Expose({ groups: [RoleEnum.Admin] })
+  @ApiProperty({ type: Date })
+  deletedAt?: Date;
 
   constructor({
     id,

@@ -7,16 +7,16 @@ import { AuthPath } from 'src/config/api-path';
 import { AccountDomain } from '@resources/account/domain/account.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-discount.domain';
-import { IsNumber, IsPositive, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsPositive,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';
-
-enum VoucherType {
-  Voucher = 'voucher',
-  Promotion = 'promotion',
-  Package = 'package',
-}
+import { ProductTypeEnum } from 'src/common/types/product.type';
 
 export class CreateOrderItem {
   @ApiProperty({
@@ -24,22 +24,19 @@ export class CreateOrderItem {
     description: 'ID of the purchased item.',
   })
   @IsUUID(7)
-  id:
-    | VoucherDomain['id']
-    | VoucherPromotionDomain['id']
-    | PackageVoucherDomain['id'];
+  id: VoucherDomain['id'] | PackageVoucherDomain['id'];
   @ApiProperty({
-    type: () => String,
+    type: () => ProductTypeEnum,
     description:
-      'There is three type of voucher. "voucher", "promotion", "package". Please provide only three of these enum.',
+      'There is two type of voucher. "voucher", "package". Please provide only three of these enum.',
   })
-  @IsEnumValue(VoucherType, {
-    message: `Voucher type should be provided with only three of this options. 1).${VoucherType.Voucher} 2).${VoucherType.Promotion} 3).${VoucherType.Package}`,
+  @IsEnumValue(ProductTypeEnum, {
+    message: `Voucher type should be provided with only one of this options. 1).${ProductTypeEnum.VOUCHER} 2).${ProductTypeEnum.PACKAGE} `,
   })
-  type: VoucherType;
+  type: ProductTypeEnum;
   @ApiProperty({
     type: Number,
-    description: 'Quantity of the purchased item. Provided in string.',
+    description: 'Quantity of the purchased item',
   })
   @IsNumber()
   @Transform(({ value }) => Number(value))
@@ -49,24 +46,19 @@ export class CreateOrderItem {
 export class CreateOrderDto {
   @ApiProperty({
     type: Number,
-    description:
-      'Calculated total price of all purchased item. Provided in string.',
+    description: 'Calculated total price of all purchased item.',
   })
   @IsPositive()
   totalPrice: number;
   @ApiProperty({
     type: () => [CreateOrderItem],
     description:
-      'Calculated total price of all purchased item. Provided in string.',
+      'Item information. Provide as an array of object. Please provide at least one item.',
   })
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItem)
   items: CreateOrderItem[];
-  // @ApiProperty({
-  //   type: String,
-  //   description: 'Card token from payment gateway.',
-  // })
-  // paymentToken: string;
 }
 
 export class CreateOrderResponse extends CoreApiResponse {
@@ -104,6 +96,16 @@ export class CreateOrderResponse extends CoreApiResponse {
     }`,
   })
   public data: OrderDomain;
+
+  constructor(
+    code: CreateOrderResponse['HTTPStatusCode'],
+    message: CreateOrderResponse['message'],
+    links: CreateOrderResponse['links'],
+    data: OrderDomain,
+  ) {
+    super(code, message, links);
+    this.data = data;
+  }
 
   public static success(
     data: OrderDomain,

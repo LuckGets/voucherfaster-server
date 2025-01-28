@@ -12,7 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { VoucherDiscountPath, VoucherPath } from 'src/config/api-path';
+import { VoucherPath } from 'src/config/api-path';
 import { VoucherService } from './voucher.service';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { RoleEnum } from '@resources/account/types/account.type';
@@ -61,14 +61,6 @@ import {
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { DeleteVoucherImgByIdResponse } from './dto/voucher-img/delete-voucher-img.dto';
 import { CompactService } from 'src/common/service/compact.service';
-import {
-  CreateVoucherDiscountDto,
-  CreateVoucherDiscountResponse,
-} from './dto/voucher-discount/create-discount.dto';
-import {
-  UpdateVoucherDiscountDto,
-  UpdateVoucherDiscountResponse,
-} from './dto/voucher-discount/update-discount.dto';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 
@@ -447,33 +439,33 @@ export class VoucherController {
   // ------------------------- VOUCHER DISCOUNT PART -------------------- //
   // -------------------------------------------------------------------- //
 
-  @ApiBearerAuth()
-  @ApiBody({
-    type: () => CreateVoucherDiscountDto,
-  })
-  @ApiOkResponse({ type: () => CreateVoucherResponse })
-  @UseGuards(AdminGuard)
-  @Post(VoucherDiscountPath.CreateDiscount)
-  async createVoucherDiscount(
-    @Body() body: CreateVoucherDiscountDto,
-  ): Promise<CreateVoucherDiscountResponse> {
-    const voucher = await this.voucherService.createVoucherDiscount(body);
-    return CreateVoucherDiscountResponse.success(voucher);
-  }
-  @ApiBearerAuth()
-  @ApiBody({
-    type: () => UpdateVoucherDiscountDto,
-  })
-  @ApiOkResponse({ type: () => UpdateVoucherResponse })
-  @UseGuards(AdminGuard)
-  @Patch(VoucherDiscountPath.UpdateDiscount)
-  async updateVoucherPromotion(
-    @Body() body: UpdateVoucherDiscountDto,
-  ): Promise<UpdateVoucherDiscountResponse> {
-    const updatedVoucher =
-      await this.voucherService.updateVoucherDiscount(body);
-    return UpdateVoucherDiscountResponse.success(updatedVoucher);
-  }
+  // @ApiBearerAuth()
+  // @ApiBody({
+  //   type: () => CreateVoucherDiscountDto,
+  // })
+  // @ApiOkResponse({ type: () => CreateVoucherResponse })
+  // @UseGuards(AdminGuard)
+  // @Post(VoucherDiscountPath.CreateDiscount)
+  // async createVoucherDiscount(
+  //   @Body() body: CreateVoucherDiscountDto,
+  // ): Promise<CreateVoucherDiscountResponse> {
+  //   const voucher = await this.voucherService.createVoucherDiscount(body);
+  //   return CreateVoucherDiscountResponse.success(voucher);
+  // }
+  // @ApiBearerAuth()
+  // @ApiBody({
+  //   type: () => UpdateVoucherDiscountDto,
+  // })
+  // @ApiOkResponse({ type: () => UpdateVoucherResponse })
+  // @UseGuards(AdminGuard)
+  // @Patch(VoucherDiscountPath.UpdateDiscount)
+  // async updateVoucherPromotion(
+  //   @Body() body: UpdateVoucherDiscountDto,
+  // ): Promise<UpdateVoucherDiscountResponse> {
+  //   const updatedVoucher =
+  //     await this.voucherService.updateVoucherDiscount(body);
+  //   return UpdateVoucherDiscountResponse.success(updatedVoucher);
+  // }
 
   // @ApiBearerAuth()
   // @ApiParam({

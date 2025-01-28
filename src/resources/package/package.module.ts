@@ -9,6 +9,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
 import { CompactService } from 'src/common/service/compact.service';
+import { ProductDomainHelper } from 'src/common/product.helper';
 
 @Module({
   imports: [
@@ -26,7 +27,13 @@ import { CompactService } from 'src/common/service/compact.service';
     MediaModule,
   ],
   controllers: [PackageVoucherController],
-  providers: [PackageVoucherService, Logger, UUIDService, CompactService],
+  providers: [
+    PackageVoucherService,
+    Logger,
+    UUIDService,
+    CompactService,
+    ProductDomainHelper,
+  ],
   exports: [PackageVoucherService],
 })
 export class PackageVoucherModule {}

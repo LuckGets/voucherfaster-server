@@ -10,7 +10,10 @@ import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
-import { UpdatePackageVoucherDto } from '@resources/package/dto/update-package.dto';
+import {
+  UpdatePackageDiscountDto,
+  UpdatePackageVoucherDto,
+} from '@resources/package/dto/update-package.dto';
 import { NullAble } from '@utils/types/common.type';
 
 export type PackageVoucherCreateInput = {
@@ -31,6 +34,21 @@ export type PackageVoucherCreateInput = {
 export type PackageVoucherDiscountNestedCreateInput = {
   id: PackageDiscountDomain['id'];
   discountedPrice: PackageDiscountDomain['discountedPrice'];
+};
+
+export type UpdatePackageVoucherDiscountRepositoryInput = {
+  update?: UpdatePackageDiscountDto;
+  create?: {
+    id: PackageDiscountDomain['id'];
+    discountedPrice: PackageDiscountDomain['discountedPrice'];
+  };
+};
+
+export type UpdatePackageVoucherRepositoryInput = Omit<
+  UpdatePackageVoucherDto,
+  'discount'
+> & {
+  discount?: UpdatePackageVoucherDiscountRepositoryInput;
 };
 
 @Injectable()
@@ -77,7 +95,7 @@ export abstract class PackageVoucherRepository {
    * Update one specific package voucher.
    */
   abstract updatePackageVoucher(
-    data: UpdatePackageVoucherDto,
+    data: UpdatePackageVoucherRepositoryInput,
   ): Promise<PackageVoucherDomain>;
   /**
    *

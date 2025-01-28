@@ -135,6 +135,7 @@ model VoucherDiscount {
   voucher          Voucher            @relation(fields: [voucherId], references: [id])
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime           @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
   status           DiscountStatus     @default(ACTIVE)
   OrderItemVoucher OrderItemVoucher[]
 
@@ -148,6 +149,7 @@ model PackageDiscount {
   package          PackageVoucher     @relation(fields: [packageId], references: [id])
   createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime           @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
   status           DiscountStatus     @default(ACTIVE)
   OrderItemPackage OrderItemPackage[]
 
@@ -243,9 +245,10 @@ model OrderItemVoucher {
   voucher     Voucher   @relation(fields: [voucherId], references: [id])
 
   // Discount column
-  voucherDiscountId    String?          @map("voucher_discount_id") @db.Uuid
-  VoucherDiscount      VoucherDiscount? @relation(fields: [voucherDiscountId], references: [id])
-  appliedDiscountPrice Decimal?         @map("applied_promotion_price") @db.Decimal(8, 2)
+  voucherDiscountId String?          @map("voucher_discount_id") @db.Uuid
+  VoucherDiscount   VoucherDiscount? @relation(fields: [voucherDiscountId], references: [id])
+
+  updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
 
   @@map("order_item_voucher")
 }
@@ -259,12 +262,13 @@ model OrderItemPackage {
   rewardVoucher Boolean        @map("reward_voucher")
 
   // Discount colum
-  packageDiscountId    String?          @map("package_discount_id") @db.Uuid
-  PackageDiscount      PackageDiscount? @relation(fields: [packageDiscountId], references: [id])
-  appliedDiscountPrice Decimal?         @map("applied_promotion_price") @db.Decimal(8, 2)
+  packageDiscountId String?          @map("package_discount_id") @db.Uuid
+  PackageDiscount   PackageDiscount? @relation(fields: [packageDiscountId], references: [id])
 
   voucherId String  @map("voucher_id") @db.Uuid
   voucher   Voucher @relation(fields: [voucherId], references: [id])
+
+  updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
 
   @@map("order_item_package")
 }

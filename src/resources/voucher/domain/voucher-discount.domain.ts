@@ -22,6 +22,9 @@ export class VoucherDiscountDomain {
   updatedAt?: Date;
   @ApiProperty({ type: () => VoucherDiscountStatusEnum })
   status: VoucherDiscountStatusEnum;
+  @ApiProperty({ type: Date })
+  @Expose({ groups: [RoleEnum.Admin] })
+  deletedAt?: Date;
 
   constructor({
     id,

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
   CreateOrderAndTransactionInput,
-  CreateOrderPromotionIdList,
-  CreateOrderVoucherIdList,
+  CreateOrderItemInfo,
+  CreateOrderItemPackageInfo,
+  CreateOrderItemVoucherInfo,
   OrderRepository,
-  PackageList,
   UpdateStockAmountEachInfo,
   UpdateStockAmountInfo,
 } from 'src/infrastructure/persistence/order/order.repository';
@@ -14,12 +14,10 @@ import { AccountDomain } from '@resources/account/domain/account.domain';
 import { VoucherService } from '@resources/voucher/voucher.service';
 import { PackageVoucherService } from '@resources/package/package.service';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { UUIDService } from '@utils/services/uuid.service';
 import { OrderItemDomain } from '../order-item/domain/order-item.domain';
-import { UsableDaysService } from '@resources/usable-days/usable-days.service';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NullAble } from '@utils/types/common.type';
@@ -34,10 +32,13 @@ import { ProcessPaymentDto } from './dto/transactions/process-payment.dto';
 import { TransactionService } from '@resources/transaction/transaction.service';
 import { ORDER_EVENT_CONSTANT, OrderSuccessEvent } from './events/order.events';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
+import { ProductTypeEnum } from 'src/common/types/product.type';
+import { VoucherDiscountStatusEnum } from '@resources/voucher/domain/voucher-discount.domain';
+import { PackageDiscountStatusEnum } from '@resources/package/domain/package-discount.domain';
+import { ProductDomainHelper } from 'src/common/product.helper';
 
 export type OrderItemsInfo = {
   vouchers: VoucherDomain[];
-  promotions: VoucherPromotionDomain[];
   packages: PackageItemInfo[];
 };
 
@@ -47,26 +48,7 @@ type PackageItemInfo = {
   reward: boolean;
 };
 
-type AnyItemDomain =
-  | VoucherDomain
-  | VoucherPromotionDomain
-  | PackageVoucherDomain;
-
-interface ItemMapping {
-  vouchers: {
-    item: VoucherDomain;
-    arrayElement: VoucherDomain;
-  };
-  promotions: {
-    item: VoucherPromotionDomain;
-    arrayElement: VoucherPromotionDomain;
-  };
-  packages: {
-    item: PackageVoucherDomain;
-    arrayElement: PackageItemInfo;
-  };
-}
-
+type AnyItemDomain = VoucherDomain | PackageVoucherDomain;
 @Injectable()
 export class OrderService {
   constructor(
@@ -74,11 +56,11 @@ export class OrderService {
     private orderItemService: OrderItemService,
     private voucherService: VoucherService,
     private packageVoucherService: PackageVoucherService,
-    private usableDaysService: UsableDaysService,
     private transactionService: TransactionService,
     private uuidService: UUIDService,
     private randomCodeGeneratorService: RandomCodeGeneratorService,
     private eventEmitter: EventEmitter2,
+    private productDomainHelper: ProductDomainHelper,
   ) {}
 
   // --------------------------------------------------------------------------//
@@ -91,18 +73,36 @@ export class OrderService {
     data: CreateOrderDto,
     accountId: AccountDomain['id'],
   ): Promise<OrderDomain> {
-    const { items, totalPrice, updateStockAmountInfo } =
-      await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(data);
-
-    const createOrderData = await this.prepareCreateOrderData({
-      accountId,
-      items,
+    const {
+      allOrderItemsId,
+      allOrderItemsInfo,
       totalPrice,
       updateStockAmountInfo,
-    });
+    } = await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(data);
 
-    const order =
-      await this.orderRepository.createOrderAndTransaction(createOrderData);
+    const createOrderData: CreateOrderAndTransactionInput = {
+      payload: { id: String(this.uuidService.make()), totalPrice },
+      allOrderItemsInfo,
+      accountId,
+      updateStockAmountInfo,
+      transaction: null,
+    };
+
+    // Generate unique code for each data
+    const createOrderDataWithAssignCode = await this.assignCodeForData(
+      createOrderData,
+      allOrderItemsId.length,
+    );
+
+    // Add all of the generated code to the order items
+    createOrderDataWithAssignCode.transaction = {
+      id: String(this.uuidService.make()),
+      status: TransactionStatusEnum.PENDING,
+    };
+
+    const order = await this.orderRepository.createOrderAndTransaction(
+      createOrderDataWithAssignCode,
+    );
     return order;
   }
 
@@ -115,92 +115,28 @@ export class OrderService {
   private async findAllOrderItemInfoAndTotalPriceAndCheckingStock(
     data: Omit<CreateOrderDto, 'paymentToken'>,
   ): Promise<{
-    items: OrderItemsInfo;
+    allOrderItemsInfo: CreateOrderItemInfo[];
+    allOrderItemsId: OrderItemDomain['id'][];
     totalPrice: number;
     updateStockAmountInfo: UpdateStockAmountInfo;
   }> {
-    const allItemsInfo: OrderItemsInfo = {
-      vouchers: [],
-      promotions: [],
-      packages: [],
-    };
+    const creatingOrderId = String(this.uuidService.make());
+
+    const allOrderItemsInfo: CreateOrderItemInfo[] = [];
 
     const updateStockAmountInfo: UpdateStockAmountInfo = {
       vouchers: [],
-      promotions: [],
       packages: [],
     };
 
-    const allItemsInfoPromisesArr = data.items.map(async (item) => {
-      let itemPrice = 0;
+    const allOrderItemsId: OrderItemDomain['id'][] = [];
 
-      switch (item.type) {
-        case 'voucher': {
-          const voucher = await this.checkOrderItemInfo({
-            orderItem: item,
-            dbQueryFunc: this.voucherService.getVoucherById.bind(
-              this.voucherService,
-            ),
-            typeOfOrderItem: 'Voucher',
-          });
-          itemPrice = this.findEachItemDataAndMutateTotalSumAndData<'vouchers'>(
-            {
-              currentSum: itemPrice,
-              itemInfoArr: allItemsInfo.vouchers,
-              updateStockAmountInfo: updateStockAmountInfo.vouchers,
-              itemInfo: voucher,
-              itemAmount: item.amount,
-              itemPrice: voucher.price,
-            },
-          );
-          break;
-        }
-        case 'promotion': {
-          const promotion = await this.checkOrderItemInfo({
-            orderItem: item,
-            dbQueryFunc: this.voucherService.getVoucherPromotionById.bind(
-              this.voucherService,
-            ),
-            typeOfOrderItem: 'Promotion',
-          });
-          itemPrice =
-            this.findEachItemDataAndMutateTotalSumAndData<'promotions'>({
-              currentSum: itemPrice,
-              itemInfoArr: allItemsInfo.promotions,
-              updateStockAmountInfo: updateStockAmountInfo.promotions,
-              itemInfo: promotion,
-              itemAmount: item.amount,
-              itemPrice: promotion.promotionPrice,
-            });
-          break;
-        }
-        case 'package': {
-          const packageVoucher = await this.checkOrderItemInfo({
-            orderItem: item,
-            dbQueryFunc: this.packageVoucherService.getPackageVoucherById.bind(
-              this.packageVoucherService,
-            ),
-            typeOfOrderItem: 'Package voucher',
-          });
-          itemPrice = this.findEachItemDataAndMutateTotalSumAndData<'packages'>(
-            {
-              currentSum: itemPrice,
-              itemInfoArr: allItemsInfo.packages,
-              updateStockAmountInfo: updateStockAmountInfo.packages,
-              itemInfo: packageVoucher,
-              itemAmount: item.amount,
-              itemPrice: packageVoucher.price,
-            },
-          );
-          break;
-        }
-        default:
-          throw ErrorApiResponse.conflictRequest(
-            `Unknown voucher type: ${item.type}`,
-          );
-      }
-
-      return itemPrice;
+    const allItemsInfoPromisesArr = this.prepareItemInfoAndMutateDataArr({
+      items: data.items,
+      allOrderItemsId,
+      allOrderItemsInfo,
+      updateStockAmountInfo,
+      orderId: creatingOrderId,
     });
 
     const allItemPricesArr = await Promise.all(allItemsInfoPromisesArr);
@@ -212,75 +148,12 @@ export class OrderService {
       throw ErrorApiResponse.conflictRequest(
         `The total price of all items: ${totalPrice} does not match with provided total price: ${data.totalPrice}`,
       );
-    return { items: allItemsInfo, totalPrice, updateStockAmountInfo };
-  }
-
-  private findEachItemDataAndMutateTotalSumAndData<
-    K extends keyof ItemMapping,
-  >({
-    itemPrice,
-    itemAmount,
-    currentSum,
-    itemInfoArr,
-    updateStockAmountInfo,
-    itemInfo,
-  }: {
-    itemPrice: number;
-    itemAmount: number;
-    currentSum: number;
-    itemInfoArr: ItemMapping[K]['arrayElement'][];
-    updateStockAmountInfo: UpdateStockAmountEachInfo[];
-    itemInfo: ItemMapping[K]['item'];
-  }): number {
-    const totalPriceOfItmes = CalculatorService.multiply(itemPrice, itemAmount);
-    currentSum = CalculatorService.add(currentSum, totalPriceOfItmes);
-    if (itemInfo instanceof PackageVoucherDomain && itemInfoArr) {
-      const rewardsVoucherArr: PackageItemInfo[] = [];
-      // console.log(itemInfo.rewardVouchers);
-      for (const item of itemInfo.rewardVouchers) {
-        const packageRewardArr: PackageItemInfo[] = Array(
-          CalculatorService.multiply(itemAmount, item.amount),
-        ).fill({
-          packageId: itemInfo.id,
-          voucherId: item.voucherId,
-          reward: true,
-        });
-        rewardsVoucherArr.push(...packageRewardArr);
-      }
-
-      delete itemInfo.rewardVouchers;
-      const quotaVoucherArr: PackageItemInfo[] = Array(
-        CalculatorService.multiply(itemAmount, itemInfo.quotaAmount),
-      ).fill({
-        packageId: itemInfo.id,
-        voucherId: itemInfo.quotaVoucherId,
-        reward: false,
-      });
-      itemInfoArr.push(...quotaVoucherArr, ...rewardsVoucherArr);
-    } else {
-      itemInfoArr.push(...Array(itemAmount).fill(itemInfo));
-    }
-
-    // Finding if any items is duplicate
-    const isIndexItemExist = updateStockAmountInfo.findIndex(
-      (item) => item.id === itemInfo.id,
-    );
-    if (isIndexItemExist >= 0) {
-      const currStock =
-        updateStockAmountInfo[isIndexItemExist].updatedStockAmount;
-      updateStockAmountInfo[isIndexItemExist].updatedStockAmount =
-        CalculatorService.minus(currStock, itemAmount);
-    } else {
-      updateStockAmountInfo.push({
-        id: itemInfo.id,
-        updatedStockAmount: CalculatorService.minus(
-          itemInfo.stockAmount,
-          itemAmount,
-        ),
-      });
-    }
-
-    return currentSum;
+    return {
+      allOrderItemsId,
+      allOrderItemsInfo,
+      totalPrice,
+      updateStockAmountInfo,
+    };
   }
 
   /**
@@ -338,116 +211,250 @@ export class OrderService {
     return item;
   }
 
-  /**
-   * Prepare the create order data from the result of the order items checking process.
-   * This function will create a new order item for each voucher, promotion and package
-   * and return the order items id and the create order input data.
-   * @param {object} data - The input data for creating order.
-   * @property {object[]} data.items - The items that user want to order.
-   * @property {string} data.accountId - The account id of the user who makes the order.
-   * @property {number} data.totalPrice - The total price of the order.
-   * @property {object} data.updateStockAmountInfo - The information for updating stock amount of voucher, promotion and package.
-   * @returns {Promise<{createOrderData: CreateOrderAndTransactionInput, allOrderItemsId: string[]}>} - The create order data and the order items id.
-   */
-  private async prepareCreateOrderData({
+  private prepareItemInfoAndMutateDataArr({
     items,
-    accountId,
-    totalPrice,
+    allOrderItemsId,
+    allOrderItemsInfo,
     updateStockAmountInfo,
+    orderId,
   }: {
-    items: OrderItemsInfo;
-    accountId: AccountDomain['id'];
-    totalPrice: number;
+    items: CreateOrderItem[];
+    allOrderItemsInfo: CreateOrderItemInfo[];
+    allOrderItemsId: OrderItemDomain['id'][];
     updateStockAmountInfo: UpdateStockAmountInfo;
-  }): Promise<CreateOrderAndTransactionInput> {
-    const usableDaysAfterPurchased =
-      await this.usableDaysService.getCurrentUsableDaysAfterPurchased();
-    if (!accountId)
-      throw ErrorApiResponse.internalServerError(
-        `Could not find account before creating order.`,
-      );
+    orderId: OrderDomain['id'];
+  }): Promise<number>[] {
+    return items.map(async (item) => {
+      let itemPrice = 0;
 
-    if (!usableDaysAfterPurchased) {
-      throw ErrorApiResponse.conflictRequest(
-        `Could not find the after-purchased usable days. Please recheck before try again.`,
+      switch (item.type) {
+        case ProductTypeEnum.VOUCHER: {
+          const voucher = await this.checkOrderItemInfo({
+            orderItem: item,
+            dbQueryFunc: this.voucherService.getVoucherById.bind(
+              this.voucherService,
+            ),
+            typeOfOrderItem: ProductTypeEnum.VOUCHER,
+          });
+          itemPrice = this.findEachItemDataAndMutateTotalSumAndData({
+            currentSum: itemPrice,
+            itemList: allOrderItemsInfo,
+            updateStockAmountInfo: updateStockAmountInfo.vouchers,
+            itemInfo: voucher,
+            itemAmount: item.amount,
+            allOrderItemsId,
+            appliedDiscountStatus: VoucherDiscountStatusEnum.ACTIVE,
+            orderId,
+          });
+          break;
+        }
+        case ProductTypeEnum.PACKAGE: {
+          const packageVoucher = await this.checkOrderItemInfo({
+            orderItem: item,
+            dbQueryFunc: this.packageVoucherService.getPackageVoucherById.bind(
+              this.packageVoucherService,
+            ),
+            typeOfOrderItem: 'Package voucher',
+          });
+          itemPrice = this.findEachItemDataAndMutateTotalSumAndData({
+            currentSum: itemPrice,
+            itemList: allOrderItemsInfo,
+            updateStockAmountInfo: updateStockAmountInfo.packages,
+            itemInfo: packageVoucher,
+            itemAmount: item.amount,
+            allOrderItemsId,
+            appliedDiscountStatus: PackageDiscountStatusEnum.ACTIVE,
+            orderId,
+          });
+          break;
+        }
+        default:
+          throw ErrorApiResponse.conflictRequest(
+            `Unknown voucher type: ${item.type}`,
+          );
+      }
+
+      return itemPrice;
+    });
+  }
+
+  private findEachItemDataAndMutateTotalSumAndData({
+    itemAmount,
+    currentSum,
+    itemList,
+    updateStockAmountInfo,
+    itemInfo,
+    allOrderItemsId,
+    appliedDiscountStatus,
+    orderId,
+  }: {
+    itemAmount: number;
+    currentSum: number;
+    itemList: CreateOrderItemInfo[];
+    updateStockAmountInfo: UpdateStockAmountEachInfo[];
+    allOrderItemsId: OrderItemDomain['id'][];
+    itemInfo: AnyItemDomain;
+    appliedDiscountStatus:
+      | VoucherDiscountStatusEnum
+      | PackageDiscountStatusEnum;
+    orderId: OrderDomain['id'];
+  }): number {
+    // Calculate price part
+
+    const { discount, usableAt, usableExpiredAt, price } = itemInfo;
+    let totalPriceOfItems: number;
+    const isDiscountApplied =
+      this.productDomainHelper.checkDiscountAvailability(
+        itemInfo,
+        appliedDiscountStatus,
       );
+    if (isDiscountApplied) {
+      totalPriceOfItems = CalculatorService.multiply(
+        discount.discountedPrice,
+        itemAmount,
+      );
+    } else {
+      totalPriceOfItems = CalculatorService.multiply(price, itemAmount);
     }
 
-    const createOrderData: CreateOrderAndTransactionInput = {
-      payload: { id: String(this.uuidService.make()), totalPrice },
-      accountId,
-      usableDaysAfterPurchasedId: usableDaysAfterPurchased.id,
-      updateStockAmountInfo,
-      transaction: null,
-    };
+    currentSum = CalculatorService.add(currentSum, totalPriceOfItems);
+    // FINISH Calculate price part
 
-    const allOrderItemsId: OrderItemDomain['id'][] = [];
+    if (itemInfo instanceof PackageVoucherDomain) {
+      // Ensure itemList is an object (not an array)
 
-    if (items.vouchers && items.vouchers.length > 0) {
-      createOrderData.voucherIdList = items.vouchers.map((item) => {
-        const orderItem: CreateOrderVoucherIdList[number] = {
+      // console.log(itemInfo.rewardVouchers);
+      for (const item of itemInfo.rewardVouchers) {
+        const { amount, voucherId } = item;
+        const orderItemDetail: CreateOrderItemPackageInfo = {
           id: String(this.uuidService.make()),
-          voucherId: item.id,
-          code: null,
+          packageId: itemInfo.id,
+          voucherId,
+          reward: true,
         };
-        allOrderItemsId.push(orderItem.id);
-        return orderItem;
-      });
-    }
 
-    if (items.promotions && items.promotions.length > 0) {
-      createOrderData.promotionIdList = items.promotions.map((item) => {
-        const orderItem: CreateOrderPromotionIdList[number] = {
-          id: String(this.uuidService.make()),
-          promotionId: item.id,
+        if (isDiscountApplied) {
+          orderItemDetail.discount = {
+            id: discount.id,
+            discountedPrice: discount.discountedPrice,
+          };
+        }
+
+        const orderItemReward: CreateOrderItemInfo = {
+          id: null,
+          orderId,
+          qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
           code: null,
+          usableAt,
+          usableExpiredAt,
+          detail: orderItemDetail,
         };
-        allOrderItemsId.push(orderItem.id);
-        return orderItem;
-      });
-    }
 
-    if (items.packages && items.packages.length > 0) {
-      createOrderData.packageIdList = items.packages.reduce(
-        (acc, curr) => {
-          if (curr.reward) {
-            const orderItem: PackageList = {
-              id: String(this.uuidService.make()),
-              packageId: curr.packageId,
-              voucherId: curr.voucherId,
-              code: null,
-            };
-            acc.rewardList.push(orderItem);
-            allOrderItemsId.push(orderItem.id);
-          } else {
-            const orderItem: PackageList = {
-              id: String(this.uuidService.make()),
-              packageId: curr.packageId,
-              voucherId: curr.voucherId,
-              code: null,
-            };
-            acc.quotaList.push(orderItem);
-            allOrderItemsId.push(orderItem.id);
-          }
-          return acc;
-        },
-        { quotaList: [], rewardList: [] },
+        const rewardsVoucherArr = Array(
+          CalculatorService.multiply(itemAmount, amount),
+        )
+          .fill({
+            orderItemReward,
+          })
+          .map((item) => {
+            item.id = String(this.uuidService.make());
+            allOrderItemsId.push(item.id);
+            return item;
+          });
+
+        itemList.push(...rewardsVoucherArr);
+      }
+
+      const quotaVoucherDetail: CreateOrderItemPackageInfo = {
+        id: String(this.uuidService.make()),
+        packageId: itemInfo.id,
+        voucherId: itemInfo.quotaVoucherId,
+        reward: false,
+      };
+
+      if (isDiscountApplied) {
+        quotaVoucherDetail.discount = {
+          id: discount.id,
+          discountedPrice: discount.discountedPrice,
+        };
+      }
+
+      const quotaVoucher: CreateOrderItemInfo = {
+        id: null,
+        code: null,
+        usableAt,
+        usableExpiredAt,
+        detail: quotaVoucherDetail,
+        orderId,
+        qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
+      };
+      const quotaVoucherArr = Array(
+        CalculatorService.multiply(itemAmount, itemInfo.quotaAmount),
+      )
+        .fill(quotaVoucher)
+        .map((item) => {
+          item.id = String(this.uuidService.make());
+          allOrderItemsId.push(item.id);
+          return item;
+        });
+      itemList.push(...quotaVoucherArr);
+    } else {
+      if (!Array.isArray(itemList))
+        throw new Error('Expected an array, but got an object.');
+      const orderItemVoucherInfo: CreateOrderItemVoucherInfo = {
+        id: String(this.uuidService.make()),
+        voucherId: itemInfo.id,
+      };
+
+      if (isDiscountApplied) {
+        orderItemVoucherInfo.discount = {
+          id: discount.id,
+          discountedPrice: discount.discountedPrice,
+        };
+      }
+
+      const orderItemInfo: CreateOrderItemInfo = {
+        id: null,
+        code: null,
+        usableAt,
+        usableExpiredAt,
+        orderId,
+        qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
+        detail: orderItemVoucherInfo,
+      };
+
+      itemList.push(
+        ...Array(itemAmount)
+          .fill(orderItemInfo)
+          .map((item) => {
+            item.id = String(this.uuidService.make());
+            allOrderItemsId.push(item.id);
+            return item;
+          }),
       );
     }
 
-    // Generate unique code for each data
-    const createOrderDataWithAssignCode = await this.assignCodeForData(
-      createOrderData,
-      allOrderItemsId.length,
+    // Finding if any items is duplicate
+    const isIndexItemExist = updateStockAmountInfo.findIndex(
+      (item) => item.id === itemInfo.id,
     );
 
-    // Add all of the generated code to the order items
-    createOrderDataWithAssignCode.transaction = {
-      id: String(this.uuidService.make()),
-      status: TransactionStatusEnum.PENDING,
-    };
+    if (isIndexItemExist >= 0) {
+      const currStock =
+        updateStockAmountInfo[isIndexItemExist].updatedStockAmount;
+      updateStockAmountInfo[isIndexItemExist].updatedStockAmount =
+        CalculatorService.minus(currStock, itemAmount);
+    } else {
+      updateStockAmountInfo.push({
+        id: itemInfo.id,
+        updatedStockAmount: CalculatorService.minus(
+          itemInfo.stockAmount,
+          itemAmount,
+        ),
+      });
+    }
 
-    return createOrderDataWithAssignCode;
+    return currentSum;
   }
 
   private async generateCodeForOrderItem(
@@ -491,23 +498,8 @@ export class OrderService {
 
     // 3) Attach these codes to each item (in the same order they were gathered)
     let codeIndex: number = 0;
-    if (createOrderDataWithAssignCode.voucherIdList) {
-      createOrderDataWithAssignCode.voucherIdList.forEach((item) => {
-        item.code = allUniqueGeneratedCode[codeIndex++];
-      });
-    }
-
-    if (createOrderDataWithAssignCode.promotionIdList) {
-      createOrderDataWithAssignCode.promotionIdList.forEach((item) => {
-        item.code = allUniqueGeneratedCode[codeIndex++];
-      });
-    }
-
-    if (createOrderDataWithAssignCode.packageIdList) {
-      createOrderDataWithAssignCode.packageIdList.quotaList.forEach((item) => {
-        item.code = allUniqueGeneratedCode[codeIndex++];
-      });
-      createOrderDataWithAssignCode.packageIdList.rewardList.forEach((item) => {
+    if (createOrderDataWithAssignCode.allOrderItemsInfo.length > 0) {
+      createOrderDataWithAssignCode.allOrderItemsInfo.forEach((item) => {
         item.code = allUniqueGeneratedCode[codeIndex++];
       });
     }

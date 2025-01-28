@@ -11,7 +11,7 @@ import {
 } from '../order.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { OrderDomain } from '@resources/order/domain/order.domain';
-import { Prisma } from '@prisma/client';
+import { DiscountStatus, Prisma } from '@prisma/client';
 import { OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -28,10 +28,14 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private defaultQrcodeImgPathToWaitForUpload: string = 'WAITFORUPLOAD';
   private defaultOrderItemLimitPaginationForFindMany: number = 1;
 
+  private voucherDiscountIncludeQuery: Prisma.VoucherInclude = {
+    VoucherDiscount: true,
+  };
+
   private voucherCategoryIncludeQuery: Prisma.VoucherInclude = {
     voucherTag: {
       include: {
-        voucherCategory: true,
+        category: true,
       },
     },
   };
@@ -52,16 +56,9 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {
       include: {
+        ...this.voucherDiscountIncludeQuery,
         ...this.voucherImgIncludeQuery,
         ...this.voucherCategoryIncludeQuery,
-      },
-    },
-  };
-
-  private orderItemPromotionIncludeQuery: Prisma.OrderItemPromotionInclude = {
-    voucherPromotion: {
-      include: {
-        ...this.orderItemVoucherIncludeQuery,
       },
     },
   };
@@ -79,17 +76,14 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             mainImg: true,
           },
         },
+        PackageDiscount: true,
         voucher: {
-          include: {
-            ...this.voucherCategoryIncludeQuery,
-          },
+          include: this.voucherCategoryIncludeQuery,
         },
         PackageRewardVoucher: {
           include: {
             voucher: {
-              include: {
-                ...this.voucherCategoryIncludeQuery,
-              },
+              include: this.voucherCategoryIncludeQuery,
             },
           },
         },
@@ -108,29 +102,14 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     },
   };
 
-  private orderItemAndUsableDaysIncludeQuery: Prisma.OrderInclude = {
-    usableDaysAfterPurchased: {
-      select: {
-        id: true,
-        usableDays: true,
-      },
-    },
+  private orderItemAndTransactionIncludeQuery: Prisma.OrderInclude = {
     OrderItem: {
       include: {
         OrderItemVoucher: {
-          include: {
-            ...this.orderItemVoucherIncludeQuery,
-          },
-        },
-        OrderItemPromotion: {
-          include: {
-            ...this.orderItemPromotionIncludeQuery,
-          },
+          include: this.orderItemVoucherIncludeQuery,
         },
         OrderItemPackage: {
-          include: {
-            ...this.orderItemPackageIncludeQuery,
-          },
+          include: this.orderItemPackageIncludeQuery,
         },
       },
     },
@@ -143,30 +122,34 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   };
 
   private findManyIncludeQuery: Prisma.OrderInclude = {
-    usableDaysAfterPurchased: {
-      select: {
-        id: true,
-        usableDays: true,
-      },
-    },
     OrderItem: {
       take: this.defaultOrderItemLimitPaginationForFindMany,
       include: {
         OrderItemVoucher: {
-          include: {
-            ...this.orderItemVoucherIncludeQuery,
-          },
-        },
-        OrderItemPromotion: {
-          include: {
-            ...this.orderItemPromotionIncludeQuery,
-          },
+          include: this.orderItemVoucherIncludeQuery,
         },
         OrderItemPackage: {
-          include: {
-            ...this.orderItemPackageIncludeQuery,
-          },
+          include: this.orderItemPackageIncludeQuery,
         },
+      },
+    },
+    account: this.accountIncludeQuery,
+  };
+
+  private allDetailIncludeQuery: Prisma.OrderInclude = {
+    OrderItem: {
+      include: {
+        OrderItemVoucher: {
+          include: this.orderItemVoucherIncludeQuery,
+        },
+        OrderItemPackage: {
+          include: this.orderItemPackageIncludeQuery,
+        },
+      },
+    },
+    Transaction: {
+      include: {
+        transactionSystem: true,
       },
     },
     account: this.accountIncludeQuery,
@@ -188,23 +171,22 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   public async createOrderAndTransaction({
     payload,
     accountId,
-    usableDaysAfterPurchasedId,
     updateStockAmountInfo,
-    voucherIdList,
-    promotionIdList,
-    packageIdList,
+    allOrderItemsInfo,
+    transaction,
   }: CreateOrderAndTransactionInput): Promise<OrderDomain> {
     // Initialize the create order items
     // promise to provide in transaction
     try {
-      const { vouchers, packages, promotions, allOrderItems } =
-        this.generateOrderItemsQuery({
-          voucherIdList,
-          promotionIdList,
-          packageIdList,
-          orderId: payload.id,
-        });
+      // const { vouchers, packages, promotions, allOrderItems } =
+      //   this.generateOrderItemsQuery({
+      //     voucherIdList,
+      //     promotionIdList,
+      //     packageIdList,
+      //     orderId: payload.id,
+      //   });
       // Find the transaction system
+
       const transactionSystem =
         await this.prismaService.transactionSystem.findFirst({
           where: {
@@ -244,35 +226,38 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             transactionExpireTime.unit,
           );
           // Create order and transaction
+          // const createOrderPromise = tx.order.create({
+          //   data: {
+          //     ...payload,
+          //     accountId,
+          //     Transaction: {
+          //       create: {
+          //         transactionSystemId: transactionSystem.id,
+          //         status: TransactionStatusEnum.PENDING,
+          //         createdAt: currentDate,
+          //         expiredAt: transactionExpiredAt,
+          //       },
+          //     },
+          //   },
+          //   include: this.orderItemAndUsableDaysIncludeQuery,
+          // });
+
           const createOrderPromise = tx.order.create({
             data: {
               ...payload,
-              usableDaysAfterPurchasedId,
               accountId,
               Transaction: {
                 create: {
+                  id: transaction.id,
                   transactionSystemId: transactionSystem.id,
                   status: TransactionStatusEnum.PENDING,
                   createdAt: currentDate,
                   expiredAt: transactionExpiredAt,
                 },
               },
-            },
-            include: {
-              Transaction: {
-                include: {
-                  transactionSystem: {
-                    select: {
-                      id: true,
-                      system: true,
-                    },
-                  },
-                },
-              },
-              usableDaysAfterPurchased: {
-                select: {
-                  id: true,
-                  usableDays: true,
+              OrderItem: {
+                createMany: {
+                  data: [],
                 },
               },
             },
@@ -283,23 +268,23 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             createOrderPromise,
             ...updateStockTransactionPromise,
           ]);
-          await tx.orderItem.createMany({
-            data: allOrderItems,
-          });
+          // await tx.orderItem.createMany({
+          //   data: allOrderItems,
+          // });
 
-          await Promise.all([
-            vouchers.length > 0
-              ? tx.orderItemVoucher.createMany({ data: vouchers })
-              : null,
-            promotions.length > 0
-              ? tx.orderItemPromotion.createMany({ data: promotions })
-              : null,
-            packages.quota.length > 0 && packages.rewards.length > 0
-              ? tx.orderItemPackage.createMany({
-                  data: [...packages.quota, ...packages.rewards],
-                })
-              : null,
-          ]);
+          // await Promise.all([
+          //   vouchers.length > 0
+          //     ? tx.orderItemVoucher.createMany({ data: vouchers })
+          //     : null,
+          //   promotions.length > 0
+          //     ? tx.orderItemPromotion.createMany({ data: promotions })
+          //     : null,
+          //   packages.quota.length > 0 && packages.rewards.length > 0
+          //     ? tx.orderItemPackage.createMany({
+          //         data: [...packages.quota, ...packages.rewards],
+          //       })
+          //     : null,
+          // ]);
 
           return orderAndTransaction;
         },

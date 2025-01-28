@@ -57,11 +57,11 @@ import {
 } from './dto/images/update-package-image.dto';
 import { DeletePackageVoucherImgResponse } from './dto/images/delete-package-image.dto';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CompactService } from 'src/common/service/compact.service';
 import { isUUID } from 'class-validator';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
@@ -156,7 +156,7 @@ export class PackageVoucherController {
     @Query(QUERY_FIELD_NAME.CURSOR)
     cursor: PackageVoucherDomain['id'],
     @Query(PackageVoucherPath.GetPackageCategoryQuery)
-    category: VoucherCategoryDomain['name'],
+    category: CategoryDomain['name'],
     @Query(PackageVoucherPath.GetPackageStatusQuery)
     status: PackageStatusQueryEnum,
     @Query(PackageVoucherPath.GetPackageSellDateQuery)
@@ -164,9 +164,6 @@ export class PackageVoucherController {
   ): Promise<GetPaginationPackageVoucherResponse> {
     if (cursor) {
       cursor = this.compactService.compactBase64toUUID(cursor);
-
-      if (!isUUID(cursor))
-        throw ErrorApiResponse.badRequest('Invalid cursor data type.');
     }
 
     const packageVoucherQueryList =

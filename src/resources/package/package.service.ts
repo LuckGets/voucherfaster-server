@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  PackageVoucherCreateInput,
   PackageVoucherDiscountNestedCreateInput,
   PackageVoucherRepository,
+  UpdatePackageVoucherRepositoryInput,
 } from 'src/infrastructure/persistence/package/package.repository';
 import {
   CreatePackageVoucherDto,
@@ -12,7 +14,7 @@ import {
   PackageImgDomain,
   PackageRewardVoucherCreateInput,
   PackageRewardVoucherDomain,
-  PackageVoucherCreateInput,
+  PackageStatusEnum,
   PackageVoucherDomain,
 } from './domain/package-voucher.domain';
 import { MediaService } from '@application/media/media.service';
@@ -22,27 +24,22 @@ import { ErrorApiResponse } from 'src/common/core-api-response';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { isUUID } from 'class-validator';
 import { NullAble } from '@utils/types/common.type';
-import {
-  packageVoucherTermAndCondENCreateInput,
-  packageVoucherTermAndCondTHCreateInput,
-} from './domain/package-voucher-term-cond.domain';
+
 import {
   UpdatePackageRewardVoucherDto,
   UpdatePackageVoucherDto,
 } from './dto/update-package.dto';
 import { PackageImgRepository } from 'src/infrastructure/persistence/package/package-img.repository';
 import { ProductDomainHelper } from 'src/common/product.helper';
-import {
-  VoucherCategoryDomain,
-  VoucherDomain,
-} from '@resources/voucher/domain/voucher.domain';
+import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
-import { CalculatorService } from '@utils/services/calculator.service';
 import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from './dto/get-package.dto';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
+import { ProductTypeEnum } from 'src/common/types/product.type';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Injectable()
 export class PackageVoucherService {
@@ -53,6 +50,7 @@ export class PackageVoucherService {
     private voucherService: VoucherService,
     private uuidService: UUIDService,
     private mediaService: MediaService,
+    private prductDomainHelper: ProductDomainHelper,
   ) {}
 
   async createPackageVoucher({
@@ -168,7 +166,7 @@ export class PackageVoucherService {
     sellDate,
   }: {
     cursor?: PackageVoucherDomain['id'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     status?: PackageStatusQueryEnum;
     sellDate?: PackageSellDateQueryEnum;
   }): Promise<PackageVoucherDomain[]> {
@@ -227,11 +225,6 @@ export class PackageVoucherService {
   async updatePackageVoucher(
     data: UpdatePackageVoucherDto,
   ): Promise<PackageVoucherDomain> {
-    if (data && Object.keys(data).length === 1)
-      throw ErrorApiResponse.badRequest(
-        'Please provide information required for this request.',
-      );
-
     const isPackageExist =
       await this.packageVoucherRepository.findPackageVoucherById(data.id);
     if (!isPackageExist)
@@ -239,11 +232,31 @@ export class PackageVoucherService {
         `Package ID: ${data.id} could not be found.`,
       );
 
+    if (data.quotaVoucherId) {
+      const isVoucherExists = await this.voucherService.getVoucherById(
+        data.quotaVoucherId,
+      );
+
+      if (ObjectHelper.isObjectEmpty(isVoucherExists))
+        throw ErrorApiResponse.notFoundRequest(
+          `Voucher ID: ${data.quotaVoucherId} could not be found.`,
+        );
+    }
+
     // Check the update date data if provided
-    ProductDomainHelper.checkUsableAndSellTime(data, isPackageExist, 'package');
+    this.prductDomainHelper.checkUsableAndSellTime(
+      data,
+      isPackageExist,
+      ProductTypeEnum.PACKAGE,
+    );
 
     // Check the other update data if provided
-    ProductDomainHelper.checkUpdateData(data, isPackageExist, 'package');
+    this.prductDomainHelper.checkUpdateData(
+      data,
+      isPackageExist,
+      ProductTypeEnum.PACKAGE,
+    );
+
     if (!ObjectHelper.isObjectEmpty(data.rewardVouchers)) {
       await this.checkRewardVoucherBeforeUpdate(
         data.rewardVouchers,
@@ -251,7 +264,38 @@ export class PackageVoucherService {
       );
     }
 
-    return this.packageVoucherRepository.updatePackageVoucher(data);
+    const { discount, ...packageInfo } = data;
+
+    const updatePackageData: UpdatePackageVoucherRepositoryInput = packageInfo;
+
+    if (!ObjectHelper.isObjectEmpty(discount)) {
+      if (
+        ObjectHelper.isObjectEmpty(isPackageExist.discount) ||
+        !isPackageExist.discount.id
+      ) {
+        updatePackageData.discount = {
+          create: {
+            id: String(this.uuidService.make()),
+            discountedPrice: discount.discountedPrice,
+          },
+        };
+      } else if (!ObjectHelper.isObjectEmpty(isPackageExist.discount)) {
+        updatePackageData.discount = {
+          update: {
+            ...discount,
+            currentDiscountId: isPackageExist.discount.id,
+          },
+        };
+        if (discount.discountedPrice)
+          updatePackageData.discount.update.newId = String(
+            this.uuidService.make(),
+          );
+      }
+    }
+
+    return this.packageVoucherRepository.updatePackageVoucher(
+      updatePackageData,
+    );
   }
 
   private async checkRewardVoucherBeforeUpdate(
@@ -384,9 +428,9 @@ export class PackageVoucherService {
         `Package ID: ${packageId} could not be found.`,
       );
 
-    if (isPackageExist.deletedAt)
+    if (isPackageExist.status === PackageStatusEnum.INACTIVE)
       throw ErrorApiResponse.conflictRequest(
-        `Package ID: ${packageId} is already deleted.`,
+        `Package ID: ${packageId} is already inactive.`,
       );
 
     return this.packageVoucherRepository.deletePackageVoucherById(packageId);
@@ -412,10 +456,10 @@ export class PackageVoucherService {
         `Package ID: ${id} could not be found.`,
       );
 
-    if (isPackageExist.deletedAt)
-      throw ErrorApiResponse.conflictRequest(
-        `Package ID: ${id} is already deleted.`,
-      );
+    // if (isPackageExist.status === PackageStatusEnum.INACTIVE)
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `Package ID: ${id} is now ${isPackageExist.status}.`,
+    //   );
 
     const uploadedImgPath = await Promise.all(
       files.map((item) =>

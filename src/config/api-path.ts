@@ -60,15 +60,15 @@ export const CategoryPath = {
   CategoryQuery: 'category',
 } as const;
 
-const VoucherDiscountPathName = 'discount';
+// const VoucherDiscountPathName = 'discount';
 
-export const VoucherDiscountPath = {
-  Name: `${VoucherDiscountPathName}`,
-  Base: `/${VoucherDiscountPathName}`,
-  DeleteDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
-  CreateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}`,
-  UpdateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
-} as const;
+// export const VoucherDiscountPath = {
+//   Name: `${VoucherDiscountPathName}`,
+//   Base: `/${VoucherDiscountPathName}`,
+//   DeleteDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
+//   CreateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}`,
+//   UpdateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
+// } as const;
 
 export const PackageVoucherPath = {
   Name: 'packages',

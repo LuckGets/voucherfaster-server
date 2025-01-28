@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TermAndCondUpdateDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Transform, Type } from 'class-transformer';
 import {
-  IsArray,
   IsDate,
   IsNumber,
   IsOptional,
@@ -14,13 +12,21 @@ import {
 } from 'class-validator';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsArrayOfUUID } from '@utils/validators/IsArrayOfUUID';
-import { PackageVoucherDomain } from '../domain/package-voucher.domain';
+import {
+  PackageStatusEnum,
+  PackageVoucherDomain,
+} from '../domain/package-voucher.domain';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HttpStatus } from '@nestjs/common';
 import { AuthPath } from 'src/config/api-path';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { plainArrayTransformer } from '@utils/transformer/plainArrayTransformer';
 import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
+import { IsEnumValue } from '@utils/validators/IsEnum';
+import {
+  PackageDiscountDomain,
+  PackageDiscountStatusEnum,
+} from '../domain/package-discount.domain';
 
 export class AddPackageRewardVoucherDto {
   @ApiProperty({
@@ -69,6 +75,24 @@ export class UpdatePackageRewardVoucherDto {
   }
 }
 
+@AtLeastOneProperty(UpdatePackageDiscountDto.updatAbleField())
+export class UpdatePackageDiscountDto {
+  newId?: PackageDiscountDomain['id'];
+  currentDiscountId: PackageDiscountDomain['id'];
+  @IsOptional()
+  @IsPositive()
+  discountedPrice?: number;
+
+  @IsOptional()
+  @IsEnumValue(PackageDiscountStatusEnum)
+  status?: PackageDiscountStatusEnum;
+
+  public static updatAbleField(): Array<keyof UpdatePackageDiscountDto> {
+    return ['discountedPrice', 'status'];
+  }
+}
+
+@AtLeastOneProperty(UpdatePackageVoucherDto.updatAbleField())
 export class UpdatePackageVoucherDto {
   @ApiProperty({ type: String })
   @IsUUID(7)
@@ -121,20 +145,28 @@ export class UpdatePackageVoucherDto {
   @Transform(({ value }) => new Date(value))
   @IsOptional()
   sellExpiredAt?: Date;
-  @ApiProperty({ type: () => [TermAndCondUpdateDto] })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  @IsArray()
+  @IsEnumValue(PackageStatusEnum)
   @IsOptional()
-  termAndCondTh?: TermAndCondUpdateDto[];
-  @ApiProperty({ type: () => [TermAndCondUpdateDto] })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  @IsArray()
+  status?: PackageStatusEnum;
+  @ValidateNested({ each: true })
+  @Type(() => UpdatePackageDiscountDto)
   @IsOptional()
-  termAndCondEn?: TermAndCondUpdateDto[];
+  discount?: UpdatePackageDiscountDto;
+
+  public static updatAbleField(): Array<keyof UpdatePackageVoucherDto> {
+    return [
+      'title',
+      'quotaVoucherId',
+      'stockAmount',
+      'quotaAmount',
+      'packagePrice',
+      'rewardVouchers',
+      'usableAt',
+      'usableExpiredAt',
+      'sellStartedAt',
+      'sellExpiredAt',
+    ];
+  }
 }
 
 export class UpdatePackageVoucherResponse extends CoreApiResponse {
@@ -201,6 +233,16 @@ export class UpdatePackageVoucherResponse extends CoreApiResponse {
     }`,
   })
   public data: PackageVoucherDomain;
+
+  constructor(
+    code: UpdatePackageVoucherResponse['HTTPStatusCode'],
+    message: UpdatePackageVoucherResponse['message'],
+    links: UpdatePackageVoucherResponse['links'],
+    data: PackageVoucherDomain,
+  ) {
+    super(code, message, links);
+    this.data = data;
+  }
 
   public static success(
     data: PackageVoucherDomain,

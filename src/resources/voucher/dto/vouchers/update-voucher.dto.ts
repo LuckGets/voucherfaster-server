@@ -17,7 +17,28 @@ import { Transform, Type } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
-import { UpdateVoucherDiscountDto } from '../voucher-discount/update-discount.dto';
+import {
+  VoucherDiscountDomain,
+  VoucherDiscountStatusEnum,
+} from '@resources/voucher/domain/voucher-discount.domain';
+
+@AtLeastOneProperty(UpdateVoucherDiscountDto.updatAbleFields())
+export class UpdateVoucherDiscountDto {
+  newId?: VoucherDiscountDomain['id'];
+  currentDiscountId: VoucherDiscountDomain['id'];
+  @IsOptional()
+  @IsEnumValue(VoucherDiscountStatusEnum)
+  status?: VoucherDiscountStatusEnum;
+  @ApiProperty({ type: Number, required: false })
+  @IsPositive()
+  @Transform(({ value }) => Number(value))
+  @IsOptional()
+  discountedPrice?: number;
+
+  public static updatAbleFields(): Array<keyof UpdateVoucherDiscountDto> {
+    return ['discountedPrice', 'status'];
+  }
+}
 
 @AtLeastOneProperty(UpdateVoucherDto.updatAbleField())
 export class UpdateVoucherDto {

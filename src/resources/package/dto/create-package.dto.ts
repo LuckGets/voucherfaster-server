@@ -53,6 +53,7 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) =>
     plainArrayTransformer(value, CreateRewardVoucherDto),
   )
+  description: PackageVoucherDomain['description'];
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateRewardVoucherDto)

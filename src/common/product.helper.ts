@@ -142,7 +142,7 @@ export class ProductDomainHelper {
 
     if (
       (data.discountedPrice && data.discountedPrice === product.price) ||
-      data.discountedPrice > product.price
+      (data.discountedPrice && data.discountedPrice > product.price)
     ) {
       throw ErrorApiResponse.conflictRequest(
         `The updated discounted price: ${data.discountedPrice} should not be equal or greater than ${productType} price: ${product.price}.`,
@@ -189,5 +189,18 @@ export class ProductDomainHelper {
     //   throw ErrorApiResponse.conflictRequest(
     //     `The updated stock amount: ${data.stockAmount} is the same as existed ${productType} stock amount: ${product.stockAmount}.`,
     //   );
+  }
+
+  public checkDiscountAvailability(
+    productDomain: ProductDomain,
+    availableDiscountStatus: string,
+  ): boolean {
+    if (ObjectHelper.isObjectEmpty(productDomain.discount)) return false;
+
+    if (productDomain.discount.status !== availableDiscountStatus) return false;
+
+    if (productDomain.discount.deletedAt) return false;
+
+    return true;
   }
 }

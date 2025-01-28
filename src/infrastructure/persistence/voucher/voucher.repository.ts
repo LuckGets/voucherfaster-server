@@ -12,13 +12,30 @@ import {
   PaginationDiscountQueryEnum,
   PaginationSellDateQueryEnum,
 } from '@resources/voucher/dto/vouchers/get-voucher.dto';
-import { UpdateVoucherDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
+import {
+  UpdateVoucherDiscountDto,
+  UpdateVoucherDto,
+} from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
-import { CreateVoucherDiscountDto } from '@resources/voucher/dto/voucher-discount/create-discount.dto';
 import { CreateVoucherDto } from '@resources/voucher/dto/vouchers/create-voucher.dto';
+
+export type UpdateVoucherRepositoryInput = Omit<
+  UpdateVoucherDto,
+  'discount'
+> & {
+  discount?: {
+    update: UpdateVoucherDiscountDto;
+    create: {
+      id: VoucherDiscountDomain['id'];
+      discountedPrice: VoucherDiscountDomain['discountedPrice'];
+    };
+  };
+};
+
+export type UpdateVoucherDiscountInput = UpdateVoucherDiscountDto;
 
 export abstract class VoucherRepository {
   /**
@@ -113,7 +130,7 @@ export abstract class VoucherRepository {
     sellDate: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]>;
 
-  abstract update(data: UpdateVoucherDto): Promise<VoucherDomain>;
+  abstract update(data: UpdateVoucherRepositoryInput): Promise<VoucherDomain>;
 }
 
 export abstract class VoucherImgRepository {
@@ -143,10 +160,10 @@ export abstract class VoucherImgRepository {
   abstract deleteById(id: VoucherImgDomain['id']): Promise<void>;
 }
 
-export abstract class VoucherDiscountRepository {
-  abstract create(data: CreateVoucherDiscountDto): Promise<VoucherDomain>;
+// export abstract class VoucherDiscountRepository {
+//   abstract create(data: CreateVoucherDiscountDto): Promise<VoucherDomain>;
 
-  // abstract update(data: UpdateVoucherDiscountDto): Promise<VoucherDomain>;
+//   // abstract update(data: UpdateVoucherDiscountDto): Promise<VoucherDomain>;
 
-  abstract delete(id: VoucherDiscountDomain['id']): Promise<void>;
-}
+//   abstract delete(id: VoucherDiscountDomain['id']): Promise<void>;
+// }

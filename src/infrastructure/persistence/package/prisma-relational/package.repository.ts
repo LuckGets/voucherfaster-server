@@ -3,6 +3,7 @@ import {
   PackageVoucherCreateInput,
   PackageVoucherDiscountNestedCreateInput,
   PackageVoucherRepository,
+  UpdatePackageVoucherRepositoryInput,
 } from '../package.repository';
 import { PrismaService } from '../../config/prisma.service';
 import {
@@ -10,26 +11,18 @@ import {
   PackageRewardVoucherCreateInput,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
-import { PackageVoucher, Prisma, VoucherStatus } from '@prisma/client';
+import { DiscountStatus, Prisma, VoucherStatus } from '@prisma/client';
 import { PackageVoucherMapper } from './mapper/package.mapper';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { NullAble } from '@utils/types/common.type';
-import {
-  packageVoucherTermAndCondENCreateInput,
-  packageVoucherTermAndCondTHCreateInput,
-} from '@resources/package/domain/package-voucher-term-cond.domain';
-import {
-  UpdatePackageRewardVoucherDto,
-  UpdatePackageVoucherDto,
-} from '@resources/package/dto/update-package.dto';
-import { TermAndCondUpdateDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
+import { UpdatePackageRewardVoucherDto } from '@resources/package/dto/update-package.dto';
 import { UUIDService } from '@utils/services/uuid.service';
 import { ObjectHelper } from '@utils/services/object.helper';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 export class PackageVoucherRelationalPrismaORMRepository
   implements PackageVoucherRepository
@@ -38,6 +31,15 @@ export class PackageVoucherRelationalPrismaORMRepository
     @Inject(PrismaService) private prismaService: PrismaService,
     private uuidService: UUIDService,
   ) {}
+
+  private activeDiscountIncludeQuery: Prisma.PackageDiscountWhereInput = {
+    deletedAt: {
+      equals: null,
+    },
+    status: {
+      equals: DiscountStatus.ACTIVE,
+    },
+  };
 
   private voucherCategoryInclude: Prisma.VoucherInclude = {
     voucherTag: {
@@ -63,7 +65,9 @@ export class PackageVoucherRelationalPrismaORMRepository
     PackageRewardVoucher: {
       include: this.rewardVoucherIncludeQuery,
     },
-    PackageDiscount: true,
+    PackageDiscount: {
+      where: this.activeDiscountIncludeQuery,
+    },
   };
 
   private findManyJoinQuery: Prisma.PackageVoucherInclude = {
@@ -72,11 +76,11 @@ export class PackageVoucherRelationalPrismaORMRepository
     },
     PackageImg: { where: { mainImg: true } },
     PackageRewardVoucher: { include: this.rewardVoucherIncludeQuery },
-    PackageDiscount: true,
+    PackageDiscount: { where: this.activeDiscountIncludeQuery },
   };
 
   private generateCategoryWhereQuery(
-    category: VoucherCategoryDomain['name'],
+    category: CategoryDomain['name'],
   ): Prisma.PackageVoucherWhereInput {
     return category
       ? {
@@ -193,7 +197,7 @@ export class PackageVoucherRelationalPrismaORMRepository
     sellDate,
   }: {
     cursor?: PackageVoucherDomain['id'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     status?: PackageStatusQueryEnum;
     sellDate?: PackageSellDateQueryEnum;
   }): Promise<PackageVoucherDomain[]> {
@@ -236,20 +240,43 @@ export class PackageVoucherRelationalPrismaORMRepository
   }
 
   async updatePackageVoucher(
-    payload: UpdatePackageVoucherDto,
+    payload: UpdatePackageVoucherRepositoryInput,
   ): Promise<PackageVoucherDomain> {
-    const { rewardVouchers, termAndCondTh, termAndCondEn, id, ...data } =
-      payload;
+    const { rewardVouchers, discount, id, ...data } = payload;
+
+    const updateData: Prisma.PackageVoucherUpdateInput = data;
+
+    if (!ObjectHelper.isObjectEmpty(discount)) {
+      const { create, update } = discount;
+      if (!ObjectHelper.isObjectEmpty(create)) {
+        updateData.PackageDiscount = { create };
+      } else if (!ObjectHelper.isObjectEmpty(update)) {
+        const { currentDiscountId, discountedPrice } = update;
+        if (update.discountedPrice) {
+          const currentTime = new Date();
+          updateData.PackageDiscount = {
+            update: {
+              where: { id: currentDiscountId },
+              data: { deletedAt: currentTime, status: DiscountStatus.INACTIVE },
+            },
+            create: {
+              id: update.newId,
+              discountedPrice,
+              status: update.status ?? DiscountStatus.ACTIVE,
+            },
+          };
+        } else {
+          updateData.PackageDiscount = {
+            update: {
+              where: { id: currentDiscountId },
+              data: update,
+            },
+          };
+        }
+      }
+    }
 
     const updatedPackage = await this.prismaService.$transaction(async (tx) => {
-      if (termAndCondTh && termAndCondTh.length > 0) {
-        await this.upsertManyTermAndCond(tx, termAndCondTh, id, 'TH');
-      }
-
-      if (termAndCondEn && termAndCondEn.length > 0) {
-        await this.upsertManyTermAndCond(tx, termAndCondEn, id, 'EN');
-      }
-
       if (!ObjectHelper.isObjectEmpty(rewardVouchers)) {
         await this.upsertManyRewardVoucher(tx, rewardVouchers, id);
       }
@@ -257,12 +284,10 @@ export class PackageVoucherRelationalPrismaORMRepository
       return tx.packageVoucher.update({
         data,
         where: { id },
-        include: {
-          ...this.detailIncludeQuery,
-        },
+        include: this.detailIncludeQuery,
       });
     });
-    return PackageVoucherMapper.toDomain(updatedPackage);
+    return PackageVoucherMapper.toDomain(updatedPackage, { allInfo: true });
   }
 
   async upsertManyRewardVoucher(

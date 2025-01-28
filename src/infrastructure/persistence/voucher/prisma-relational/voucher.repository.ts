@@ -4,8 +4,11 @@ import {
 } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 import { PrismaService } from '../../config/prisma.service';
-import { VoucherRepository } from '../voucher.repository';
-import { Prisma, VoucherStatus } from '@prisma/client';
+import {
+  UpdateVoucherRepositoryInput,
+  VoucherRepository,
+} from '../voucher.repository';
+import { DiscountStatus, Prisma, VoucherStatus } from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -24,6 +27,15 @@ import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
+
+  private activeDiscountIncludeQuery: Prisma.VoucherDiscountWhereInput = {
+    deletedAt: {
+      equals: null,
+    },
+    status: {
+      equals: DiscountStatus.ACTIVE,
+    },
+  };
 
   private tagAndCategoryIncludeQuery: Prisma.VoucherInclude = {
     voucherTag: {
@@ -47,7 +59,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         imgPath: true,
       },
     },
-    VoucherDiscount: true,
+    VoucherDiscount: {
+      where: this.activeDiscountIncludeQuery,
+    },
     ...this.tagAndCategoryIncludeQuery,
   };
 
@@ -60,7 +74,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         mainImg: true,
       },
     },
-    VoucherDiscount: true,
+    VoucherDiscount: {
+      where: this.activeDiscountIncludeQuery,
+    },
   };
 
   private generateCategoryWhereQuery(
@@ -344,24 +360,46 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
    * @returns VoucherDomain
    * Service for updating voucher information in database
    */
-  async update(payload: UpdateVoucherDto): Promise<VoucherDomain> {
+  async update(payload: UpdateVoucherRepositoryInput): Promise<VoucherDomain> {
     // Extract term and condition which need to
     // update in another table
     const { id, discount, tagId, ...data } = payload;
 
-    const updateData: Prisma.VoucherUpdateInput = {
-      ...data,
-    };
+    const updateData: Prisma.VoucherUpdateInput = data;
 
     if (tagId && isUUID(tagId)) {
       updateData.voucherTag = { update: { id: tagId } };
     }
 
     if (!ObjectHelper.isObjectEmpty(discount)) {
-      const { discountedPrice, status } = discount;
-      if (discountedPrice)
-        updateData.VoucherDiscount.update.discountedPrice = discountedPrice;
-      if (status) updateData.VoucherDiscount.update.status = status;
+      const { create, update } = discount;
+
+      if (!ObjectHelper.isObjectEmpty(create)) {
+        updateData.VoucherDiscount = { create };
+      } else if (!ObjectHelper.isObjectEmpty(update)) {
+        if (update.discountedPrice) {
+          const currentTime = new Date();
+          const { newId, currentDiscountId, discountedPrice, status } = update;
+          updateData.VoucherDiscount = {
+            update: {
+              where: { id: currentDiscountId },
+              data: { deletedAt: currentTime, status: DiscountStatus.ACTIVE },
+            },
+            create: {
+              id: newId,
+              discountedPrice,
+              status: status ?? DiscountStatus.ACTIVE,
+            },
+          };
+        } else {
+          updateData.VoucherDiscount = {
+            update: {
+              where: { id: update.currentDiscountId },
+              data: update,
+            },
+          };
+        }
+      }
     }
 
     const updatedVoucher = await this.prismaService.$transaction(
