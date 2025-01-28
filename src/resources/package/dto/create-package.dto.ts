@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiBodyOptions, ApiProperty } from '@nestjs/swagger';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
 import { Transform, Type } from 'class-transformer';
@@ -7,6 +7,7 @@ import {
   IsArray,
   IsDate,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
   IsUUID,
@@ -59,16 +60,9 @@ export class CreatePackageVoucherDto {
   @ApiProperty({ type: String })
   @IsString()
   title: string;
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  @IsArray()
-  termAndCondTh: string[];
-  @IsArray()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  termAndCondEn: string[];
+  @ApiProperty({ type: String })
+  @IsString()
+  termAndCondition: string;
   @ApiProperty({ type: Date })
   @IsDate()
   @Transform(({ value }) => new Date(value))
@@ -85,7 +79,82 @@ export class CreatePackageVoucherDto {
   @IsDateGreaterThan('usableAt')
   @Transform(({ value }) => new Date(value))
   usableExpiredAt: Date;
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsPositive()
+  discountedPrice?: number;
 }
+
+export const createPackageVoucherDtoSchemaDocument: ApiBodyOptions = {
+  description:
+    'Create package voucher with its associated datails included image and reward vouchers.',
+  schema: {
+    required: [
+      'quotaVoucherId',
+      'quotaAmount',
+      'stockAmount',
+      'price',
+      'rewardVouchers',
+      'title',
+      'termAndCondition',
+      'sellStartedAt',
+      'sellExpiredAt',
+      'usableAt',
+      'usableExpiredAt',
+    ],
+    type: 'object',
+    properties: {
+      quotaVoucherId: {
+        type: 'string',
+      },
+      quotaAmount: {
+        type: 'number',
+      },
+      stockAmount: {
+        type: 'number',
+      },
+      price: {
+        type: 'number',
+      },
+      rewardVouchers: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            voucherId: {
+              type: 'string',
+            },
+            amount: {
+              type: 'number',
+            },
+          },
+        },
+      },
+      title: {
+        type: 'string',
+      },
+      termAndCondition: {
+        type: 'string',
+      },
+      sellStartedAt: {
+        type: 'date',
+      },
+      sellExpiredAt: {
+        type: 'date',
+      },
+      usableAt: {
+        type: 'date',
+      },
+      usableExpiredAt: {
+        type: 'date',
+      },
+      discountedPrice: {
+        type: 'number',
+        nullable: true,
+      },
+    },
+  },
+};
 
 export class CreatePackageVoucherResponse extends CoreApiResponse {
   @ApiProperty({
@@ -95,7 +164,7 @@ export class CreatePackageVoucherResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Package ID: 123 have been created successfully.',
+    example: 'Package title: น้ำปลาคลุกไก่ have been created successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -120,6 +189,16 @@ export class CreatePackageVoucherResponse extends CoreApiResponse {
   })
   public data: PackageVoucherDomain;
 
+  constructor(
+    code: CreatePackageVoucherResponse['HTTPStatusCode'],
+    message: CreatePackageVoucherResponse['message'],
+    links: CreatePackageVoucherResponse['links'],
+    data: PackageVoucherDomain,
+  ) {
+    super(code, message, links);
+    this.data = data;
+  }
+
   public static success(
     data: PackageVoucherDomain,
     message?: string,
@@ -127,7 +206,7 @@ export class CreatePackageVoucherResponse extends CoreApiResponse {
     statusCode?: number,
   ): CreatePackageVoucherResponse {
     const responseMessage =
-      message ?? `Package ID: ${data.id} have been created successfully.`;
+      message ?? `Package title: ${data.title} have been created successfully.`;
     const responseCode = statusCode ?? HttpStatus.CREATED;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);

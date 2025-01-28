@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { OrderItemPath } from 'src/config/api-path';
 import { OrderItemService } from './order-item.service';
 import { ApiOkResponse, ApiQuery } from '@nestjs/swagger';
@@ -7,9 +7,14 @@ import {
   OrderItemDomain,
   OrderItemRedeemStatusEnum,
   OrderItemTypeEnum,
-} from '@resources/order/domain/order-item.domain';
+} from '@resources/order-item/domain/order-item.domain';
 import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
-import { GetPaginationOrderItemsResponse } from './dto/get-order-item';
+import {
+  GetByOrderItemIdResponse,
+  GetPaginationOrderItemsResponse,
+} from './dto/get-order-item';
+import { isUUID } from 'class-validator';
+import { ErrorApiResponse } from 'src/common/core-api-response';
 
 @Controller({ path: OrderItemPath.Base, version: '1' })
 export class OrderItemController {
@@ -17,17 +22,17 @@ export class OrderItemController {
 
   // GET
   // Pagination voucher
-  // @ApiQuery({
-  //   name: OrderItemPath.SortQuery,
-  //   description:
-  //     'Query for sorting order-item. Can pass as many, included, field as possible',
-  //   required: false,
-  //   example: [
-  //     '?sort="fullname:asc", "?sort="createdAt:desc,expired:asc","?sort="fullname:desc,code:asc,createdAt:asc"',
-  //   ],
-  //   enum: ['fullname', 'code', 'createdAt', 'expired'],
-  //   type: String,
-  // })
+  @ApiQuery({
+    name: OrderItemPath.SortQuery,
+    description:
+      'Query for sorting order-item. Can pass as many, included, field as possible',
+    required: false,
+    example: [
+      '?sort="fullname:asc", "?sort="createdAt:desc,expired:asc","?sort="fullname:desc,code:asc,createdAt:asc"',
+    ],
+    enum: ['fullname', 'code', 'createdAt', 'expired'],
+    type: String,
+  })
   @ApiQuery({
     name: OrderItemPath.CategoryQuery,
     description: 'Category name of the voucher to filter by.',
@@ -74,7 +79,7 @@ export class OrderItemController {
   })
   @Get()
   async getPaginationOrderItems(
-    // @Query(OrderItemPath.SortQuery) sortOption: string,
+    @Query(OrderItemPath.SortQuery) sortOption: string,
     @Query(OrderItemPath.CategoryQuery) category: VoucherCategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: OrderItemDomain['id'],
     @Query(OrderItemPath.StatusQuery) status: OrderItemRedeemStatusEnum,
@@ -83,7 +88,7 @@ export class OrderItemController {
     const orderItemList = await this.orderItemService.getPagination({
       cursor,
       category,
-      // sortOption,
+      sortOption,
       status,
       type,
     });
@@ -92,4 +97,21 @@ export class OrderItemController {
   }
 
   async getBySearchContent() {}
+
+  @ApiOkResponse({
+    type: () => GetByOrderItemIdResponse,
+  })
+  @Get(OrderItemPath.GetById)
+  async getById(
+    @Param(OrderItemPath.OrderItemIdParm) itemId: OrderItemDomain['id'],
+  ): Promise<GetByOrderItemIdResponse> {
+    if (!itemId || !isUUID(itemId))
+      throw ErrorApiResponse.badRequest(
+        'Provided parameter for order-item id is invaid.',
+      );
+
+    const orderItem = await this.orderItemService.findById(itemId);
+
+    return GetByOrderItemIdResponse.success(orderItem);
+  }
 }

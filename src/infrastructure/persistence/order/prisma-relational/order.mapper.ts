@@ -35,11 +35,7 @@ export class OrderMapper {
   public static toDomain(
     orderAndTransactionEntity: AllOrderInformation,
   ): OrderDomain {
-    if (
-      !orderAndTransactionEntity ||
-      Object.keys(orderAndTransactionEntity).length === 0
-    )
-      return null;
+    if (ObjectHelper.isObjectEmpty(orderAndTransactionEntity)) return null;
     // EXTRACT DATA
     const {
       Transaction,
@@ -60,7 +56,7 @@ export class OrderMapper {
         fullname: account.fullname,
         phone: account.phone,
         verifiedAt: account.verifiedAt,
-        role: RoleEnum[account.role.toUpperCase()],
+        role: AccountMapper.toRoleDomain(account.role),
       };
     }
 

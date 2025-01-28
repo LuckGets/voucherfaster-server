@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { Expose } from 'class-transformer';
-import { OrderItemDomain } from './order-item.domain';
+import { OrderItemDomain } from '../../order-item/domain/order-item.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { AccountDomain } from '@resources/account/domain/account.domain';
 

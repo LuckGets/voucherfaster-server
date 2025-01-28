@@ -15,6 +15,7 @@ import {
 import { PackageVoucherPath } from 'src/config/api-path';
 import {
   CreatePackageVoucherDto,
+  createPackageVoucherDtoSchemaDocument,
   CreatePackageVoucherResponse,
   PACKAGE_FILE_FIELD,
 } from './dto/create-package.dto';
@@ -59,10 +60,15 @@ import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { CompactService } from 'src/common/service/compact.service';
+import { isUUID } from 'class-validator';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
-  constructor(private packageVoucherService: PackageVoucherService) {}
+  constructor(
+    private packageVoucherService: PackageVoucherService,
+    private compactService: CompactService,
+  ) {}
 
   // -------------------------------------------------------------------- //
   // ------------------------- PACKAGE PART ----------------------------- //
@@ -70,6 +76,7 @@ export class PackageVoucherController {
 
   @ApiBearerAuth()
   @ApiConsumes('multipart/formdata')
+  @ApiBody(createPackageVoucherDtoSchemaDocument)
   @ApiCreatedResponse({
     type: () => CreatePackageVoucherResponse,
   })
@@ -115,7 +122,7 @@ export class PackageVoucherController {
     name: PackageVoucherPath.GetPackageSellDateQuery,
     description: `Sell date of the package voucher. If not provided, default will be ${PackageSellDateQueryEnum.NOW}.`,
     required: false,
-    enumName: 'sellDate',
+    enumName: 'PackageSellDateQueryEnum',
     enum: [
       PackageSellDateQueryEnum.ALL,
       PackageSellDateQueryEnum.EXPIRED,
@@ -128,8 +135,12 @@ export class PackageVoucherController {
     name: PackageVoucherPath.GetPackageStatusQuery,
     description: `Status of the voucher. If not provided, default will be ${PackageStatusQueryEnum.ACTIVE}`,
     required: false,
-    enumName: 'status',
-    enum: [PackageStatusQueryEnum.ACTIVE, PackageStatusQueryEnum.DELETED],
+    enumName: 'PackageStatusQueryEnum',
+    enum: [
+      PackageStatusQueryEnum.ALL,
+      PackageStatusQueryEnum.ACTIVE,
+      PackageStatusQueryEnum.INACTIVE,
+    ],
     default: PackageStatusQueryEnum.ACTIVE,
     type: String,
   })
@@ -151,6 +162,13 @@ export class PackageVoucherController {
     @Query(PackageVoucherPath.GetPackageSellDateQuery)
     sellDate: PackageSellDateQueryEnum,
   ): Promise<GetPaginationPackageVoucherResponse> {
+    if (cursor) {
+      cursor = this.compactService.compactBase64toUUID(cursor);
+
+      if (!isUUID(cursor))
+        throw ErrorApiResponse.badRequest('Invalid cursor data type.');
+    }
+
     const packageVoucherQueryList =
       await this.packageVoucherService.getAllPackageVoucher({
         cursor,
@@ -158,7 +176,18 @@ export class PackageVoucherController {
         status,
         sellDate,
       });
-    return GetPaginationPackageVoucherResponse.success(packageVoucherQueryList);
+
+    const nextPackageCursor =
+      packageVoucherQueryList.length > 0
+        ? this.compactService.compactUUIDtoBase64(
+            packageVoucherQueryList[packageVoucherQueryList.length - 1].id,
+          )
+        : null;
+
+    return GetPaginationPackageVoucherResponse.success(
+      packageVoucherQueryList,
+      nextPackageCursor,
+    );
   }
 
   @ApiParam({ name: PackageVoucherPath.PackageParamId })
@@ -170,7 +199,6 @@ export class PackageVoucherController {
   ): Promise<GetPackageVoucherByIdResponse> {
     const packageVoucher =
       await this.packageVoucherService.getPackageVoucherById(packageId);
-    console.log(packageVoucher);
     return GetPackageVoucherByIdResponse.success(packageVoucher);
   }
 

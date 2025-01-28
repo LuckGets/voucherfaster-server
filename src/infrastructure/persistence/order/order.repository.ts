@@ -2,11 +2,11 @@ import { AccountDomain } from '@resources/account/domain/account.domain';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { CreateOrderDto } from '@resources/order/dto/create-order.dto';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
+import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/usable-day.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 
 export type CreateOrderVoucherIdList = {

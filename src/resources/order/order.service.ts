@@ -14,11 +14,11 @@ import { AccountDomain } from '@resources/account/domain/account.domain';
 import { VoucherService } from '@resources/voucher/voucher.service';
 import { PackageVoucherService } from '@resources/package/package.service';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
+import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { UUIDService } from '@utils/services/uuid.service';
-import { OrderItemDomain } from './domain/order-item.domain';
+import { OrderItemDomain } from '../order-item/domain/order-item.domain';
 import { UsableDaysService } from '@resources/usable-days/usable-days.service';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -101,11 +101,9 @@ export class OrderService {
       updateStockAmountInfo,
     });
 
-    console.log('create order data package', createOrderData.packageIdList);
-
-    // const order =
-    //   await this.orderRepository.createOrderAndTransaction(createOrderData);
-    return new OrderDomain();
+    const order =
+      await this.orderRepository.createOrderAndTransaction(createOrderData);
+    return order;
   }
 
   // There are going to have the
@@ -419,7 +417,6 @@ export class OrderService {
               voucherId: curr.voucherId,
               code: null,
             };
-            console.log('CURR in reward', curr);
             acc.rewardList.push(orderItem);
             allOrderItemsId.push(orderItem.id);
           } else {

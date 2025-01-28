@@ -12,7 +12,7 @@ import {
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { Prisma } from '@prisma/client';
-import { AllOrderInformation, OrderMapper } from './order.mapper';
+import { OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import {
@@ -517,9 +517,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     });
     if (!order) return null;
 
-    const account = AccountMapper.toDomain(order.account, RoleEnum.Me);
-
-    return OrderMapper.toDomain({ ...order, account });
+    return OrderMapper.toDomain(order);
   }
 
   async findMany({
@@ -547,32 +545,6 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         ...this.findManyIncludeQuery,
       },
     });
-
-    // const accountList = await this.prismaService.account.findMany({
-    //   where: {
-    //     id: {
-    //       in: ordersList.map((item) => item.accountId),
-    //     },
-    //   },
-    //   select: {
-    //     id: true,
-    //     fullname: true,
-    //     email: true,
-    //     phone: true,
-    //   },
-    // });
-
-    // const accountMap = new Map<string, (typeof accountList)[number]>();
-    // accountList.forEach((account) => accountMap.set(account.id, account));
-
-    // const allOrdersInfo: AllOrderInformation[] = ordersList.map((order) => {
-    //   const matchedAccount = accountMap.get(order.accountId);
-    //   if (!matchedAccount)
-    //     throw ErrorApiResponse.conflictRequest(
-    //       `The order ID: ${order.id} does not have matching account. Please contact developer to fix the issue.`,
-    //     );
-    // return { ...order, account: matchedAccount };
-    // });
 
     return ordersList.map(OrderMapper.toDomain);
   }

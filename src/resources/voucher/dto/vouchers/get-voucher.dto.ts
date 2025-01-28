@@ -13,6 +13,13 @@ export enum PaginationSellDateQueryEnum {
   ALL = 'ALL',
 }
 
+export enum PaginationDiscountQueryEnum {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  NONE = 'NONE',
+  ALL = 'ALL',
+}
+
 export class GetManyVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
@@ -61,8 +68,22 @@ export class GetManyVoucherResponse extends CoreApiResponse {
   })
   public cursor: VoucherDomain['id'];
 
+  constructor(
+    code: number,
+    message: string,
+    link: HATEOSLink,
+    data: VoucherDomain[],
+    cursor: VoucherDomain['id'],
+  ) {
+    super(code, message, link);
+
+    this.data = data;
+    this.cursor = cursor;
+  }
+
   public static success(
     data: VoucherDomain[],
+    cursor: VoucherDomain['id'],
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
@@ -71,18 +92,15 @@ export class GetManyVoucherResponse extends CoreApiResponse {
       message ?? `${HTTPMethod.Get}:: ${VoucherPath.Base} successful.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
-    let cursor = null;
     // generateVoucherReponseHATEOASLink(data.id);
     const response = new GetManyVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
+      cursor,
     );
-    if (data && data.length > 0) {
-      cursor = data[data.length - 1].id;
-    }
-    response.cursor = cursor;
+
     return response;
   }
 }
@@ -141,10 +159,29 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
     ]`,
   })
   public data: NullAble<VoucherDomain[]>;
+  @ApiProperty({
+    type: String,
+    example: `9HrBC1jMQ3KlZw4CssPUeQ`,
+  })
+  public cursor: NullAble<VoucherDomain['id']>;
+
+  constructor(
+    code: number,
+    message: string,
+    link: HATEOSLink,
+    data: GetVoucherBySearchContentResponse['data'],
+    cursor: GetVoucherBySearchContentResponse['cursor'],
+  ) {
+    super(code, message, link);
+
+    this.data = data;
+    this.cursor = cursor;
+  }
 
   public static success(
     data: VoucherDomain[],
     searchContent: string,
+    cursor: VoucherDomain['id'],
     links?: HATEOSLink,
     statusCode?: number,
   ): GetVoucherBySearchContentResponse {
@@ -157,6 +194,7 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
       responseMessage,
       responseLink,
       data,
+      cursor,
     );
   }
 }
@@ -221,6 +259,16 @@ export class GetVoucherByIdResponse extends CoreApiResponse {
     }`,
   })
   public data: NullAble<VoucherDomain>;
+
+  constructor(
+    code: number,
+    message: string,
+    link,
+    data: GetVoucherByIdResponse['data'],
+  ) {
+    super(code, message, link);
+    this.data = data;
+  }
 
   public static success(
     data: VoucherDomain,

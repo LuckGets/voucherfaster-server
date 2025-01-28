@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { IsString, IsUUID } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';

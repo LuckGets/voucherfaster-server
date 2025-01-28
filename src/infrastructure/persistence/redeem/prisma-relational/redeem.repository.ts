@@ -1,4 +1,4 @@
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { PrismaService } from '../../config/prisma.service';
 import { RedeemItemInput, RedeemItemRepository } from '../redeem.repository';
 import { Prisma } from '@prisma/client';

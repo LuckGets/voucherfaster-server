@@ -2,23 +2,25 @@ import {
   PackageVoucher,
   PackageRewardVoucher,
   PackageImg,
-  VoucherCategory,
   Voucher,
   VoucherTag,
-  PackageVoucherTermAndCondTH,
-  PackageVoucherTermAndCondEN,
+  Category,
+  PackageDiscount,
 } from '@prisma/client';
 import {
-  PackageRewardVoucherDomain,
+  PackageDiscountDomain,
+  PackageDiscountStatusEnum,
+} from '@resources/package/domain/package-discount.domain';
+import {
+  PackageStatusEnum,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
-import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
-import { ErrorApiResponse } from 'src/common/core-api-response';
+import { ProductTypeEnum } from 'src/common/types/product.type';
 
 type NestedVoucherTagAndCategory = Voucher & {
   voucherTag?: VoucherTag & {
-    voucherCategory?: Partial<VoucherCategory>;
+    category?: Pick<Category, 'id' | 'name'>;
   };
 };
 
@@ -28,92 +30,91 @@ type AllPackageVoucherEntityInformation = PackageVoucher & {
     voucher?: NestedVoucherTagAndCategory;
   })[];
   PackageImg?: Partial<PackageImg>[];
-  PackageVoucherTermAndCondTH?: Partial<PackageVoucherTermAndCondTH>[];
-  PackageVoucherTermAndCondEN?: Partial<PackageVoucherTermAndCondEN>[];
+  PackageDiscount?: PackageDiscount;
 };
 
 export class PackageVoucherMapper {
   public static toDomain(
     packageVoucherEntity: AllPackageVoucherEntityInformation,
+    options: { allInfo: boolean },
   ): PackageVoucherDomain {
-    if (!packageVoucherEntity) return null;
+    if (ObjectHelper.isObjectEmpty(packageVoucherEntity)) return null;
+
     const {
       voucher,
       PackageImg,
       PackageRewardVoucher,
-      PackageVoucherTermAndCondEN,
-      PackageVoucherTermAndCondTH,
+      PackageDiscount,
+      ...packageInfo
     } = packageVoucherEntity;
-    const packageVoucherDomain = new PackageVoucherDomain();
-    packageVoucherDomain.id = packageVoucherEntity.id;
-    packageVoucherDomain.title = packageVoucherEntity.title;
-    packageVoucherDomain.price = packageVoucherEntity.price.toNumber();
-    packageVoucherDomain.stockAmount = packageVoucherEntity.stockAmount;
-    packageVoucherDomain.quotaVoucherId = packageVoucherEntity.quotaVoucherId;
-    packageVoucherDomain.quotaAmount = packageVoucherEntity.quotaAmount;
-    packageVoucherDomain.usableAt = packageVoucherEntity.usableAt;
-    packageVoucherDomain.usableExpiredAt = packageVoucherEntity.usableExpiredAt;
-    packageVoucherDomain.sellStartedAt = packageVoucherEntity.sellStartedAt;
-    packageVoucherDomain.sellExpiredAt = packageVoucherEntity.sellExpiredAt;
-    packageVoucherDomain.createdAt = packageVoucherEntity.createdAt;
-    packageVoucherDomain.updatedAt = packageVoucherEntity.updatedAt;
-    packageVoucherDomain.deletedAt = packageVoucherEntity.deletedAt;
 
-    if (voucher)
-      packageVoucherDomain.category = voucher.voucherTag?.voucherCategory?.name;
+    if (PackageRewardVoucher.length < 1) {
+      throw new Error(
+        `Package voucher should have at least one reward voucher but package ID: ${packageVoucherEntity.id} does not have any reward voucher.`,
+      );
+    }
+    const categoryName = voucher?.voucherTag?.category?.name;
+
+    let packageDiscount: PackageVoucherDomain['discount'];
+
+    if (!ObjectHelper.isObjectEmpty(PackageDiscount)) {
+      const { id, discountedPrice, createdAt, status, updatedAt } =
+        PackageDiscount;
+      const discountStatus = PackageDiscountStatusEnum[status];
+      packageDiscount = new PackageDiscountDomain({
+        id,
+        discountedPrice: discountedPrice.toNumber(),
+        createdAt,
+        updatedAt,
+        status: discountStatus,
+      });
+    }
+
+    let packageImg: PackageVoucherDomain['images'] = [];
 
     if (PackageImg && PackageImg.length > 0) {
-      packageVoucherDomain.images = PackageImg.map((item) => ({
+      packageImg = PackageImg.map((item) => ({
         id: item.id,
         mainImg: item.mainImg,
         imgPath: item.imgPath,
       }));
     }
 
-    if (PackageRewardVoucher && PackageRewardVoucher.length > 0) {
-      const rewardVoucher: PackageRewardVoucherDomain[] =
-        PackageRewardVoucher.map((item) => ({
-          id: item.id,
-          voucherId: item.rewardVoucherId,
-          amount: item.amount,
-          category: item.voucher?.voucherTag?.voucherCategory?.name,
-        }));
-      packageVoucherDomain.rewardVouchers = rewardVoucher;
-    } else {
-      throw ErrorApiResponse.conflictRequest(
-        `Package voucher should have at least one reward voucher but package ID: ${packageVoucherEntity.id} does not have any reward voucher.`,
-      );
+    const rewardVouchers: PackageVoucherDomain['rewardVouchers'] =
+      PackageRewardVoucher.map((item) => ({
+        id: item.id,
+        voucherId: item.rewardVoucherId,
+        amount: item.amount,
+        category: item.voucher?.voucherTag?.category?.name,
+      }));
+
+    const packageVoucherDomain = new PackageVoucherDomain({
+      ...packageInfo,
+      price: packageInfo.price.toNumber(),
+      status: PackageStatusEnum[packageInfo.status],
+      rewardVouchers,
+      category: categoryName,
+      images: packageImg,
+      discount: packageDiscount,
+    });
+
+    switch (options.allInfo) {
+      case true:
+        ObjectHelper.findEmptyFieldAndThrowError(
+          packageVoucherDomain,
+          PackageVoucherDomain.getRequiredFieldForDetail(),
+          ProductTypeEnum.PACKAGE,
+        );
+        break;
+      case false:
+        ObjectHelper.findEmptyFieldAndThrowError(
+          packageVoucherDomain,
+          PackageVoucherDomain.getRequiredFieldForList(),
+          ProductTypeEnum.PACKAGE,
+        );
+        break;
     }
 
-    if (
-      PackageVoucherTermAndCondTH &&
-      PackageVoucherTermAndCondTH.length > 0 &&
-      PackageVoucherTermAndCondEN &&
-      PackageVoucherTermAndCondEN.length > 0
-    ) {
-      packageVoucherDomain.termAndCond = {
-        en: [],
-        th: [],
-      };
-      packageVoucherDomain.termAndCond.th = PackageVoucherTermAndCondTH.map(
-        (item) => ({
-          id: item.id,
-          description: item.description,
-        }),
-      );
-      packageVoucherDomain.termAndCond.en = PackageVoucherTermAndCondEN.map(
-        (item) => ({
-          id: item.id,
-          description: item.description,
-        }),
-      );
-    }
-
-    ObjectHelper.findEmptyFieldAndThrowError(
-      packageVoucherDomain,
-      PackageVoucherDomain.getRequiredFieldForList(),
-      'Package',
-    );
     return packageVoucherDomain;
   }
 }

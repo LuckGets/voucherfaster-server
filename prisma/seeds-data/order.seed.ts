@@ -1,22 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { v7 as uuidv7 } from 'uuid';
 import { accounts } from './account.seed';
-import { voucherPromotions, vouchers } from './voucher.seed';
+import { vouchers } from './voucher.seed';
 import { packageVoucherId } from './package.seed';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
-
-export const usableDaysAfterPurchased: Prisma.UsableDaysAfterPurchasedCreateManyInput[] =
-  [
-    {
-      id: uuidv7(),
-      usableDays: 3,
-    },
-    {
-      id: uuidv7(),
-      usableDays: 0,
-      deletedAt: new Date(),
-    },
-  ];
+import { OrderItemDomain } from '../../src/resources/order-item/domain/order-item.domain';
 
 export const orderIDArr = [
   '01948342-277a-77ae-bd3a-194f5752b687',
@@ -70,31 +57,26 @@ export const orders: Prisma.OrderCreateManyInput[] = [
   {
     accountId: ordersMapping.firstOrder.accountId,
     totalPrice: ordersMapping.firstOrder.totalPrice,
-    usableDaysAfterPurchasedId: usableDaysAfterPurchased[1].id,
     id: ordersMapping.firstOrder.id,
   },
   {
     accountId: ordersMapping.secondOrder.accountId,
     totalPrice: ordersMapping.secondOrder.totalPrice,
-    usableDaysAfterPurchasedId: usableDaysAfterPurchased[1].id,
     id: ordersMapping.secondOrder.id,
   },
   {
     accountId: ordersMapping.thirdOrder.accountId,
     totalPrice: ordersMapping.thirdOrder.totalPrice,
-    usableDaysAfterPurchasedId: usableDaysAfterPurchased[1].id,
     id: ordersMapping.thirdOrder.id,
   },
   {
     accountId: ordersMapping.fourthOrder.accountId,
     totalPrice: ordersMapping.fourthOrder.totalPrice,
-    usableDaysAfterPurchasedId: usableDaysAfterPurchased[1].id,
     id: ordersMapping.fourthOrder.id,
   },
   {
     accountId: ordersMapping.fifthOrder.accountId,
     totalPrice: ordersMapping.fifthOrder.totalPrice,
-    usableDaysAfterPurchasedId: usableDaysAfterPurchased[1].id,
     id: ordersMapping.fifthOrder.id,
   },
 ];
@@ -105,72 +87,81 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCA',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[0],
+    countNumber: 1,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[1],
     code: 'AB2BCB',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[1],
+    countNumber: 1,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[2],
     code: 'AB2BCC',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[1],
+    countNumber: 2,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[3],
     code: 'AB2BCD',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[2],
+    countNumber: 1,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[4],
     code: 'AB2BCE',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[3],
+    countNumber: 1,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[5],
     code: 'AB2BCF',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[3],
+    countNumber: 2,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[6],
     code: 'AB2BCG',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[3],
+    countNumber: 3,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[7],
     code: 'AB2BCH',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[4],
+    countNumber: 1,
+    usableAt: '',
+    usableExpiredAt: '',
   },
   {
     id: orderItemIDArr[8],
     code: 'AB2BCI',
     qrcodeImgPath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[4],
-  },
-];
-
-export const orderItemsPromotion: Prisma.OrderItemPromotionCreateManyInput[] = [
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[3],
-    voucherPromotionId: voucherPromotions[0].id,
-  },
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[7],
-    voucherPromotionId: voucherPromotions[1].id,
-  },
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[8],
-    voucherPromotionId: voucherPromotions[0].id,
+    countNumber: 2,
+    usableAt: '',
+    usableExpiredAt: '',
   },
 ];
 

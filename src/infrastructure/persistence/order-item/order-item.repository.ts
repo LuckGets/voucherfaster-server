@@ -3,7 +3,7 @@ import {
   OrderItemDomain,
   OrderItemRedeemStatusEnum,
   OrderItemTypeEnum,
-} from '@resources/order/domain/order-item.domain';
+} from '@resources/order-item/domain/order-item.domain';
 import { NullAble } from '@utils/types/common.type';
 import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { ISortOption } from 'src/common/types/pagination.type';

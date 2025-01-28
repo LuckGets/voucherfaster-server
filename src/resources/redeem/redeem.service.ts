@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OrderItemService } from '@resources/order-item/order-item.service';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { OwnerService } from '@resources/owner/owner.service';
 import { RedeemItemDto } from './dto/redeem-item.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';

@@ -7,7 +7,7 @@ import { AuthPath } from 'src/config/api-path';
 import { AccountDomain } from '@resources/account/domain/account.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
+import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import { IsNumber, IsPositive, IsUUID, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';

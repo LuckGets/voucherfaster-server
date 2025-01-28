@@ -1,14 +1,13 @@
 import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
-import { error } from 'console';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { ProductTypeEnum } from './types/product.type';
+import { Injectable } from '@nestjs/common';
+import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
+import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 
-export type ProductDomain =
-  | VoucherDomain
-  | VoucherPromotionDomain
-  | PackageVoucherDomain;
+export type ProductDomain = VoucherDomain | PackageVoucherDomain;
 export interface IDateDataToCheck {
   usableAt?: Date;
   usableExpiredAt?: Date;
@@ -18,19 +17,21 @@ export interface IDateDataToCheck {
 
 export interface IUpdateDataToCheck {
   title?: VoucherDomain['title'] | PackageVoucherDomain['title'];
-  name?: VoucherPromotionDomain['name'];
   description?: VoucherDomain['description'];
   price?: VoucherDomain['price'] | PackageVoucherDomain['price'];
-  promotionPrice?: VoucherPromotionDomain['promotionPrice'];
+  discountedPrice?:
+    | VoucherDiscountDomain['discountedPrice']
+    | PackageDiscountDomain['discountedPrice'];
   stockAmount?: number;
-  status?: VoucherDomain['status'];
+  status?: VoucherDomain['status'] | PackageVoucherDomain['status'];
 }
 
+@Injectable()
 export class ProductDomainHelper {
-  public static checkUsableAndSellTime(
+  public checkUsableAndSellTime(
     data: IDateDataToCheck,
     productDomain: ProductDomain,
-    productType: string,
+    productType: ProductTypeEnum,
   ): void {
     // If the request data want to change the promotion start selling Date
     // should check with the existing promotion date first.
@@ -126,67 +127,67 @@ export class ProductDomainHelper {
     }
   }
 
-  public static checkUpdateData(
+  public checkUpdateData(
     data: IUpdateDataToCheck,
     product: ProductDomain,
-    productType: string,
+    productType: ProductTypeEnum,
   ) {
-    if (ObjectHelper.isObjectEmpty(data))
-      throw ErrorApiResponse.badRequest(
-        `There is no any update data in this request.`,
-      );
+    if (ObjectHelper.isObjectEmpty(data)) return;
 
-    if (data.title && product['title'] && data.title === product['title']) {
+    if (data.status && product.status && data.status === product.status) {
       throw ErrorApiResponse.conflictRequest(
-        `The updated title: ${data.title} is the same as existed ${productType} title: ${product['title']}.`,
-      );
-    }
-
-    if (data.name && product['name'] && data.name === product['name']) {
-      throw ErrorApiResponse.conflictRequest(
-        `The updated name: ${data.name} is the same as existed ${productType} name: ${product['name']}.`,
+        `The updated status: ${data.status} is the same as existed ${productType} status: ${product.status}.`,
       );
     }
 
     if (
-      data.description &&
-      product['description'] &&
-      data.description === product['description']
+      (data.discountedPrice && data.discountedPrice === product.price) ||
+      data.discountedPrice > product.price
     ) {
       throw ErrorApiResponse.conflictRequest(
-        `The updated description: ${data.description} is the same as existed ${productType} description : ${product['description']}.`,
+        `The updated discounted price: ${data.discountedPrice} should not be equal or greater than ${productType} price: ${product.price}.`,
       );
     }
 
-    if (data.price && product['price'] && data.price === product['price']) {
-      throw ErrorApiResponse.conflictRequest(
-        `The updated price: ${data.price} is the same as existed ${productType} price: ${product['price']}.`,
-      );
-    }
+    // if (data.title && product.title && data.title === product.title) {
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `The updated title: ${data.title} is the same as existed ${productType} title: ${product.title}.`,
+    //   );
+    // }
 
-    if (
-      data.promotionPrice &&
-      product['promotionPrice'] &&
-      data.promotionPrice === product['promotionPrice']
-    ) {
-      throw ErrorApiResponse.conflictRequest(
-        `The updated promotion price: ${data.promotionPrice} is the same as existed ${productType} promotion price: ${product['promotionPrice']}.`,
-      );
-    }
+    // if (
+    //   data.description &&
+    //   product.description &&
+    //   data.description === product.description
+    // ) {
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `The updated description: ${data.description} is the same as existed ${productType} description : ${product.description}.`,
+    //   );
+    // }
 
-    if (
-      data.stockAmount &&
-      product['stockAmount'] &&
-      data.stockAmount === product['stockAmount']
-    )
-      throw ErrorApiResponse.conflictRequest(
-        `The updated stock amount: ${data.stockAmount} is the same as existed ${productType} stock amount: ${product['stockAmount']}.`,
-      );
+    // if (data.price && product.price && data.price === product.price) {
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `The updated price: ${data.price} is the same as existed ${productType} price: ${product.price}.`,
+    //   );
+    // }
 
-    if (data.status && product['status'] && data.status == product['status']) {
-      throw ErrorApiResponse.conflictRequest(
-        `The updated status: ${data.stockAmount} is the same as existed ${productType} status: ${product['status']}.`,
-      );
-    }
+    // if (
+    //   data.discountedPrice &&
+    //   product.discount.discountedPrice &&
+    //   data.discountedPrice === product.discount.discountedPrice
+    // ) {
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `The updated promotion price: ${data.discountedPrice} is the same as existed ${productType} promotion price: ${product.discount.discountedPrice}.`,
+    //   );
+    // }
+
+    // if (
+    //   data.stockAmount &&
+    //   product.stockAmount &&
+    //   data.stockAmount === product.stockAmount
+    // )
+    //   throw ErrorApiResponse.conflictRequest(
+    //     `The updated stock amount: ${data.stockAmount} is the same as existed ${productType} stock amount: ${product.stockAmount}.`,
+    //   );
   }
 }

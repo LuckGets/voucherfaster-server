@@ -15,7 +15,7 @@ import {
   OrderItemDetailForMail,
 } from '@application/mail/mail.service';
 import { MailerService } from '@application/mailer/mailer.service';
-import { OrderItemDomain } from '../domain/order-item.domain';
+import { OrderItemDomain } from '../../order-item/domain/order-item.domain';
 import { OwnerService } from '@resources/owner/owner.service';
 
 @Injectable()

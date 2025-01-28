@@ -1,172 +1,95 @@
 import {
+  Category,
   Voucher,
-  VoucherCategory,
+  VoucherDiscount,
   VoucherImg,
-  VoucherPromotion,
   VoucherTag,
-  VoucherTermAndCondEN,
-  VoucherTermAndCondTh,
 } from '@prisma/client';
-import { VoucherPromotionDomain } from '@resources/voucher/domain/voucher-promotion.domain';
 import {
-  VoucherCategoryDomain,
+  VoucherDiscountDomain,
+  VoucherDiscountStatusEnum,
+} from '@resources/voucher/domain/voucher-discount.domain';
+import {
   VoucherDomain,
   VoucherStatusEnum,
-  VoucherTagDomain,
-  VoucherTermAndCondDomain,
 } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
-import { plainToInstance } from 'class-transformer';
+import { ProductTypeEnum } from 'src/common/types/product.type';
 
 type AllVoucherInformation = Voucher & {
-  VoucherTermAndCondEN?: Partial<VoucherTermAndCondEN>[];
-  VoucherTermAndCondTh?: Partial<VoucherTermAndCondTh>[];
-  VoucherImg?: Partial<VoucherImg>[];
-  VoucherPromotion?: Partial<VoucherPromotion>[];
+  VoucherImg?: Pick<VoucherImg, 'id' | 'imgPath' | 'mainImg'>[];
+  VoucherDiscount?: Partial<VoucherDiscount>;
   voucherTag?: Partial<VoucherTag> & {
-    voucherCategory?: Partial<VoucherCategory>;
+    category?: Partial<Category>;
   };
 };
 
-type VoucherCategoryInformation = VoucherCategory & {
-  VoucherTags?: Pick<
-    VoucherTagDomain,
-    'id' | 'name' | 'categoryId' | 'createdAt' | 'updatedAt'
-  >[];
-};
-
-// type VoucherPromotionInformation = VoucherPromotion
-
 export class VoucherMapper {
+  /**
+   * Converts a voucher entity from the database to a domain object.
+   *
+   * @param voucherEntity - The voucher entity containing all related information.
+   * @param options - Additional options for conversion, such as whether to include all information.
+   * @returns A VoucherDomain object or null if the input is empty.
+   */
   public static toDomain(
     voucherEntity: AllVoucherInformation,
     options: { allInfo: boolean },
   ): VoucherDomain {
-    const voucherDomain = new VoucherDomain();
-
     if (ObjectHelper.isObjectEmpty(voucherEntity)) return null;
-    voucherDomain.id = voucherEntity.id;
-    voucherDomain.stockAmount = voucherEntity.stockAmount;
-    voucherDomain.description = voucherEntity.description;
-    voucherDomain.price = voucherEntity.price.toNumber();
-    voucherDomain.usableAt = voucherEntity.usableAt;
-    voucherDomain.usableExpiredAt = voucherEntity.usableExpiredAt;
-    voucherDomain.sellStartedAt = voucherEntity.sellStartedAt;
-    voucherDomain.sellExpiredAt = voucherEntity.sellExpiredAt;
-    voucherDomain.title = voucherEntity.title;
-    voucherDomain.usableExpiredAt = voucherEntity.usableExpiredAt;
-    voucherDomain.status = VoucherStatusEnum[voucherEntity.status];
 
-    voucherDomain.tag = voucherEntity.voucherTag?.name;
-    voucherDomain.category = voucherEntity.voucherTag?.voucherCategory?.name;
+    // Destructure necessary properties from the voucher entity
+    const {
+      VoucherDiscount,
+      VoucherImg,
+      voucherTag,
+      status,
+      price,
+      ...voucherInfo
+    } = voucherEntity;
 
-    voucherDomain.img = voucherEntity.VoucherImg?.map((item) => {
-      const img: VoucherDomain['img'][number] = { ...item };
-      return img;
+    // Extract tag and category names
+    const tagName = voucherTag?.name;
+    const categoryName = voucherTag?.category?.name;
+
+    // Convert status to VoucherStatusEnum
+    const voucherStatus = VoucherStatusEnum[status];
+
+    // Create a VoucherDiscountDomain object
+    const voucherDiscount = new VoucherDiscountDomain({
+      id: VoucherDiscount?.id,
+      discountedPrice: VoucherDiscount?.discountedPrice.toNumber(),
+      createdAt: VoucherDiscount?.createdAt,
+      updatedAt: VoucherDiscount?.updatedAt,
+      status: VoucherDiscountStatusEnum[VoucherDiscount?.status],
     });
-    if (
-      voucherEntity.VoucherTermAndCondEN &&
-      voucherEntity.VoucherTermAndCondTh
-    ) {
-      voucherDomain.termAndCond = {
-        th: voucherEntity.VoucherTermAndCondTh?.map((item) => {
-          const termAndCond = new VoucherTermAndCondDomain();
-          termAndCond.id = item.id;
-          termAndCond.description = item.description;
-          return termAndCond;
-        }),
-        en: voucherEntity.VoucherTermAndCondEN?.map((item) => {
-          const termAndCond = new VoucherTermAndCondDomain();
-          termAndCond.id = item.id;
-          termAndCond.description = item.description;
-          return termAndCond;
-        }),
-      };
-    }
-    if (
-      voucherEntity.VoucherPromotion &&
-      voucherEntity.VoucherPromotion.length > 0
-    ) {
-      voucherDomain.promotion = voucherEntity.VoucherPromotion?.map(
-        VoucherPromotionMapper.toDomain,
-      );
-    } else {
-      voucherDomain.promotion = [];
-    }
 
+    // Construct the VoucherDomain object
+    const voucherDomain = new VoucherDomain({
+      ...voucherInfo,
+      price: price.toNumber(),
+      status: voucherStatus,
+      tag: tagName,
+      category: categoryName,
+      discount: voucherDiscount,
+      img: VoucherImg,
+    });
+
+    // Check for required fields based on the options provided
     if (options.allInfo) {
       ObjectHelper.findEmptyFieldAndThrowError(
         voucherDomain,
         VoucherDomain.requiredFieldForDetail(),
-        'Voucher',
+        ProductTypeEnum.VOUCHER,
       );
     } else if (!options.allInfo) {
       ObjectHelper.findEmptyFieldAndThrowError(
         voucherDomain,
         VoucherDomain.requiredFieldForList(),
-        'Voucher',
+        ProductTypeEnum.VOUCHER,
       );
     }
+
     return voucherDomain;
-  }
-}
-
-export class VoucherCategoryMapper {
-  public static toDomain(
-    voucherCategoryEntity: VoucherCategoryInformation,
-  ): VoucherCategoryDomain {
-    const voucherCategoryDomain: VoucherCategoryDomain = plainToInstance(
-      VoucherCategoryDomain,
-      voucherCategoryEntity,
-      { excludeExtraneousValues: true },
-    );
-
-    if (voucherCategoryEntity.VoucherTags) {
-      voucherCategoryDomain.voucherTags = [
-        ...voucherCategoryEntity.VoucherTags,
-      ];
-    }
-    return voucherCategoryDomain;
-  }
-}
-
-export class VoucherPromotionMapper {
-  public static toDomain(
-    voucherPromotionEntity: VoucherPromotion,
-  ): VoucherPromotionDomain {
-    if (!voucherPromotionEntity) return null;
-    const voucherPromotionDomain = new VoucherPromotionDomain();
-    voucherPromotionDomain.id = voucherPromotionEntity.id;
-    voucherPromotionDomain.name = voucherPromotionEntity.name;
-    voucherPromotionDomain.stockAmount = voucherPromotionEntity.stockAmount;
-    voucherPromotionDomain.sellStartedAt = voucherPromotionEntity.sellStartedAt;
-    voucherPromotionDomain.sellExpiredAt = voucherPromotionEntity.sellExpiredAt;
-    voucherPromotionDomain.usableAt = voucherPromotionEntity.usableAt;
-    voucherPromotionDomain.usableExpiredAt =
-      voucherPromotionEntity.usableExpiredAt;
-    voucherPromotionDomain.promotionPrice =
-      voucherPromotionEntity.promotionPrice.toNumber();
-    if (voucherPromotionEntity.createdAt && voucherPromotionEntity.updatedAt) {
-      voucherPromotionDomain.createdAt = voucherPromotionEntity.createdAt;
-      voucherPromotionDomain.updatedAt = voucherPromotionEntity.updatedAt;
-    }
-    if (voucherPromotionEntity.deletedAt)
-      voucherPromotionDomain.deletedAt = voucherPromotionEntity.deletedAt;
-    return voucherPromotionDomain;
-  }
-}
-
-export class VoucherTermAndCondMapper {
-  public static toDomain(
-    termAndCondEntity: VoucherTermAndCondEN | VoucherTermAndCondTh,
-  ): VoucherTermAndCondDomain {
-    const termAndCondDomain = new VoucherTermAndCondDomain();
-    termAndCondDomain.id = termAndCondEntity.id;
-    termAndCondDomain.description = termAndCondEntity.description;
-    termAndCondDomain.voucherId = termAndCondEntity.voucherId;
-    termAndCondDomain.createdAt = termAndCondEntity.createdAt;
-    termAndCondDomain.updatedAt = termAndCondEntity.updatedAt;
-    termAndCondDomain.inactiveAt = termAndCondEntity.inactiveAt;
-    return termAndCondDomain;
   }
 }

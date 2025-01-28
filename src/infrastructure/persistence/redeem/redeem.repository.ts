@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 
 export type RedeemItemInput = {
   id: string;

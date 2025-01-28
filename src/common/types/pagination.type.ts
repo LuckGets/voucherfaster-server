@@ -9,7 +9,7 @@ export const defaultPaginationOption = {
 } as const;
 
 export const QUERY_FIELD_NAME = {
-  CURSOR: 'cursor',
+  CURSOR: 'csr',
 } as const;
 
 export const SORT_DIRECTION = {

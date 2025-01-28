@@ -18,7 +18,7 @@ import {
   OrderItemDetailPromotionField,
   OrderItemDetails,
   OrderItemDomain,
-} from '@resources/order/domain/order-item.domain';
+} from '@resources/order-item/domain/order-item.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import {
   AllOrderInformation,
@@ -89,7 +89,8 @@ export class OrderItemMapper {
 
     let redeemOrderItem = RedeemOrderItem;
 
-    if (Array.isArray(RedeemOrderItem)) redeemOrderItem = RedeemOrderItem[0];
+    if (Array.isArray(RedeemOrderItem) && RedeemOrderItem.length > 0)
+      redeemOrderItem = RedeemOrderItem[0];
 
     if (ObjectHelper.isObjectEmpty(redeemOrderItem)) {
       orderItemDomain.redeemedAt = null;
@@ -139,7 +140,7 @@ export class OrderItemVoucherMapper {
       );
 
     // Map all required fields
-    orderItemDetail.id = orderItemVoucher.voucher.id;
+    orderItemDetail.voucherId = orderItemVoucher.voucher.id;
     orderItemDetail.title = orderItemVoucher.voucher.title;
     orderItemDetail.price = orderItemVoucher.voucher.price.toNumber();
     orderItemDetail.usableExpiredAt = orderItemVoucher.voucher.usableExpiredAt;
@@ -185,7 +186,7 @@ export class OrderItemPromotionMapper {
     }
 
     // Map the voucher promotion data to the order item detail
-    orderItemDetail.id = orderItemPromotion.voucherPromotionId;
+    orderItemDetail.voucherId = orderItemPromotion.voucherPromotion?.voucher.id;
     orderItemDetail.title = orderItemPromotion.voucherPromotion?.voucher.title;
     orderItemDetail.price =
       orderItemPromotion.voucherPromotion?.promotionPrice.toNumber();
@@ -252,7 +253,7 @@ export class OrderItemPackageMapper {
 
     const orderItemDetail = new OrderItemDetails();
     // Map the id and package details
-    orderItemDetail.id = orderItemPackage.voucherId;
+    orderItemDetail.voucherId = orderItemPackage.voucherId;
     const packageField: OrderItemDetailPackageField = {
       packageId: orderItemPackage.packageId,
       name: orderItemPackage.package?.title,

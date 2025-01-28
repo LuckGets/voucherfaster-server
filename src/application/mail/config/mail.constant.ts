@@ -1,4 +1,4 @@
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 
 export const VERIFY_EMAIL_CONSTANT = {
   title: "Confirm the email you've registed with Voucher Faster",

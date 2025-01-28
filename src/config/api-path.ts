@@ -37,31 +37,37 @@ export const VoucherPath = {
   AddVoucherImg: ':voucherId/images',
   UpdateVoucherImg: ':voucherId/images/:imageId',
   DeleteVoucherImgById: ':voucherId/images/:imageId',
-  TagQuery: 'tag',
-  CategoryQuery: 'category',
-  StatusQuery: 'status',
-  SellDateQuery: 'sellDate',
+  TagQuery: 't',
+  CategoryQuery: 'c',
+  StatusQuery: 's',
+  SellDateQuery: 'sd',
+  DiscountQuery: 'd',
 } as const;
 
-export const VoucherCategoryPath = {
-  Name: 'categories',
-  Base: '/categories',
-  TagsName: 'tags',
-  CreateTag: ':categoryId/tags',
-  UpdateTag: ':categoryId/tags/:tagId',
+const CATEGORIES_CONST = {
+  NAME: 'categories',
+  PARAM_ID: 'categoryId',
+  TAG_NAME: 'tags',
+  PARAM_TAG_ID: 'tagId',
+};
+
+export const CategoryPath = {
+  Name: `${CATEGORIES_CONST.NAME}`,
+  Base: `/${CATEGORIES_CONST.NAME}`,
+  GetManyTag: `/:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}`,
+  CreateTag: `/:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}`,
+  UpdateTag: `:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}/:${CATEGORIES_CONST.PARAM_TAG_ID}`,
   CategoryQuery: 'category',
 } as const;
 
-export const VoucherPromotionPath = {
-  Name: 'promotions',
-  Base: '/promotions',
-  GetManyPromotion: `/promotions`,
-  PromotionParmId: 'promotionId',
-  PromotionNameQuery: 'name',
-  GetPromotionById: `:${VoucherPath.VoucherIdParm}/promotions/:promotionId`,
-  DeletePromotion: `:${VoucherPath.VoucherIdParm}/promotions/:promotionId`,
-  CreatePromotion: `:${VoucherPath.VoucherIdParm}/promotions`,
-  UpdatePromotion: `:${VoucherPath.VoucherIdParm}/promotions/:promotionId`,
+const VoucherDiscountPathName = 'discount';
+
+export const VoucherDiscountPath = {
+  Name: `${VoucherDiscountPathName}`,
+  Base: `/${VoucherDiscountPathName}`,
+  DeleteDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
+  CreateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}`,
+  UpdateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
 } as const;
 
 export const PackageVoucherPath = {
@@ -98,6 +104,7 @@ export const OrderPath = {
 export const OrderItemPath = {
   Name: 'order-items',
   Base: '/order-items',
+  GetById: '/:itemId',
   GetBySearchContent: '/search/:search',
   OrderItemIdParm: 'itemId',
   SortQuery: 'sort',

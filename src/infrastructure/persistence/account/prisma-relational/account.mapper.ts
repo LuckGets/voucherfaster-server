@@ -3,6 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { Account } from '@prisma/client';
 import {
   AccountProviderEnum,
+  Role,
   RoleEnum,
 } from '@resources/account/types/account.type';
 import { NullAble } from '@utils/types/common.type';
@@ -21,10 +22,13 @@ export class AccountMapper {
       AccountProviderEnum[
         `${accountEntity.accountProvider[0]}${accountEntity.accountProvider.toLowerCase().slice(1)}`
       ];
-    accountDomain.role =
-      RoleEnum[
-        `${accountEntity.role[0]}${accountEntity.role.toLowerCase().slice(1)}`
-      ];
+    accountDomain.role = this.toRoleDomain(accountEntity.role);
     return accountDomain;
+  }
+
+  public static toRoleDomain(accountRoleEntity: Account['role']): Role {
+    return RoleEnum[
+      `${accountRoleEntity[0]}${accountRoleEntity.toLowerCase().slice(1)}`
+    ];
   }
 }

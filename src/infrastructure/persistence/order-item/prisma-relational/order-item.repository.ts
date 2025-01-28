@@ -1,18 +1,23 @@
 import {
+  ORDER_ITEM_SORT_MAP_TO_DB,
   OrderItemDomain,
   OrderItemRedeemStatusEnum,
+  OrderItemSortEnum,
   OrderItemTypeEnum,
-} from '@resources/order/domain/order-item.domain';
+} from '@resources/order-item/domain/order-item.domain';
 import { NullAble } from '@utils/types/common.type';
 import { OrderItemRepository } from '../order-item.repository';
 import { UpdateOrderItemDto } from '@resources/redeem/dto/update.dto';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
+// const { getRedeemAbleOrderItem } = require('@prisma/client/sql');
+import { getRedeemAbleOrderItemRawQuery } from '../../../../utils/prisma/getRedeemAbleOrderItemQuery';
 import { OrderItemAndDetails, OrderItemMapper } from './order-item.mapper';
 import { Inject } from '@nestjs/common';
 import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { ISortOption } from 'src/common/types/pagination.type';
+import { TransactionStatusEnum } from '@resources/transaction/domain/transaction.domain';
 
 export class OrderItemRelationPrismaORMRepository
   implements OrderItemRepository
@@ -120,22 +125,83 @@ export class OrderItemRelationPrismaORMRepository
     },
   };
 
-  private categoryWhereQuery(
-    category: VoucherCategoryDomain['name'],
-  ): Prisma.VoucherWhereInput {
-    if (!category) return {};
-    return {
-      voucherTag: {
-        is: {
-          voucherCategory: {
-            name: {
-              contains: category,
-              mode: 'insensitive',
-            },
-          },
+  private sucessOrderWhereQuery: Prisma.OrderItemWhereInput = {
+    order: {
+      Transaction: {
+        status: {
+          equals: TransactionStatusEnum.SUCCESS,
         },
       },
-    };
+    },
+  };
+
+  private generatedSortQuery(
+    sortOption: ISortOption[],
+  ): Prisma.OrderItemOrderByWithRelationInput {
+    if (!sortOption || sortOption.length === 0) return {};
+
+    return sortOption.reduce<Prisma.OrderItemOrderByWithRelationInput>(
+      (acc, { field, direction }) => {
+        switch (field) {
+          case ORDER_ITEM_SORT_MAP_TO_DB[OrderItemSortEnum.CREATED_AT]:
+            acc = {
+              ...acc,
+              order: {
+                createdAt: direction,
+              },
+            };
+            return acc;
+          case ORDER_ITEM_SORT_MAP_TO_DB[OrderItemSortEnum.EXPIRED_AT]:
+            acc = {
+              ...acc,
+              OrderItemPackage: {
+                package: {
+                  usableExpiredAt: direction,
+                },
+              },
+              OrderItemPromotion: {
+                voucherPromotion: {
+                  usableExpiredAt: direction,
+                },
+              },
+              OrderItemVoucher: {
+                voucher: {
+                  usableExpiredAt: direction,
+                },
+              },
+            };
+            return acc;
+          case ORDER_ITEM_SORT_MAP_TO_DB[OrderItemSortEnum.CODE]:
+            acc = {
+              ...acc,
+              code: direction,
+            };
+            return acc;
+          case ORDER_ITEM_SORT_MAP_TO_DB[OrderItemSortEnum.FULLNAME]:
+            acc = {
+              ...acc,
+              order: {
+                account: {
+                  fullname: direction,
+                },
+              },
+            };
+
+            return acc;
+          case ORDER_ITEM_SORT_MAP_TO_DB[OrderItemSortEnum.EMAIL]:
+            acc = {
+              ...acc,
+              order: {
+                account: {
+                  email: direction,
+                },
+              },
+            };
+            return acc;
+        }
+      },
+      {},
+    );
   }
 
   private async generateFindCategoryWhereQuery(
@@ -192,19 +258,21 @@ export class OrderItemRelationPrismaORMRepository
     };
   }
 
-  private generateFindStatusWhereQuery(
+  private async generateFindStatusWhereQuery(
     status?: OrderItemRedeemStatusEnum,
-  ): Prisma.OrderItemWhereInput {
+  ): Promise<Prisma.OrderItemWhereInput> {
     const currentDate = new Date();
     switch (status) {
       case OrderItemRedeemStatusEnum.REDEEMED:
         return {
+          ...this.sucessOrderWhereQuery,
           RedeemOrderItem: {
             some: {},
           },
         };
       case OrderItemRedeemStatusEnum.EXPIRED:
         return {
+          ...this.sucessOrderWhereQuery,
           OrderItemPackage: {
             package: {
               usableExpiredAt: {
@@ -228,10 +296,25 @@ export class OrderItemRelationPrismaORMRepository
           },
         };
       case OrderItemRedeemStatusEnum.REDEEMABLE:
+        const allRedeemAbleOrderItem: {
+          order_item_id: OrderItemDomain['id'];
+        }[] = await this.prismaService.$queryRawUnsafe(
+          getRedeemAbleOrderItemRawQuery,
+        );
+        console.log('testQuery', allRedeemAbleOrderItem);
         return {
-          RedeemOrderItem: {
-            none: {},
-          },
+          AND: [
+            {
+              RedeemOrderItem: {
+                none: {},
+              },
+            },
+            {
+              id: {
+                in: allRedeemAbleOrderItem.map((item) => item.order_item_id),
+              },
+            },
+          ],
         };
       default:
         return {};
@@ -310,7 +393,7 @@ export class OrderItemRelationPrismaORMRepository
   }): Promise<OrderItemDomain[]> {
     const paginationOption = generatePaginationQueryOption({
       cursor,
-      sortOption: sortQuery,
+      // sortOption: sortQuery,
     });
 
     let categoryQuery: Prisma.OrderItemWhereInput = {};
@@ -318,22 +401,26 @@ export class OrderItemRelationPrismaORMRepository
     if (category)
       categoryQuery = await this.generateFindCategoryWhereQuery(category);
 
-    const allQuery = [
+    const orderBySortQuery = this.generatedSortQuery(sortQuery);
+    const statusQuery = await this.generateFindStatusWhereQuery(status);
+
+    const allWhereQuery = [
       categoryQuery,
-      this.generateFindStatusWhereQuery(status),
+      statusQuery,
       this.generateFindTypeWhereQuery(type),
     ];
 
     const orderItemsList = await this.prismaService.orderItem.findMany({
       ...paginationOption,
+      orderBy: orderBySortQuery,
       where: {
-        AND: allQuery,
+        AND: allWhereQuery,
       },
       include: this.includeQuery,
     });
 
     return orderItemsList.map((item) =>
-      OrderItemMapper.toDomain(item as OrderItemAndDetails, { allInfo: false }),
+      OrderItemMapper.toDomain(item as OrderItemAndDetails, { allInfo: true }),
     );
   }
 

@@ -11,7 +11,7 @@ export class PrismaService
      * Install UTC to timezone
      * Prisma middleware
      */
-    this.$use(utcToTimeZoneMiddleware);
+    // this.$use(utcToTimeZoneMiddleware);
     await this.$connect();
   }
   async onModuleDestroy() {

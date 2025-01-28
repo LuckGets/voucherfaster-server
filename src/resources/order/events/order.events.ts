@@ -1,5 +1,5 @@
 import { AccountDomain } from '@resources/account/domain/account.domain';
-import { OrderItemDomain } from '../domain/order-item.domain';
+import { OrderItemDomain } from '../../order-item/domain/order-item.domain';
 
 export const ORDER_EVENT_CONSTANT = {
   CREATED: 'ORDER_CREATED',

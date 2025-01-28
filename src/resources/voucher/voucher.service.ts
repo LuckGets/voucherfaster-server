@@ -1,26 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { CreateVoucherCategoryDto } from './dto/voucher-category.dto';
 import {
-  CreateVoucherTagDto,
-  UpdateVoucherTagDto,
-} from './dto/voucher-tag.dto';
-import {
-  TermAndCondLangauage,
-  VoucherCategoryDomain,
   VoucherDomain,
-  VoucherDomainCreateInput,
   VoucherImgCreateInput,
   VoucherImgDomain,
   VoucherStatusEnum,
-  VoucherTagDomain,
-  VoucherTermAndCondCreateInput,
 } from './domain/voucher.domain';
 import {
-  VoucherCategoryRepository,
+  CreateVoucherInput,
+  VoucherDiscountRepository,
   VoucherImgRepository,
-  VoucherPromotionRepository,
   VoucherRepository,
-  VoucherTagRepository,
 } from 'src/infrastructure/persistence/voucher/voucher.repository';
 import { UUIDService } from '@utils/services/uuid.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
@@ -29,37 +18,39 @@ import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
-import {
-  TermAndCondUpdateDto,
-  UpdateVoucherDto,
-} from './dto/vouchers/update-voucher.dto';
+import { UpdateVoucherDto } from './dto/vouchers/update-voucher.dto';
 import {
   AddVoucherImgDto,
   UpdateVoucherImgDto,
-  VOUCHER_FILE_FILED,
 } from './dto/voucher-img/voucher-img.dto';
 import {
-  VoucherPromotionCreateInput,
-  VoucherPromotionDomain,
-} from './domain/voucher-promotion.domain';
-import { CreateVoucherPromotionDto } from './dto/voucher-promotion/create-promotion.dto';
-import { UpdateVoucherPromotionDto } from './dto/voucher-promotion/update-promotion.dto';
+  VoucherDiscountCreateInput,
+  VoucherDiscountStatusEnum,
+} from './domain/voucher-discount.domain';
+import { UpdateVoucherDiscountDto } from './dto/voucher-discount/update-discount.dto';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductDomainHelper } from 'src/common/product.helper';
-import { ObjectHelper } from '@utils/services/object.helper';
-import { PaginationSellDateQueryEnum } from './dto/vouchers/get-voucher.dto';
+import {
+  PaginationDiscountQueryEnum,
+  PaginationSellDateQueryEnum,
+} from './dto/vouchers/get-voucher.dto';
+import { ProductTypeEnum } from 'src/common/types/product.type';
+import { CreateVoucherDiscountDto } from './dto/voucher-discount/create-discount.dto';
+import { VoucherTagService } from '@resources/category/tag/voucher-tag.service';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Injectable()
 export class VoucherService {
   constructor(
     private voucherRepository: VoucherRepository,
-    private voucherTagRepository: VoucherTagRepository,
-    private voucherCategoryRepository: VoucherCategoryRepository,
+    private voucherDiscountRepository: VoucherDiscountRepository,
     private voucherImgRepository: VoucherImgRepository,
-    private voucherPromotionRepository: VoucherPromotionRepository,
+    private voucherTagService: VoucherTagService,
     private uuidService: UUIDService,
     private mediaService: MediaService,
+    private productDomainHelper: ProductDomainHelper,
   ) {}
 
   // -------------------------------------------------------------------- //
@@ -80,29 +71,13 @@ export class VoucherService {
     if (!mainImg)
       throw ErrorApiResponse.badRequest('Main image for voucher is required.');
     // Check first if voucher tag exists or no
-    const isTagExists = await this.voucherTagRepository.findById(data.tagId);
+    const isTagExists = await this.voucherTagService.findById(data.tagId);
     if (!isTagExists)
       throw ErrorApiResponse.notFoundRequest(
         'The tag ID provided could not be found on this server.',
       );
     // Extract the term and condition from data
-    const { termAndCondTh, termAndCondEn, promotion, ...restData } = data;
-    if (!ObjectHelper.isObjectEmpty(promotion)) {
-      if (promotion.sellStartedAt < restData.sellStartedAt)
-        throw ErrorApiResponse.badRequest(
-          `Promotion should not sell earlier than voucher.`,
-        );
-
-      if (promotion.sellExpiredAt > restData.sellExpiredAt)
-        throw ErrorApiResponse.badRequest(
-          `Promotion should stop selling before or the same time as the voucher.`,
-        );
-
-      if (promotion.usableAt < restData.usableAt)
-        throw ErrorApiResponse.badRequest(
-          `Promotion should be usable the same time or later than voucher.`,
-        );
-    }
+    const { discountedPrice, ...restData } = data;
 
     // ---------------------------------------------------------
     // ------------------ CREATE VOUCHER PART  ------------------
@@ -131,40 +106,20 @@ export class VoucherService {
     // ------- SECOND PART : SET UP INFORMATION -------
 
     // Set up the voucher information before store in database
-    const voucherData: VoucherDomainCreateInput = {
+    const voucherData: CreateVoucherInput = {
       ...restData,
       id: String(this.uuidService.make()),
       status: VoucherStatusEnum.ACTIVE,
     };
 
-    // Set up the Thai Term and condition before store in database
-    const termAndCondThWithVoucherId: VoucherTermAndCondCreateInput[] =
-      termAndCondTh.map((item) => {
-        return {
-          id: String(this.uuidService.make()),
-          voucherId: voucherData.id,
-          description: item,
-        };
-      });
-
-    // Set up the English Term and condition before store in database
-    const termAndCondEnWithVoucherId: VoucherTermAndCondCreateInput[] =
-      termAndCondEn.map((item) => {
-        return {
-          id: String(this.uuidService.make()),
-          voucherId: voucherData.id,
-          description: item,
-        };
-      });
-
     // If the voucher creating input
     // provided a promotion
-    let promotionData: VoucherPromotionCreateInput;
-    if (promotion && Object.keys(promotion).length > 0) {
-      promotionData = {
-        ...promotion,
+    let voucherDiscountData: VoucherDiscountCreateInput;
+    if (discountedPrice) {
+      voucherDiscountData = {
         id: String(this.uuidService.make()),
         voucherId: voucherData.id,
+        discountedPrice,
       };
     }
     // Set up the image before store in database
@@ -190,10 +145,8 @@ export class VoucherService {
     return this.voucherRepository.createVoucherAndTermAndImgAndPromotionTransaction(
       {
         voucherData,
-        termAndCondThArr: termAndCondThWithVoucherId,
-        termAndCondEnArr: termAndCondEnWithVoucherId,
         image: voucherImgToStore,
-        promotion: promotionData,
+        voucherDiscount: voucherDiscountData,
       },
     );
   }
@@ -203,13 +156,15 @@ export class VoucherService {
     category,
     cursor,
     paginationOption,
+    discount,
     sortOption,
     status,
     sellDate,
   }: {
     tag?: VoucherTagDomain['name'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     paginationOption?: IPaginationOption;
+    discount?: PaginationDiscountQueryEnum;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
     status?: VoucherDomain['status'];
@@ -219,17 +174,13 @@ export class VoucherService {
       this.checkVoucherStatusQuery(status);
     const sellDateQuery: PaginationSellDateQueryEnum =
       this.checkSellDateQuery(sellDate);
+    const discountQuery: PaginationDiscountQueryEnum =
+      this.checkDiscountQuery(discount);
 
     if (cursor) {
       if (!isUUID(cursor, 7))
         throw ErrorApiResponse.conflictRequest(
           `${cursor} is not valid data type for cursor.`,
-        );
-
-      const isVoucherExist = await this.voucherRepository.findById(cursor);
-      if (!isVoucherExist)
-        throw ErrorApiResponse.notFoundRequest(
-          `Voucher ID: ${cursor} does not exist on this server.`,
         );
     }
 
@@ -239,6 +190,7 @@ export class VoucherService {
       cursor,
       paginationOption,
       sortOption,
+      discount: discountQuery,
       status: statusToQuery,
       sellDate: sellDateQuery,
     });
@@ -247,7 +199,8 @@ export class VoucherService {
   public async getVoucherById(
     id: VoucherDomain['id'],
   ): Promise<NullAble<VoucherDomain>> {
-    if (!id) return null;
+    if (!id || !isUUID(id, 7))
+      throw ErrorApiResponse.badRequest('Invalid ID format.');
 
     const voucher = await this.voucherRepository.findById(id);
     if (!voucher)
@@ -266,13 +219,26 @@ export class VoucherService {
 
   public async getSearchedVoucher(
     searchContent: string,
-    { sellDate, status }: { sellDate: string; status: VoucherDomain['status'] },
+    {
+      sellDate,
+      status,
+      cursor,
+    }: {
+      sellDate: string;
+      status: VoucherDomain['status'];
+      cursor: VoucherDomain['id'];
+    },
   ): Promise<NullAble<VoucherDomain[]>> {
+    if (!searchContent) return [];
+
+    if (cursor && !isUUID(cursor, 7))
+      throw ErrorApiResponse.badRequest('Invalid cursor format.');
     const sellDateQuery = this.checkSellDateQuery(sellDate);
     const statusQuery = this.checkVoucherStatusQuery(status);
     return this.voucherRepository.findBySearchContent(searchContent, {
       sellDate: sellDateQuery,
       status: statusQuery,
+      cursor,
     });
   }
 
@@ -301,205 +267,56 @@ export class VoucherService {
     );
   }
 
+  private checkDiscountQuery(discount: string): PaginationDiscountQueryEnum {
+    return EnumCheckerHelper.getEnumValueOrThrow(
+      PaginationDiscountQueryEnum,
+      discount,
+      PaginationDiscountQueryEnum.ALL,
+    );
+  }
+
   /**
-   * Service for updating
-   * existing voucher.
+   * Updates an existing voucher with the provided data.
+   *
+   * @param data UpdateVoucherDto - The updated data for the voucher.
+   * @returns The updated VoucherDomain object.
+   * @throws ErrorApiResponse.notFoundRequest if the voucher or tag is not found.
    */
   public async updateVoucher(data: UpdateVoucherDto): Promise<VoucherDomain> {
     // Find the voucher via id
     const voucher = await this.voucherRepository.findById(data.id);
 
-    // If the voucher does not exist
-    // throw the error.
-    if (!voucher)
+    // If the voucher does not exist, throw an error
+    if (!voucher) {
       throw ErrorApiResponse.notFoundRequest(
         `The voucher ID: ${data.id} could not be found on this server`,
       );
-    ProductDomainHelper.checkUpdateData(data, voucher, 'voucher');
-    ProductDomainHelper.checkUsableAndSellTime(data, voucher, 'voucher');
-
-    if (data.termAndCondTh) {
-      await this.checkVoucherTermAndCondBeforeUpdate(
-        data.termAndCondTh,
-        TermAndCondLangauage.TH,
-      );
     }
 
-    if (data.termAndCondEn) {
-      await this.checkVoucherTermAndCondBeforeUpdate(
-        data.termAndCondEn,
-        TermAndCondLangauage.EN,
-      );
-    }
+    // Validate the update data and check usable and sell time
+    this.productDomainHelper.checkUpdateData(
+      data,
+      voucher,
+      ProductTypeEnum.VOUCHER,
+    );
+    this.productDomainHelper.checkUsableAndSellTime(
+      data,
+      voucher,
+      ProductTypeEnum.VOUCHER,
+    );
 
+    // Validate the existence of the tag ID
     if (data.tagId) {
-      const tagId = await this.voucherTagRepository.findById(data.tagId);
-      if (!tagId)
+      const tagId = await this.voucherTagService.findById(data.tagId);
+      if (!tagId) {
         throw ErrorApiResponse.notFoundRequest(
           `The tag ID: ${data.tagId} could not be found on this server.`,
         );
+      }
     }
 
+    // Update the voucher with the new data
     return this.voucherRepository.update(data);
-  }
-
-  // ------------------------- VOUCHER TERM AND COND PART --------------- //
-  public async checkVoucherTermAndCondBeforeUpdate(
-    data: TermAndCondUpdateDto[],
-    lang: TermAndCondLangauage,
-  ) {
-    const actionMap = new Map<string, TermAndCondUpdateDto>();
-    const allTermAndCondId = [];
-    data.forEach((item) => {
-      if (item.id && actionMap.get(item.id)) {
-        throw ErrorApiResponse.conflictRequest(
-          `Please provide only one action per term and condition ID as ID: ${item.id} is duplicate in request.`,
-        );
-      }
-      actionMap.set(item.id, item);
-      if (item.id) {
-        allTermAndCondId.push(item.id);
-      }
-    });
-    // If there is no id provided,
-    // return
-    if (allTermAndCondId.length < 1) return;
-
-    const termAndCondList =
-      await this.voucherRepository.findManyTermAndConditionWithIds(
-        allTermAndCondId,
-        lang,
-      );
-    if (termAndCondList.length !== allTermAndCondId.length) {
-      throw ErrorApiResponse.conflictRequest(
-        `The term and condition of language: ${lang} ID ${allTermAndCondId.filter((item) => !termAndCondList.map((item) => item.id).includes(item)).join(', ')} could not be found on this server.`,
-      );
-    }
-
-    termAndCondList.forEach((item) => {
-      if (actionMap.get(item.id).inactive && item.inactiveAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The term and condition ID: ${item.id} has already been inactive.`,
-        );
-      }
-
-      if (actionMap.get(item.id).inactive === false) {
-        throw ErrorApiResponse.conflictRequest(
-          `Please provided inactive value as a boolean to set ID: ${item.id} as inactive.`,
-        );
-      }
-    });
-  }
-
-  // -------------------------------------------------------------------- //
-  // ------------------------- VOUCHER TAG PART ------------------------- //
-  // -------------------------------------------------------------------- //
-
-  /**
-   * Service for create voucher tag.
-   *
-   */
-  public async createVoucherTag(
-    data: CreateVoucherTagDto,
-  ): Promise<VoucherTagDomain> {
-    const voucherCategory = await this.voucherCategoryRepository.findById(
-      data.categoryId,
-    );
-    if (!voucherCategory) {
-      throw ErrorApiResponse.notFoundRequest(
-        'The category ID you request could not be found on this server.',
-      );
-    }
-    const createInput: Omit<
-      VoucherTagDomain,
-      'createdAt' | 'updatedAt' | 'deletedAt'
-    > = {
-      id: String(this.uuidService.make()),
-      name: data.name,
-      categoryId: data.categoryId,
-    };
-    return this.voucherTagRepository.create(createInput);
-  }
-
-  public async getPaginationVoucherTag({
-    category,
-    cursor,
-    paginationOption,
-    sortOption,
-  }: {
-    category?: VoucherCategoryDomain['name'];
-    paginationOption?: IPaginationOption;
-    cursor?: VoucherTagDomain['id'];
-    sortOption?: unknown;
-  }) {
-    return this.voucherTagRepository.findMany({
-      category,
-      cursor,
-      paginationOption,
-      sortOption,
-    });
-  }
-
-  public async updateVoucherTag(
-    data: UpdateVoucherTagDto,
-  ): Promise<VoucherTagDomain> {
-    const isVoucherTagExist: VoucherTagDomain =
-      await this.voucherTagRepository.findById(data.tagId);
-    if (!isVoucherTagExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `The tag ID: ${data.tagId} could not be found on this server.`,
-      );
-    const isCategoryExist: VoucherCategoryDomain =
-      await this.voucherCategoryRepository.findById(data.updateCategoryId);
-    if (!isCategoryExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `The voucher category ID: ${data.updateCategoryId} could not be found on this server.`,
-      );
-    const { tagId, ...rest } = data;
-    const input:
-      | Partial<VoucherTagDomain>
-      | (Partial<VoucherTagDomain> & {
-          categoryId: VoucherCategoryDomain['id'];
-        }) = { ...rest };
-    if (rest.updateCategoryId) {
-      input.categoryId = rest.updateCategoryId;
-    }
-    return this.voucherTagRepository.update(tagId, input);
-  }
-
-  // -------------------------------------------------------------------- //
-  // ------------------------- VOUCHER CATEGORY PART -------------------- //
-  // -------------------------------------------------------------------- //
-
-  /**
-   * Create voucher category
-   */
-  public createVoucherCategory(
-    data: CreateVoucherCategoryDto,
-  ): Promise<VoucherCategoryDomain> {
-    const createInput: Omit<
-      VoucherCategoryDomain,
-      'createdAt' | 'updatedAt' | 'deletedAt'
-    > = {
-      id: String(this.uuidService.make()),
-      name: data.name,
-    };
-    return this.voucherCategoryRepository.create(createInput);
-  }
-
-  /**
-   * Service for
-   * finding many
-   * voucher category
-   * via pagination which
-   * can provide
-   * cursor and page
-   * to paginated
-   */
-  public getPaginationVoucherCategory(): Promise<
-    NullAble<VoucherCategoryDomain[]>
-  > {
-    return this.voucherCategoryRepository.findManyWithPagination({});
   }
 
   // -------------------------------------------------------------------- //
@@ -657,11 +474,11 @@ export class VoucherService {
   }
 
   // -------------------------------------------------------------------- //
-  // ------------------------- VOUCHER PROMOTION PART ----------------------------- //
+  // ------------------------- VOUCHER DISCOUNT PART -------------------- //
   // -------------------------------------------------------------------- //
-  async createVoucherPromotion(
-    data: CreateVoucherPromotionDto,
-  ): Promise<VoucherPromotionDomain> {
+  async createVoucherDiscount(
+    data: CreateVoucherDiscountDto,
+  ): Promise<VoucherDomain> {
     const isVoucherExist = await this.voucherRepository.findById(
       data.voucherId,
     );
@@ -669,34 +486,25 @@ export class VoucherService {
       throw ErrorApiResponse.notFoundRequest(
         `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
       );
-    if (isVoucherExist.price < data.promotionPrice) {
+
+    if (isVoucherExist.discount.id)
       throw ErrorApiResponse.conflictRequest(
-        `The promotion price: ${data.promotionPrice} should not be more expensive than the original price: ${isVoucherExist.price}`,
+        `Voucher ID: ${isVoucherExist.id} already has a discount. Discount price: ${isVoucherExist.discount.discountedPrice}. If desired to update the discount information of this voucher, Please request to the update endpoint.`,
       );
-    }
-    data['id'] = this.uuidService.make();
-    return this.voucherPromotionRepository.createPromotion(data);
+
+    this.productDomainHelper.checkUpdateData(
+      data,
+      isVoucherExist,
+      ProductTypeEnum.VOUCHER,
+    );
+
+    data.id = String(this.uuidService.make());
+    return this.voucherDiscountRepository.create(data);
   }
 
-  async getPaginationVoucherPromotion({
-    cursor,
-    name,
-  }: {
-    cursor?: VoucherPromotionDomain['id'];
-    name?: VoucherPromotionDomain['name'];
-  }): Promise<NullAble<VoucherPromotionDomain>[]> {
-    return this.voucherPromotionRepository.findMany({ cursor, name });
-  }
-
-  async getVoucherPromotionById(
-    promotionId: VoucherPromotionDomain['id'],
-  ): Promise<NullAble<VoucherPromotionDomain>> {
-    return this.voucherPromotionRepository.findById(promotionId);
-  }
-
-  async updateVoucherPromotion(
-    data: UpdateVoucherPromotionDto,
-  ): Promise<VoucherPromotionDomain> {
+  async updateVoucherDiscount(
+    data: UpdateVoucherDiscountDto,
+  ): Promise<VoucherDomain> {
     // Finding voucher via ID
     const isVoucherExist = await this.voucherRepository.findById(
       data.voucherId,
@@ -709,67 +517,20 @@ export class VoucherService {
         `Voucher ID: ${isVoucherExist.id} does not exist on this server.`,
       );
 
-    const isVoucherPromotionExist =
-      await this.voucherPromotionRepository.findById(data.promotionId);
-
-    // If promotion ID provided in the request
-    // could not be found on the server.
-    if (!isVoucherPromotionExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `Promotion ID: ${isVoucherPromotionExist.id} does not exist on this server.`,
+    if (!isVoucherExist.discount.id)
+      throw ErrorApiResponse.conflictRequest(
+        `Voucher ID: ${isVoucherExist.id} does not have a discount. Please request to the create endpoint first.`,
       );
 
-    // If the new promotion price is more expensive than original price
-    // it should not be updatable.
-    if (data.promotionPrice) {
-      if (isVoucherExist.price < data.promotionPrice) {
-        throw ErrorApiResponse.conflictRequest(
-          `The promotion price: ${data.promotionPrice} should not be more expensive than the original price: ${isVoucherExist.price}`,
-        );
-      }
-    }
+    if (data.status)
+      EnumCheckerHelper.checkEnumValue(data.status, VoucherDiscountStatusEnum);
 
-    // If the request data want to change the promotion start selling Date
-    // should check with the existing promotion date first.
-    // if greater, than it could not proceed any further.
-    if (data.sellStartedAt) {
-      if (data.sellStartedAt > isVoucherPromotionExist.sellExpiredAt) {
-        throw ErrorApiResponse.conflictRequest(
-          `The updated promotion start-selling date :: ${data.sellStartedAt} should not be greater than the existing stop-selling date: ${isVoucherPromotionExist.sellExpiredAt}`,
-        );
-      }
-    }
-
-    ProductDomainHelper.checkUsableAndSellTime(
-      data,
-      isVoucherPromotionExist,
-      'promotion',
+    this.productDomainHelper.checkUpdateData(
+      { discountedPrice: data.discountedPrice },
+      isVoucherExist,
+      ProductTypeEnum.VOUCHER,
     );
 
-    return this.voucherPromotionRepository.updatePromotion(data);
-  }
-
-  async deleteVoucherPromotion(
-    voucherPromotionId: VoucherPromotionDomain['id'],
-  ): Promise<void> {
-    const isVoucherPromotionExist =
-      await this.voucherPromotionRepository.findById(voucherPromotionId);
-
-    // If promotion ID provided in the request
-    // could not be found on the server.
-    if (!isVoucherPromotionExist)
-      throw ErrorApiResponse.notFoundRequest(
-        `Promotion ID: ${isVoucherPromotionExist.id} does not exist on this server.`,
-      );
-
-    // If promotion ID provided in the request
-    // has already been deleted.
-    if (isVoucherPromotionExist.deletedAt) {
-      throw ErrorApiResponse.conflictRequest(
-        `Promotion ID: ${isVoucherPromotionExist.id} has already been deleted since ${isVoucherPromotionExist.deletedAt.toLocaleString()}`,
-      );
-    }
-    await this.voucherPromotionRepository.deletePromotion(voucherPromotionId);
-    return;
+    return this.voucherDiscountRepository.update(data);
   }
 }

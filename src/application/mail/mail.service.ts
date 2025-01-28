@@ -9,7 +9,7 @@ import {
   MAIL_ORDER_ITEM_CONSTANT,
   VERIFY_EMAIL_CONSTANT,
 } from './config/mail.constant';
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { Transporter } from 'nodemailer';
 import { OwnerDomain } from '@resources/owner/domain/owner.domain';
 import { DateFormatterService } from '@utils/services/date-formatter.service';
@@ -117,7 +117,6 @@ export class MailService {
   ): Promise<void> {
     const { data } = mailData;
     const title = MAIL_ORDER_ITEM_CONSTANT.generateTitle(ownerName, data.code);
-    console.log('data in mail service', data);
     const context = HandleBarContextHelper.orderItem({
       ownerName,
       itemName: data.detail?.title,

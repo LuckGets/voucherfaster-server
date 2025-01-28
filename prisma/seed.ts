@@ -33,10 +33,14 @@ import {
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
-import { CryptoService } from '@utils/services/crypto.service';
 config({ path: '.env.development' });
 
 const prisma = new PrismaClient();
+
+console.log(
+  'Loaded Prisma version: ',
+  require('@prisma/client/package.json').version,
+);
 
 const seedingFunc = async (
   func: Function,

@@ -74,7 +74,7 @@ export class OrderController {
     @Param(OrderPath.OrderIdParam) orderId: OrderDomain['id'],
   ): Promise<GetOrderByIdReponse> {
     const order = await this.orderService.getOrderById(orderId);
-    return CreateOrderResponse.success(order);
+    return GetOrderByIdReponse.success(order);
   }
 
   @ApiQuery({ name: OrderPath.GetOrdersQueryCursor, required: false })

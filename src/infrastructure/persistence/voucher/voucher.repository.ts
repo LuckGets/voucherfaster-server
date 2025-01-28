@@ -1,26 +1,24 @@
 import {
-  VoucherPromotionCreateInput,
-  VoucherPromotionDomain,
-} from '@resources/voucher/domain/voucher-promotion.domain';
+  VoucherDiscountCreateInput,
+  VoucherDiscountDomain,
+} from '@resources/voucher/domain/voucher-discount.domain';
 import {
-  TermAndCondLangauage,
-  VoucherCategoryDomain,
   VoucherDomain,
-  VoucherDomainCreateInput,
   VoucherImgCreateInput,
   VoucherImgDomain,
   VoucherImgUpdateInput,
-  VoucherStatusEnum,
-  VoucherTagDomain,
-  VoucherTermAndCondCreateInput,
-  VoucherTermAndCondDomain,
 } from '@resources/voucher/domain/voucher.domain';
-import { CreateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/create-promotion.dto';
-import { UpdateVoucherPromotionDto } from '@resources/voucher/dto/voucher-promotion/update-promotion.dto';
-import { PaginationSellDateQueryEnum } from '@resources/voucher/dto/vouchers/get-voucher.dto';
+import {
+  PaginationDiscountQueryEnum,
+  PaginationSellDateQueryEnum,
+} from '@resources/voucher/dto/vouchers/get-voucher.dto';
 import { UpdateVoucherDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { CreateVoucherDiscountDto } from '@resources/voucher/dto/voucher-discount/create-discount.dto';
+import { CreateVoucherDto } from '@resources/voucher/dto/vouchers/create-voucher.dto';
 
 export abstract class VoucherRepository {
   /**
@@ -40,16 +38,12 @@ export abstract class VoucherRepository {
    */
   abstract createVoucherAndTermAndImgAndPromotionTransaction({
     voucherData,
-    termAndCondThArr,
-    termAndCondEnArr,
     image,
-    promotion,
+    voucherDiscount,
   }: {
-    voucherData: VoucherDomainCreateInput;
-    termAndCondThArr: VoucherTermAndCondCreateInput[];
-    termAndCondEnArr: VoucherTermAndCondCreateInput[];
+    voucherData: CreateVoucherDto;
     image: VoucherImgCreateInput[];
-    promotion?: VoucherPromotionCreateInput;
+    voucherDiscount?: VoucherDiscountCreateInput;
   }): Promise<VoucherDomain>;
   /**
    *
@@ -74,20 +68,6 @@ export abstract class VoucherRepository {
 
   /**
    *
-   * @param categoryName string
-   * @param tagName string
-   * @returns VoucherAndPackageDateType
-   * Due to voucher grouping into category or room
-   * this service provide a way to search for voucher
-   * via category name or tag name
-   */
-  abstract findByCategory(
-    categoryName: VoucherCategoryDomain['name'],
-    voucherStatus: VoucherStatusEnum,
-    tagName?: VoucherTagDomain['name'],
-  ): Promise<VoucherDomain[]>;
-  /**
-   *
    * @param searchContent string
    * @returns VoucherDomain[] or null
    *
@@ -101,9 +81,11 @@ export abstract class VoucherRepository {
     {
       sellDate,
       status,
+      cursor,
     }: {
       sellDate: PaginationSellDateQueryEnum;
       status: VoucherDomain['status'];
+      cursor: VoucherDomain['id'];
     },
   ): Promise<VoucherDomain[]>;
 
@@ -119,86 +101,19 @@ export abstract class VoucherRepository {
     sortOption,
     status,
     sellDate,
+    discount,
   }: {
     tag?: VoucherTagDomain['name'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherDomain['id'];
+    discount?: PaginationDiscountQueryEnum;
     sortOption?: unknown;
     status?: VoucherDomain['status'];
     sellDate: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]>;
 
-  abstract findManyTermAndConditionWithIds(
-    termAndCondIds: VoucherTermAndCondDomain['id'][],
-    lang: TermAndCondLangauage,
-  ): Promise<VoucherTermAndCondDomain[]>;
-
   abstract update(data: UpdateVoucherDto): Promise<VoucherDomain>;
-}
-
-export abstract class VoucherCategoryRepository {
-  abstract findById(
-    id: VoucherCategoryDomain['id'],
-  ): Promise<NullAble<VoucherCategoryDomain>>;
-  abstract create(
-    data: Omit<VoucherCategoryDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
-  ): Promise<VoucherCategoryDomain>;
-  abstract findManyWithPagination({
-    paginationOption,
-    sortOption,
-  }: {
-    paginationOption?: IPaginationOption;
-    sortOption?: any;
-  }): Promise<VoucherCategoryDomain[]>;
-}
-
-export abstract class VoucherTagRepository {
-  abstract findById(
-    id: VoucherTagDomain['id'],
-  ): Promise<NullAble<VoucherTagDomain>>;
-
-  /**
-   *
-   * @param param
-   * @returns List of Voucher tag
-   *
-   * Service for finding many voucher tag list.
-   *
-   * If none information provided, the returned
-   * voucher tag list
-   * will be sequential
-   */
-  abstract findMany({
-    category,
-    cursor,
-    paginationOption,
-    sortOption,
-  }: {
-    category?: VoucherCategoryDomain['name'] | VoucherCategoryDomain['id'];
-    paginationOption?: IPaginationOption;
-    cursor?: VoucherDomain['id'];
-    sortOption?: unknown;
-  }): Promise<NullAble<VoucherTagDomain[]>>;
-  abstract findManyByCategoryNameAndTagName(
-    categoryName: VoucherCategoryDomain['name'],
-    {
-      tagName,
-      cursor,
-    }: {
-      tagName?: VoucherTagDomain['name'];
-      cursor?: VoucherTagDomain['id'];
-    },
-  ): Promise<NullAble<VoucherTagDomain[]>>;
-  abstract create(
-    data: Omit<VoucherTagDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
-  ): Promise<VoucherTagDomain>;
-  abstract update(
-    tagId: VoucherDomain['id'],
-    payload:
-      | Partial<VoucherTagDomain>
-      | Partial<VoucherTagDomain & { categoryId: VoucherCategoryDomain['id'] }>,
-  ): Promise<VoucherTagDomain>;
 }
 
 export abstract class VoucherImgRepository {
@@ -228,26 +143,10 @@ export abstract class VoucherImgRepository {
   abstract deleteById(id: VoucherImgDomain['id']): Promise<void>;
 }
 
-export abstract class VoucherPromotionRepository {
-  abstract createPromotion(
-    data: CreateVoucherPromotionDto,
-  ): Promise<VoucherPromotionDomain>;
-  abstract findById(
-    id: VoucherPromotionDomain['id'],
-  ): Promise<NullAble<VoucherPromotionDomain>>;
-  abstract findMany({
-    paginationOption,
-    sortOptions,
-    cursor,
-    name,
-  }: {
-    paginationOption?: IPaginationOption;
-    sortOptions?: unknown;
-    cursor?: VoucherPromotionDomain['id'];
-    name?: VoucherPromotionDomain['name'];
-  }): Promise<VoucherPromotionDomain[]>;
-  abstract updatePromotion(
-    data: UpdateVoucherPromotionDto,
-  ): Promise<VoucherPromotionDomain>;
-  abstract deletePromotion(id: VoucherPromotionDomain['id']): Promise<void>;
+export abstract class VoucherDiscountRepository {
+  abstract create(data: CreateVoucherDiscountDto): Promise<VoucherDomain>;
+
+  // abstract update(data: UpdateVoucherDiscountDto): Promise<VoucherDomain>;
+
+  abstract delete(id: VoucherDiscountDomain['id']): Promise<void>;
 }

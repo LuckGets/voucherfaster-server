@@ -13,7 +13,8 @@ export enum PackageSellDateQueryEnum {
 
 export enum PackageStatusQueryEnum {
   ACTIVE = 'ACTIVE',
-  DELETED = 'DELETED',
+  INACTIVE = 'INACTIVE',
+  ALL = 'ALL',
 }
 
 export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
@@ -72,10 +73,23 @@ export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
         }]`,
   })
   public data: PackageVoucherDomain[];
-  public cursor: PackageVoucherDomain['id'];
+  public cursor: string;
+
+  constructor(
+    code: GetPaginationPackageVoucherResponse['HTTPStatusCode'],
+    message: GetPaginationPackageVoucherResponse['message'],
+    link: GetPaginationPackageVoucherResponse['links'],
+    data: GetPaginationPackageVoucherResponse['data'],
+    cursor: GetPaginationPackageVoucherResponse['cursor'],
+  ) {
+    super(code, message, link);
+    this.data = data;
+    this.cursor = cursor;
+  }
 
   public static success(
-    data: PackageVoucherDomain[],
+    data: GetPaginationPackageVoucherResponse['data'],
+    cursor: GetPaginationPackageVoucherResponse['cursor'],
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
@@ -84,18 +98,13 @@ export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    const response = new GetPaginationPackageVoucherResponse(
+    return new GetPaginationPackageVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
+      cursor,
     );
-    if (data.length > 0) {
-      response.cursor = data[data.length - 1].id;
-      return response;
-    }
-    response.cursor = null;
-    return response;
   }
 }
 

@@ -1,4 +1,4 @@
-import { OrderItemDomain } from '@resources/order/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { OwnerDomain } from '@resources/owner/domain/owner.domain';
 import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { DateFormatterService } from '@utils/services/date-formatter.service';

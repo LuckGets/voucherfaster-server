@@ -5,7 +5,7 @@ import {
 } from '../../src/resources/account/types/account.type';
 import { v7 as uuidv7 } from 'uuid';
 
-export const accounts: Prisma.AccountCreateInput[] = [
+export const accounts: Prisma.AccountCreateManyInput[] = [
   {
     id: uuidv7(),
     email: 'johndoe@mail.com',

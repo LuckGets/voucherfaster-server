@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import {
-  packageVoucherTermAndCondENCreateInput,
-  packageVoucherTermAndCondTHCreateInput,
-} from '@resources/package/domain/package-voucher-term-cond.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import {
   PackageImgCreateInput,
   PackageRewardVoucherCreateInput,
-  PackageVoucherCreateInput,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
 import {
@@ -14,21 +11,40 @@ import {
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
 import { UpdatePackageVoucherDto } from '@resources/package/dto/update-package.dto';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
+
+export type PackageVoucherCreateInput = {
+  id: string;
+  description: string;
+  quotaVoucherId: string;
+  quotaAmount: number;
+  stockAmount: number;
+  sellStartedAt: Date;
+  sellExpiredAt: Date;
+  usableAt: Date;
+  usableExpiredAt: Date;
+  price: number;
+  title: string;
+  termAndCondition: string;
+};
+
+export type PackageVoucherDiscountNestedCreateInput = {
+  id: PackageDiscountDomain['id'];
+  discountedPrice: PackageDiscountDomain['discountedPrice'];
+};
 
 @Injectable()
 export abstract class PackageVoucherRepository {
   abstract createPackageVoucher({
     packageVoucherCreateInput,
+    packageDiscountedPrice,
     packageImage,
     packageRewardVoucher,
   }: {
     packageVoucherCreateInput: PackageVoucherCreateInput;
+    packageDiscountedPrice?: PackageVoucherDiscountNestedCreateInput;
     packageImage: PackageImgCreateInput[];
     packageRewardVoucher: PackageRewardVoucherCreateInput[];
-    packageVoucherTermAndCondTH: packageVoucherTermAndCondTHCreateInput[];
-    packageVoucherTermAndCondEN: packageVoucherTermAndCondENCreateInput[];
   }): Promise<PackageVoucherDomain>;
 
   /**
@@ -44,7 +60,7 @@ export abstract class PackageVoucherRepository {
     sellDate,
   }: {
     cursor?: PackageVoucherDomain['id'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     status?: PackageStatusQueryEnum;
     sellDate?: PackageSellDateQueryEnum;
   }): Promise<PackageVoucherDomain[]>;

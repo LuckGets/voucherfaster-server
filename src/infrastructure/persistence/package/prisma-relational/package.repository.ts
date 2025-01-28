@@ -1,13 +1,16 @@
 import { Inject } from '@nestjs/common';
-import { PackageVoucherRepository } from '../package.repository';
-import { PrismaService } from '../../config/prisma.service';
 import {
   PackageVoucherCreateInput,
+  PackageVoucherDiscountNestedCreateInput,
+  PackageVoucherRepository,
+} from '../package.repository';
+import { PrismaService } from '../../config/prisma.service';
+import {
   PackageImgCreateInput,
   PackageRewardVoucherCreateInput,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
-import { PackageVoucher, Prisma } from '@prisma/client';
+import { PackageVoucher, Prisma, VoucherStatus } from '@prisma/client';
 import { PackageVoucherMapper } from './mapper/package.mapper';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { NullAble } from '@utils/types/common.type';
@@ -39,7 +42,7 @@ export class PackageVoucherRelationalPrismaORMRepository
   private voucherCategoryInclude: Prisma.VoucherInclude = {
     voucherTag: {
       include: {
-        voucherCategory: {
+        category: {
           select: { id: true, name: true },
         },
       },
@@ -48,151 +51,29 @@ export class PackageVoucherRelationalPrismaORMRepository
 
   private rewardVoucherIncludeQuery: Prisma.PackageRewardVoucherInclude = {
     voucher: {
-      include: {
-        ...this.voucherCategoryInclude,
-      },
+      include: this.voucherCategoryInclude,
     },
   };
 
   private detailIncludeQuery: Prisma.PackageVoucherInclude = {
     voucher: {
-      include: {
-        ...this.voucherCategoryInclude,
-      },
+      include: this.voucherCategoryInclude,
     },
     PackageImg: true,
     PackageRewardVoucher: {
-      include: {
-        ...this.rewardVoucherIncludeQuery,
-      },
+      include: this.rewardVoucherIncludeQuery,
     },
-    PackageVoucherTermAndCondEN: {
-      select: {
-        id: true,
-        description: true,
-      },
-      where: {
-        inactiveAt: {
-          equals: null,
-        },
-      },
-    },
-    PackageVoucherTermAndCondTH: {
-      select: {
-        id: true,
-        description: true,
-      },
-      where: {
-        inactiveAt: {
-          equals: null,
-        },
-      },
-    },
+    PackageDiscount: true,
   };
 
-  private findManyJoinQuery:
-    | Prisma.PackageVoucherFindManyArgs
-    | Prisma.PackageVoucherFindFirstArgs = {
-    include: {
-      voucher: {
-        include: { ...this.voucherCategoryInclude },
-      },
-      PackageImg: { where: { mainImg: true } },
-      PackageRewardVoucher: { include: { ...this.rewardVoucherIncludeQuery } },
+  private findManyJoinQuery: Prisma.PackageVoucherInclude = {
+    voucher: {
+      include: this.voucherCategoryInclude,
     },
+    PackageImg: { where: { mainImg: true } },
+    PackageRewardVoucher: { include: this.rewardVoucherIncludeQuery },
+    PackageDiscount: true,
   };
-
-  async createPackageVoucher({
-    packageVoucherCreateInput,
-    packageImage,
-    packageRewardVoucher,
-    packageVoucherTermAndCondTH,
-    packageVoucherTermAndCondEN,
-  }: {
-    packageVoucherCreateInput: PackageVoucherCreateInput;
-    packageImage: PackageImgCreateInput[];
-    packageRewardVoucher: PackageRewardVoucherCreateInput[];
-    packageVoucherTermAndCondTH: packageVoucherTermAndCondTHCreateInput[];
-    packageVoucherTermAndCondEN: packageVoucherTermAndCondENCreateInput[];
-  }): Promise<PackageVoucherDomain> {
-    const { price, quotaVoucherId, ...restData } = packageVoucherCreateInput;
-
-    // Process the information
-    const packageVoucherData: Prisma.PackageVoucherCreateInput = {
-      ...restData,
-      price,
-      voucher: { connect: { id: quotaVoucherId } },
-    };
-
-    // transaction for creating all of the package related information
-    const createdPackageVoucher = await this.prismaService.$transaction(
-      async (txUnit) => {
-        const packageVoucher = await txUnit.packageVoucher.create({
-          data: packageVoucherData,
-        });
-
-        await Promise.all([
-          txUnit.packageRewardVoucher.createMany({
-            data: packageRewardVoucher,
-          }),
-          txUnit.packageImg.createMany({
-            data: packageImage,
-          }),
-          txUnit.packageVoucherTermAndCondTH.createMany({
-            data: packageVoucherTermAndCondTH,
-          }),
-          txUnit.packageVoucherTermAndCondEN.createMany({
-            data: packageVoucherTermAndCondEN,
-          }),
-        ]);
-        return txUnit.packageVoucher.findUnique({
-          where: { id: packageVoucher.id },
-          include: { ...this.detailIncludeQuery },
-        });
-      },
-    );
-    return PackageVoucherMapper.toDomain(createdPackageVoucher);
-  }
-
-  async findManyPackageVoucher({
-    cursor,
-    category,
-    status,
-    sellDate,
-  }: {
-    cursor?: PackageVoucherDomain['id'];
-    category?: VoucherCategoryDomain['name'];
-    status?: PackageStatusQueryEnum;
-    sellDate?: PackageSellDateQueryEnum;
-  }): Promise<PackageVoucherDomain[]> {
-    // Grab the pagination query option
-    const paginateQueryOption = generatePaginationQueryOption<
-      PackageVoucherDomain['id']
-    >({ cursor });
-    const categoryWhereQuery: Prisma.PackageVoucherWhereInput =
-      this.generateCategoryWhereQuery(category);
-    // Set the today date for query.
-    const sellDateQuery = this.generateSellDateWhereQuery(sellDate);
-
-    const statusQuery = this.generateStatusWhereQuery(status);
-    // Grab JOIN query
-    const joinQuery = this.findManyJoinQuery;
-    // Query the data in the database.
-    const packageVoucherQueryList =
-      await this.prismaService.packageVoucher.findMany({
-        where: {
-          deletedAt: {
-            equals: null,
-          },
-          ...sellDateQuery,
-          ...categoryWhereQuery,
-          ...statusQuery,
-        },
-        ...paginateQueryOption,
-        ...joinQuery,
-      });
-    return packageVoucherQueryList.map(PackageVoucherMapper.toDomain);
-  }
 
   private generateCategoryWhereQuery(
     category: VoucherCategoryDomain['name'],
@@ -201,7 +82,7 @@ export class PackageVoucherRelationalPrismaORMRepository
       ? {
           voucher: {
             voucherTag: {
-              voucherCategory: {
+              category: {
                 name: {
                   contains: category,
                   mode: 'insensitive',
@@ -252,21 +133,94 @@ export class PackageVoucherRelationalPrismaORMRepository
     switch (status) {
       case PackageStatusQueryEnum.ACTIVE:
         return {
-          deletedAt: {
-            equals: null,
+          status: {
+            equals: VoucherStatus.ACTIVE,
           },
         };
-      case PackageStatusQueryEnum.DELETED:
+      case PackageStatusQueryEnum.INACTIVE:
         return {
-          deletedAt: {
-            not: {
-              equals: null,
-            },
+          status: {
+            equals: VoucherStatus.INACTIVE,
           },
         };
       default:
         return {};
     }
+  }
+
+  async createPackageVoucher({
+    packageVoucherCreateInput,
+    packageDiscount,
+    packageImage,
+    packageRewardVoucher,
+  }: {
+    packageVoucherCreateInput: PackageVoucherCreateInput;
+    packageDiscount: PackageVoucherDiscountNestedCreateInput;
+    packageImage: PackageImgCreateInput[];
+    packageRewardVoucher: PackageRewardVoucherCreateInput[];
+  }): Promise<PackageVoucherDomain> {
+    const { quotaVoucherId, ...restPackageInfo } = packageVoucherCreateInput;
+
+    const createPackageData: Prisma.PackageVoucherCreateInput = {
+      ...restPackageInfo,
+      voucher: { connect: { id: quotaVoucherId } },
+      PackageImg: { createMany: { data: packageImage } },
+      PackageRewardVoucher: { createMany: { data: packageRewardVoucher } },
+    };
+
+    if (!ObjectHelper.isObjectEmpty(packageDiscount))
+      createPackageData.PackageDiscount.create = {
+        id: packageDiscount.id,
+        discountedPrice: packageDiscount.discountedPrice,
+      };
+
+    const createdVoucher = await this.prismaService.$transaction(
+      async (txUnit) => {
+        return txUnit.packageVoucher.create({
+          data: createPackageData,
+          include: this.detailIncludeQuery,
+        });
+      },
+    );
+
+    return PackageVoucherMapper.toDomain(createdVoucher, { allInfo: true });
+  }
+
+  async findManyPackageVoucher({
+    cursor,
+    category,
+    status,
+    sellDate,
+  }: {
+    cursor?: PackageVoucherDomain['id'];
+    category?: VoucherCategoryDomain['name'];
+    status?: PackageStatusQueryEnum;
+    sellDate?: PackageSellDateQueryEnum;
+  }): Promise<PackageVoucherDomain[]> {
+    // Grab the pagination query option
+    const paginateQueryOption = generatePaginationQueryOption<
+      PackageVoucherDomain['id']
+    >({ cursor });
+    const categoryWhereQuery: Prisma.PackageVoucherWhereInput =
+      this.generateCategoryWhereQuery(category);
+    // Set the today date for query.
+    const sellDateQuery = this.generateSellDateWhereQuery(sellDate);
+
+    const statusQuery = this.generateStatusWhereQuery(status);
+
+    const allWhereQuery: Prisma.PackageVoucherWhereInput = {
+      AND: [categoryWhereQuery, sellDateQuery, statusQuery],
+    };
+
+    const packageVoucherQueryList =
+      await this.prismaService.packageVoucher.findMany({
+        where: allWhereQuery,
+        include: this.findManyJoinQuery,
+        ...paginateQueryOption,
+      });
+    return packageVoucherQueryList.map((item) =>
+      PackageVoucherMapper.toDomain(item, { allInfo: false }),
+    );
   }
 
   async findPackageVoucherById(
@@ -276,11 +230,9 @@ export class PackageVoucherRelationalPrismaORMRepository
       where: {
         id,
       },
-      include: {
-        ...this.detailIncludeQuery,
-      },
+      include: this.detailIncludeQuery,
     });
-    return PackageVoucherMapper.toDomain(packageVoucher);
+    return PackageVoucherMapper.toDomain(packageVoucher, { allInfo: true });
   }
 
   async updatePackageVoucher(
@@ -311,73 +263,6 @@ export class PackageVoucherRelationalPrismaORMRepository
       });
     });
     return PackageVoucherMapper.toDomain(updatedPackage);
-  }
-
-  async upsertManyTermAndCond(
-    tx: Prisma.TransactionClient,
-    data: TermAndCondUpdateDto[],
-    packageId: PackageVoucher['id'],
-    lang: 'TH' | 'EN',
-  ): Promise<unknown> {
-    const termAndCondInsertArr: Prisma.PackageVoucherTermAndCondTHCreateManyInput[] =
-      [];
-    const termAndCondUpdateArr: Array<{
-      id: string; // primary key in your table, presumably
-      data: Prisma.PackageVoucherTermAndCondTHUpdateInput;
-    }> = [];
-
-    // Process the data which can also be
-    // the update or insert
-    data.forEach((item) => {
-      if (item.id && !item.description) {
-        const { id, inactive, updatedDescription } = item;
-        const data: Prisma.PackageVoucherTermAndCondTHUpdateInput = { id };
-        if (inactive) {
-          data.inactiveAt = new Date(Date.now());
-        } else if (updatedDescription) {
-          data.description = updatedDescription;
-        }
-        termAndCondUpdateArr.push({ id, data });
-      } else {
-        termAndCondInsertArr.push({
-          description: item.description,
-          packageVoucherId: packageId,
-        });
-      }
-    });
-
-    if (lang === 'TH') {
-      if (termAndCondInsertArr.length > 0) {
-        await tx.packageVoucherTermAndCondTH.createMany({
-          data: termAndCondInsertArr,
-        });
-      }
-      // 1. multiple updates if
-      // there is the data for update
-      if (termAndCondUpdateArr.length > 0) {
-        for (const item of termAndCondUpdateArr) {
-          await tx.packageVoucherTermAndCondTH.update({
-            where: { id: item.id },
-            data: item.data,
-          });
-        }
-      }
-    } else if (lang === 'EN') {
-      if (termAndCondInsertArr.length > 0) {
-        await tx.packageVoucherTermAndCondEN.createMany({
-          data: termAndCondInsertArr,
-        });
-      }
-      if (termAndCondUpdateArr.length > 0) {
-        for (const item of termAndCondUpdateArr) {
-          await tx.packageVoucherTermAndCondEN.update({
-            where: { id: item.id },
-            data: item.data,
-          });
-        }
-      }
-    }
-    return;
   }
 
   async upsertManyRewardVoucher(
@@ -441,13 +326,9 @@ export class PackageVoucherRelationalPrismaORMRepository
   async deletePackageVoucherById(
     id: PackageVoucherDomain['id'],
   ): Promise<void> {
-    const currentDate: Date = new Date(Date.now());
-    // Update the deletedAt column
-    // So the package voucher can be marked as
-    // deleted.
     await this.prismaService.packageVoucher.update({
       where: { id },
-      data: { deletedAt: currentDate },
+      data: { status: VoucherStatus.INACTIVE },
     });
     return;
   }

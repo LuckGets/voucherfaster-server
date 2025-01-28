@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Decimal } from '@prisma/client/runtime/library';
-import { RoleEnum } from '@resources/account/types/account.type';
-import { Expose, Transform } from 'class-transformer';
-import { VoucherPromotionDomain } from './voucher-promotion.domain';
+import { Transform } from 'class-transformer';
+import { VoucherDiscountDomain } from './voucher-discount.domain';
+import { ObjectHelper } from '@utils/services/object.helper';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 export enum VoucherStatusEnum {
   ACTIVE = 'ACTIVE',
@@ -18,9 +20,6 @@ export class VoucherDomain {
   id: string;
   @ApiProperty({ type: String })
   title: string;
-  @Expose({
-    toClassOnly: true,
-  })
   @ApiProperty({ type: () => VoucherStatusEnum })
   status: VoucherStatusEnum;
   @ApiProperty({ type: Number })
@@ -32,15 +31,12 @@ export class VoucherDomain {
   )
   @ApiProperty({ type: () => Number })
   price: number;
-  @ApiProperty({ type: Date })
+  @ApiProperty({ type: () => Date })
   usableAt: Date;
   @ApiProperty({ type: () => Date })
   usableExpiredAt: Date;
-  @ApiProperty({ type: () => Object })
-  termAndCond?: {
-    th: VoucherTermAndCondDomain[];
-    en: VoucherTermAndCondDomain[];
-  };
+  @ApiProperty({ type: () => String })
+  termAndCondition?: string;
   @ApiProperty({ type: () => Date })
   sellStartedAt: Date;
   @ApiProperty({ type: () => Date })
@@ -50,9 +46,64 @@ export class VoucherDomain {
     example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
   })
   img?: Partial<VoucherImgDomain>[];
-  promotion?: Partial<VoucherPromotionDomain>[];
-  category: VoucherCategoryDomain['name'];
+  @ApiProperty({ type: () => VoucherDiscountDomain, nullable: true })
+  discount?: VoucherDiscountDomain;
+  @ApiProperty({ type: () => String })
+  category: CategoryDomain['name'];
+  @ApiProperty({ type: () => String })
   tag: VoucherTagDomain['name'];
+
+  constructor({
+    id,
+    title,
+    status,
+    stockAmount,
+    description,
+    price,
+    usableAt,
+    usableExpiredAt,
+    termAndCondition,
+    sellStartedAt,
+    sellExpiredAt,
+    img,
+    discount,
+    tag,
+    category,
+  }: {
+    id: string;
+    title: string;
+    status: VoucherStatusEnum;
+    stockAmount: number;
+    description: string;
+    price: number;
+    usableAt: Date;
+    usableExpiredAt: Date;
+    termAndCondition: string;
+    sellStartedAt: Date;
+    sellExpiredAt: Date;
+    img: Partial<VoucherImgDomain>[];
+    discount: VoucherDiscountDomain;
+    category: CategoryDomain['name'];
+    tag: VoucherTagDomain['name'];
+  }) {
+    this.id = id;
+    this.title = title;
+    this.status = status;
+    this.stockAmount = stockAmount;
+    this.description = description;
+    this.price = price;
+    this.usableAt = usableAt;
+    this.usableExpiredAt = usableExpiredAt;
+    this.termAndCondition = termAndCondition;
+    this.sellStartedAt = sellStartedAt;
+    this.sellExpiredAt = sellExpiredAt;
+    this.img = [...img];
+    this.discount = ObjectHelper.isObjectEmpty(discount)
+      ? null
+      : { ...discount };
+    this.category = category;
+    this.tag = tag;
+  }
 
   public static requiredFieldForDetail(): Array<keyof VoucherDomain> {
     return [
@@ -64,10 +115,10 @@ export class VoucherDomain {
       'category',
       'tag',
       'price',
-      'promotion',
+      'discount',
       'img',
       'stockAmount',
-      'termAndCond',
+      'termAndCondition',
       'usableExpiredAt',
       'sellExpiredAt',
     ];
@@ -83,7 +134,7 @@ export class VoucherDomain {
       'category',
       'tag',
       'price',
-      'promotion',
+      'discount',
       'img',
       'stockAmount',
       'usableExpiredAt',
@@ -92,111 +143,23 @@ export class VoucherDomain {
   }
 }
 
-export type VoucherDomainCreateInput = Omit<
-  VoucherDomain,
-  'img' | 'tag' | 'category'
-> & {
-  tagId: VoucherTagDomain['id'];
-};
-
-export class VoucherCategoryDomain {
-  @Expose()
-  @ApiProperty({ type: String })
-  id: string;
-  @Expose()
-  @ApiProperty({ type: String })
-  name: string;
-  @Expose({
-    groups: [RoleEnum.Admin],
-  })
-  @ApiProperty({ type: Date })
-  createdAt: Date;
-  @Expose({
-    groups: [RoleEnum.Admin],
-  })
-  @ApiProperty({ type: Date })
-  updatedAt: Date;
-  @Expose({
-    groups: [RoleEnum.Admin],
-  })
-  @ApiProperty({ type: Date, nullable: true })
-  deletedAt?: Date;
-  @Expose()
-  @ApiProperty({ type: () => [VoucherTagDomain], nullable: true })
-  voucherTags?: VoucherTagDomain[];
-}
-
-/**
- * The Domain
- * of voucher tag
- */
-export class VoucherTagDomain {
-  @ApiProperty({ type: String })
-  id: string;
-  @ApiProperty({ type: String })
-  categoryId: string;
-  @ApiProperty({ type: String })
-  name: string;
-  @Expose({
-    groups: [RoleEnum.Admin],
-  })
-  @ApiProperty({ type: Date })
-  createdAt: Date;
-  @Expose({
-    groups: [RoleEnum.Admin],
-  })
-  @ApiProperty({ type: Date })
-  updatedAt: Date;
-  @Expose({
-    groups: [RoleEnum.Admin],
-  })
-  @ApiProperty({ type: Date, nullable: true })
-  deletedAt?: Date;
-}
-
-export enum TermAndCondLangauage {
-  EN = 'EN',
-  TH = 'TH',
-}
-
-/**
- * The Domain
- * of term and condition
- * of one voucher
- */
-export class VoucherTermAndCondDomain {
-  @ApiProperty({ type: String })
-  id: string;
-  @ApiProperty({ type: String })
-  description: string;
-  @ApiProperty({ type: String })
-  voucherId: string;
-  @ApiProperty({ type: Date })
-  createdAt: Date;
-  @ApiProperty({ type: Date })
-  updatedAt: Date;
-  @ApiProperty({ type: Date })
-  inactiveAt?: Date;
-}
-/**
- * The input type
- * for creating voucher term and condition
- */
-export type VoucherTermAndCondCreateInput = Omit<
-  VoucherTermAndCondDomain,
-  'createdAt' | 'updatedAt' | 'inactiveAt'
->;
-
 /**
  * The Voucher Image Domain
  */
 export class VoucherImgDomain {
+  @ApiProperty({ type: () => String })
   id: string;
+  @ApiProperty({ type: () => String })
   imgPath: string;
+  @ApiProperty({ type: () => String })
   voucherId: string;
+  @ApiProperty({ type: () => Boolean })
   mainImg: boolean;
+  @ApiProperty({ type: () => Date })
   createdAt: Date;
+  @ApiProperty({ type: () => Date })
   updatedAt: Date;
+  @ApiProperty({ type: () => Date })
   deletedAt?: Date;
 }
 

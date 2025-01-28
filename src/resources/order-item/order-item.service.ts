@@ -5,7 +5,7 @@ import {
   OrderItemRedeemStatusEnum,
   OrderItemSortEnum,
   OrderItemTypeEnum,
-} from '@resources/order/domain/order-item.domain';
+} from '@resources/order-item/domain/order-item.domain';
 import { OrderItemRepository } from 'src/infrastructure/persistence/order-item/order-item.repository';
 import { UpdateOrderItemDto } from '../redeem/dto/update.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
@@ -54,12 +54,12 @@ export class OrderItemService {
 
     const statusToQuery = this.checkStatusQuery(status);
     const typeToQuery = this.checkTypeToQuery(type);
-    // const sortQuery = this.formatSortQueryOption(sortOption);
+    const sortQuery = this.formatSortQueryOption(sortOption);
 
     return this.orderItemRepository.findMany({
       cursor,
       category,
-      // sortQuery,
+      sortQuery,
       status: statusToQuery,
       type: typeToQuery,
     });
@@ -104,10 +104,7 @@ export class OrderItemService {
         rawDirection === SORT_DIRECTION.DESCENSION
           ? SORT_DIRECTION.DESCENSION
           : SORT_DIRECTION.ASCENSION;
-      console.log(`parse sorts ${field}: direction ${direction}`, {
-        field,
-        direction,
-      });
+
       return { field, direction };
     });
   };

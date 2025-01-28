@@ -1,59 +1,16 @@
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { ApiBodyOptions, ApiProperty } from '@nestjs/swagger';
-import { plainToInstance, Transform, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { VoucherDomain } from '../../domain/voucher.domain';
 import { AuthPath } from 'src/config/api-path';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 type CreateVoucherDataType = Omit<VoucherDomain, 'img'>;
-class CreatePromotionNestedInVoucherDto {
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({ type: String })
-  name: string;
-  @ApiProperty({ type: Number })
-  @IsPositive()
-  @IsNotEmpty()
-  @Transform(({ value }) => Number(value))
-  promotionPrice: number;
-  @ApiProperty({ type: Number })
-  @IsPositive()
-  @IsNotEmpty()
-  @Transform(({ value }) => Number(value))
-  stockAmount: number;
-  @ApiProperty({ type: Date })
-  @IsDate()
-  @Transform(({ value }) => new Date(value))
-  @IsNotEmpty()
-  sellStartedAt: Date;
-  @IsDateGreaterThan('sellStartedAt')
-  @Transform(({ value }) => new Date(value))
-  @IsNotEmpty()
-  @ApiProperty({ type: Date })
-  sellExpiredAt: Date;
-  @ApiProperty({ type: Date })
-  @IsDateGreaterThan('sellStartedAt')
-  @Transform(({ value }) => new Date(value))
-  @IsNotEmpty()
-  usableAt: Date;
-  @IsDateGreaterThan('usableAt')
-  @Transform(({ value }) => new Date(value))
-  @IsNotEmpty()
-  @ApiProperty({ type: Date })
-  usableExpiredAt: Date;
-}
 
 export const createVoucherFormDataDocumentation: ApiBodyOptions = {
   description: 'Create a voucher with its associated details and file uploads',
@@ -87,59 +44,22 @@ export const createVoucherFormDataDocumentation: ApiBodyOptions = {
         format: 'date-time',
         example: '2024-12-25T23:59:59Z',
       },
-      sellExpiredTime: {
+      sellExpiredAt: {
         type: 'string',
         format: 'date-time',
         example: '2025-02-25T23:59:59Z',
       },
-      tagId: { type: 'string', example: 'tag123' },
-      termAndCondTh: {
-        type: 'array',
-        items: { type: 'string' },
-        example: ['Condition 1', 'Condition 2'],
+      tagId: {
+        type: 'string',
+        example: '0193f3cc-c977-7182-9627-debca7376208',
       },
-      termAndCondEn: {
-        type: 'array',
-        items: { type: 'string' },
-        example: ['Condition A', 'Condition B'],
+      termAndCond: {
+        type: 'string',
+        example: 'Condition 1',
       },
-      promotion: {
-        type: 'object',
-        description: 'Details of the promotion associated with the voucher',
-        properties: {
-          name: { type: 'string', example: 'Holiday Promo' },
-          promotionPrice: { type: 'number', example: 400 },
-          stockAmount: { type: 'number', example: 500 },
-          sellStartedAt: {
-            type: 'string',
-            format: 'date-time',
-            example: '2024-01-01T00:00:00Z',
-          },
-          sellExpiredAt: {
-            type: 'string',
-            format: 'date-time',
-            example: '2024-12-31T23:59:59Z',
-          },
-          usableAt: {
-            type: 'string',
-            format: 'date-time',
-            example: '2024-01-01T00:00:00Z',
-          },
-          usableExpiredAt: {
-            type: 'string',
-            format: 'date-time',
-            example: '2024-12-31T23:59:59Z',
-          },
-        },
-        required: [
-          'name',
-          'stockAmount',
-          'promotionPrice',
-          'sellStartedAt',
-          'sellExpiredAt',
-          'usableAt',
-          'usableExpiredAt',
-        ],
+      discountedPrice: {
+        type: 'number',
+        description: 'Discounted price of the voucher',
       },
       mainImg: {
         type: 'string',
@@ -156,17 +76,14 @@ export const createVoucherFormDataDocumentation: ApiBodyOptions = {
       },
     },
     required: [
-      'code',
       'title',
       'description',
       'price',
       'usageExpiredTime',
       'saleExpiredTime',
       'tagId',
-      'termAndCondTh',
-      'termAndCondEn',
+      'termAndCond',
       'mainImg',
-      'voucherImg',
     ],
   },
 };
@@ -200,32 +117,16 @@ export class CreateVoucherDto {
   @IsNotEmpty()
   sellExpiredAt: Date;
   @IsString()
-  tagId: string;
+  tagId: VoucherTagDomain['id'];
   @Transform(({ value }) =>
     typeof value === 'string' ? JSON.parse(value) : value,
   )
-  @IsArray()
-  termAndCondTh: string[];
-  @IsArray()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  termAndCondEn: string[];
+  @IsString()
+  termAndCondition: string;
   @IsOptional()
-  @ValidateNested()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try {
-        const parsed = JSON.parse(value);
-        return plainToInstance(CreatePromotionNestedInVoucherDto, parsed);
-      } catch (error) {
-        throw new BadRequestException('Invalid JSON format for promotion');
-      }
-    }
-    return value;
-  })
-  @Type(() => CreatePromotionNestedInVoucherDto)
-  promotion?: CreatePromotionNestedInVoucherDto;
+  @IsPositive()
+  @Transform(({ value }) => Number(value))
+  discountedPrice?: number;
 }
 
 export class CreateVoucherResponse extends CoreApiResponse {

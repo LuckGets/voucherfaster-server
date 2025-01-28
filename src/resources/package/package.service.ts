@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PackageVoucherRepository } from 'src/infrastructure/persistence/package/package.repository';
+import {
+  PackageVoucherDiscountNestedCreateInput,
+  PackageVoucherRepository,
+} from 'src/infrastructure/persistence/package/package.repository';
 import {
   CreatePackageVoucherDto,
   PACKAGE_FILE_FIELD,
@@ -64,12 +67,7 @@ export class PackageVoucherService {
     if (!mainImg || mainImg.length === 0)
       throw ErrorApiResponse.badRequest('Main image for voucher is required.');
     // Extract reward voucher ID from package voucher data
-    const { rewardVouchers, termAndCondTh, termAndCondEn, ...restData } = data;
-
-    if (termAndCondTh.length === 0 && termAndCondEn.length === 0)
-      throw ErrorApiResponse.badRequest(
-        `Please provide value for term and condition field.`,
-      );
+    const { rewardVouchers, discountedPrice, ...restData } = data;
 
     const rewardVoucherIdSet = new Set<VoucherDomain['id']>();
     const rewardVoucherData: PackageRewardVoucherCreateInput[] = [];
@@ -116,7 +114,8 @@ export class PackageVoucherService {
     allImgBuffer.push(mainImg[0]);
     if (packageImg && packageImg.length > 0) allImgBuffer.push(...packageImg);
 
-    if (allImgBuffer.length < 1) throw ErrorApiResponse.conflictRequest();
+    if (allImgBuffer.length < 1)
+      throw ErrorApiResponse.conflictRequest('There is no image for upload.');
     const allPackageImgLinks = await Promise.all(
       allImgBuffer.map((item) =>
         this.mediaService.uploadFile({
@@ -131,8 +130,6 @@ export class PackageVoucherService {
 
     // ------- SECOND PART : PREPARE INFORMATION -------
 
-    // Extract reward voucher ID from package voucher data
-    // Extract reward voucher ID from package voucher data
     const packageData: PackageVoucherCreateInput = {
       id: packageId,
       ...restData,
@@ -148,30 +145,19 @@ export class PackageVoucherService {
         };
       });
 
-    const packageTermAndCondTHData: packageVoucherTermAndCondTHCreateInput[] =
-      termAndCondTh.map((item) => {
-        return {
-          id: String(this.uuidService.make()),
-          description: item,
-          packageVoucherId: packageData.id,
-        };
-      });
+    let discountedData: PackageVoucherDiscountNestedCreateInput;
 
-    const packageTermAndCondENData: packageVoucherTermAndCondENCreateInput[] =
-      termAndCondTh.map((item) => {
-        return {
-          id: String(this.uuidService.make()),
-          description: item,
-          packageVoucherId: packageData.id,
-        };
-      });
+    if (discountedPrice)
+      discountedData = {
+        id: String(this.uuidService.make()),
+        discountedPrice: discountedPrice,
+      };
 
     return this.packageVoucherRepository.createPackageVoucher({
       packageVoucherCreateInput: packageData,
       packageImage: packageImgCreateData,
       packageRewardVoucher: rewardVoucherData,
-      packageVoucherTermAndCondTH: packageTermAndCondTHData,
-      packageVoucherTermAndCondEN: packageTermAndCondENData,
+      packageDiscountedPrice: discountedData,
     });
   }
 

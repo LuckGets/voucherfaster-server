@@ -1,14 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { Expose } from 'class-transformer';
-import { PackageVoucherTermAndCondDomain } from './package-voucher-term-cond.domain';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
+import { PackageDiscountDomain } from './package-discount.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
+
+export enum PackageStatusEnum {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
 
 export class PackageVoucherDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: String })
-  category: VoucherCategoryDomain['name'];
+  category: CategoryDomain['name'];
+  @ApiProperty({ type: () => String })
+  description: string;
   @ApiProperty({ type: String })
   quotaVoucherId: string;
   @ApiProperty({ type: Number })
@@ -23,11 +30,8 @@ export class PackageVoucherDomain {
   images: Pick<PackageImgDomain, 'id' | 'mainImg' | 'imgPath'>[];
   @ApiProperty({ type: String })
   title: string;
-  @ApiProperty({ type: () => Object })
-  termAndCond?: {
-    th: PackageVoucherTermAndCondDomain[];
-    en: PackageVoucherTermAndCondDomain[];
-  };
+  @ApiProperty({ type: () => String })
+  termAndCondition?: string;
   @ApiProperty({ type: Date })
   sellStartedAt: Date;
   @ApiProperty({ type: Date })
@@ -40,16 +44,83 @@ export class PackageVoucherDomain {
   createdAt?: Date;
   @ApiProperty({ type: Date })
   updatedAt?: Date;
-  @ApiProperty({ type: Date })
+  @ApiProperty({ type: () => PackageStatusEnum })
   @Expose({ groups: [RoleEnum.Admin] })
-  deletedAt?: Date;
+  status: PackageStatusEnum;
+  @ApiProperty({ type: () => PackageDiscountDomain })
+  discount?: PackageDiscountDomain;
+
+  constructor({
+    id,
+    category,
+    description,
+    images,
+    price,
+    discount,
+    status,
+    quotaAmount,
+    quotaVoucherId,
+    sellExpiredAt,
+    sellStartedAt,
+    stockAmount,
+    title,
+    rewardVouchers,
+    termAndCondition,
+    usableAt,
+    usableExpiredAt,
+    createdAt,
+    updatedAt,
+  }: {
+    id: PackageVoucherDomain['id'];
+    category: PackageVoucherDomain['category'];
+    description: PackageVoucherDomain['description'];
+    images: PackageVoucherDomain['images'];
+    price: PackageVoucherDomain['price'];
+    discount: PackageVoucherDomain['discount'];
+    status: PackageVoucherDomain['status'];
+    quotaAmount: PackageVoucherDomain['quotaAmount'];
+    quotaVoucherId: PackageVoucherDomain['quotaVoucherId'];
+    sellExpiredAt: PackageVoucherDomain['sellExpiredAt'];
+    sellStartedAt: PackageVoucherDomain['sellStartedAt'];
+    stockAmount: PackageVoucherDomain['stockAmount'];
+    title: PackageVoucherDomain['title'];
+    rewardVouchers: PackageVoucherDomain['rewardVouchers'];
+    termAndCondition: PackageVoucherDomain['termAndCondition'];
+    usableAt: PackageVoucherDomain['usableAt'];
+    usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
+    createdAt?: PackageVoucherDomain['createdAt'];
+    updatedAt?: PackageVoucherDomain['updatedAt'];
+  }) {
+    this.id = id;
+    this.category = category;
+    this.description = description;
+    this.images = images;
+    this.price = price;
+    this.discount = discount;
+    this.status = status;
+    this.quotaAmount = quotaAmount;
+    this.quotaVoucherId = quotaVoucherId;
+    this.sellExpiredAt = sellExpiredAt;
+    this.sellStartedAt = sellStartedAt;
+    this.stockAmount = stockAmount;
+    this.title = title;
+    this.rewardVouchers = rewardVouchers;
+    this.termAndCondition = termAndCondition;
+    this.usableAt = usableAt;
+    this.usableExpiredAt = usableExpiredAt;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
 
   public static getRequiredFieldForList(): Array<keyof PackageVoucherDomain> {
     return [
       'id',
       'category',
+      'description',
       'images',
       'price',
+      'discount',
+      'status',
       'quotaAmount',
       'quotaVoucherId',
       'sellExpiredAt',
@@ -60,26 +131,14 @@ export class PackageVoucherDomain {
       'usableAt',
       'usableExpiredAt',
       'createdAt',
+      'discount',
     ];
   }
 
   public static getRequiredFieldForDetail(): Array<keyof PackageVoucherDomain> {
-    return [...this.getRequiredFieldForList(), 'termAndCond'];
+    return [...this.getRequiredFieldForList(), 'termAndCondition'];
   }
 }
-
-export type PackageVoucherCreateInput = {
-  id: string;
-  quotaVoucherId: string;
-  quotaAmount: number;
-  stockAmount: number;
-  sellStartedAt: Date;
-  sellExpiredAt: Date;
-  usableAt: Date;
-  usableExpiredAt: Date;
-  price: number;
-  title: string;
-};
 
 export class PackageImgDomain {
   @ApiProperty({ type: String })
@@ -107,7 +166,7 @@ export class PackageRewardVoucherDomain {
   @ApiProperty({ type: String })
   voucherId: string;
   @ApiProperty({ type: String })
-  category: VoucherCategoryDomain['name'];
+  category: CategoryDomain['name'];
   @ApiProperty({ type: Number })
   amount: number;
   @ApiProperty({ type: String })
