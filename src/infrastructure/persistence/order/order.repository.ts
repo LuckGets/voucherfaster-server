@@ -9,12 +9,14 @@ import { PackageDiscountDomain } from '@resources/package/domain/package-discoun
 
 export type CreateOrderItemVoucherInfo = {
   id: string;
+  orderItemId: OrderItemDomain['id'];
   voucherId: VoucherDomain['id'];
   discount?: Pick<PackageDiscountDomain, 'id' | 'discountedPrice'>;
 };
 
 export type CreateOrderItemPackageInfo = {
   id: string;
+  orderItemId: OrderItemDomain['id'];
   voucherId: VoucherDomain['id'];
   packageId: PackageVoucherDomain['id'];
   reward: boolean;
@@ -34,9 +36,9 @@ export type UpdateStockAmountEachInfo = {
 export type CreateOrderItemInfo = {
   id: OrderItemDomain['id'];
   orderId: OrderDomain['id'];
-  detail: CreateOrderItemVoucherInfo | CreateOrderItemPackageInfo;
   code: OrderItemDomain['code'];
   qrcodeImagePath: string;
+  countNumber: number;
   usableAt: PackageVoucherDomain['usableAt'];
   usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
 };
@@ -47,6 +49,8 @@ export type CreateOrderAndTransactionInput = {
   updateStockAmountInfo: UpdateStockAmountInfo;
   transaction: Pick<TransactionDomain, 'status' | 'id'>;
   allOrderItemsInfo: CreateOrderItemInfo[];
+  orderItemsVoucherInfo: CreateOrderItemVoucherInfo[];
+  orderItemsPackageInfo: CreateOrderItemPackageInfo[];
 };
 
 export abstract class OrderRepository {

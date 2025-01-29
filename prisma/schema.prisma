@@ -219,13 +219,13 @@ model Order {
 }
 
 model OrderItem {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  orderId       String   @map("order_id") @db.Uuid
-  order         Order    @relation(fields: [orderId], references: [id])
-  countNumber   Int      @db.Integer
-  qrcodeImgPath String   @map("qrcode_img_path")
-  code          String   @unique @db.VarChar(40)
-  updatedAt     DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  id              String   @id @default(uuid(7)) @db.Uuid
+  orderId         String   @map("order_id") @db.Uuid
+  order           Order    @relation(fields: [orderId], references: [id])
+  countNumber     Int      @db.Integer
+  qrcodeImagePath String   @map("qrcode_image_path")
+  code            String   @unique @db.VarChar(40)
+  updatedAt       DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
 
   usableAt        DateTime @map("usable_at") @db.Timestamptz(3)
   usableExpiredAt DateTime @map("usable_expired_at") @db.Timestamptz(3)

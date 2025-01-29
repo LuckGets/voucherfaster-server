@@ -37,18 +37,21 @@ import { VoucherDiscountStatusEnum } from '@resources/voucher/domain/voucher-dis
 import { PackageDiscountStatusEnum } from '@resources/package/domain/package-discount.domain';
 import { ProductDomainHelper } from 'src/common/product.helper';
 
-export type OrderItemsInfo = {
-  vouchers: VoucherDomain[];
-  packages: PackageItemInfo[];
-};
-
-type PackageItemInfo = {
-  packageId: PackageVoucherDomain['id'];
-  voucherId: VoucherDomain['id'];
-  reward: boolean;
-};
-
 type AnyItemDomain = VoucherDomain | PackageVoucherDomain;
+
+type OrderItemVoucherContainer = {
+  type: 'voucher';
+  items: CreateOrderItemVoucherInfo[];
+};
+
+type OrderItemPackageContainer = {
+  type: 'package';
+  items: CreateOrderItemPackageInfo[];
+};
+
+type OrderItemsProductList =
+  | OrderItemVoucherContainer
+  | OrderItemPackageContainer;
 @Injectable()
 export class OrderService {
   constructor(
@@ -78,32 +81,28 @@ export class OrderService {
       allOrderItemsInfo,
       totalPrice,
       updateStockAmountInfo,
+      orderItemsVoucherList,
+      orderItemsPackageList,
     } = await this.findAllOrderItemInfoAndTotalPriceAndCheckingStock(data);
 
-    const createOrderData: CreateOrderAndTransactionInput = {
-      payload: { id: String(this.uuidService.make()), totalPrice },
-      allOrderItemsInfo,
-      accountId,
-      updateStockAmountInfo,
-      transaction: null,
-    };
-
     // Generate unique code for each data
-    const createOrderDataWithAssignCode = await this.assignCodeForData(
-      createOrderData,
+    const createOrderItemsWithAssignedCode = await this.assignCodeForData(
+      allOrderItemsInfo,
       allOrderItemsId.length,
     );
 
-    // Add all of the generated code to the order items
-    createOrderDataWithAssignCode.transaction = {
-      id: String(this.uuidService.make()),
-      status: TransactionStatusEnum.PENDING,
-    };
-
-    const order = await this.orderRepository.createOrderAndTransaction(
-      createOrderDataWithAssignCode,
-    );
-    return order;
+    return this.orderRepository.createOrderAndTransaction({
+      payload: { id: String(this.uuidService.make()), totalPrice },
+      allOrderItemsInfo: createOrderItemsWithAssignedCode,
+      accountId,
+      updateStockAmountInfo,
+      orderItemsVoucherInfo: orderItemsVoucherList.items,
+      orderItemsPackageInfo: orderItemsPackageList.items,
+      transaction: {
+        id: String(this.uuidService.make()),
+        status: TransactionStatusEnum.PENDING,
+      },
+    });
   }
 
   // There are going to have the
@@ -117,6 +116,8 @@ export class OrderService {
   ): Promise<{
     allOrderItemsInfo: CreateOrderItemInfo[];
     allOrderItemsId: OrderItemDomain['id'][];
+    orderItemsVoucherList: OrderItemVoucherContainer;
+    orderItemsPackageList: OrderItemPackageContainer;
     totalPrice: number;
     updateStockAmountInfo: UpdateStockAmountInfo;
   }> {
@@ -131,12 +132,23 @@ export class OrderService {
 
     const allOrderItemsId: OrderItemDomain['id'][] = [];
 
+    const orderItemsVoucherList: OrderItemVoucherContainer = {
+      type: 'voucher',
+      items: [],
+    };
+    const orderItemsPackageList: OrderItemPackageContainer = {
+      type: 'package',
+      items: [],
+    };
+
     const allItemsInfoPromisesArr = this.prepareItemInfoAndMutateDataArr({
       items: data.items,
       allOrderItemsId,
       allOrderItemsInfo,
       updateStockAmountInfo,
       orderId: creatingOrderId,
+      orderItemsVoucherList,
+      orderItemsPackageList,
     });
 
     const allItemPricesArr = await Promise.all(allItemsInfoPromisesArr);
@@ -151,6 +163,8 @@ export class OrderService {
     return {
       allOrderItemsId,
       allOrderItemsInfo,
+      orderItemsVoucherList,
+      orderItemsPackageList,
       totalPrice,
       updateStockAmountInfo,
     };
@@ -216,11 +230,15 @@ export class OrderService {
     allOrderItemsId,
     allOrderItemsInfo,
     updateStockAmountInfo,
+    orderItemsVoucherList,
+    orderItemsPackageList,
     orderId,
   }: {
     items: CreateOrderItem[];
     allOrderItemsInfo: CreateOrderItemInfo[];
     allOrderItemsId: OrderItemDomain['id'][];
+    orderItemsVoucherList: OrderItemVoucherContainer;
+    orderItemsPackageList: OrderItemPackageContainer;
     updateStockAmountInfo: UpdateStockAmountInfo;
     orderId: OrderDomain['id'];
   }): Promise<number>[] {
@@ -237,6 +255,7 @@ export class OrderService {
             typeOfOrderItem: ProductTypeEnum.VOUCHER,
           });
           itemPrice = this.findEachItemDataAndMutateTotalSumAndData({
+            orderItemsProductList: orderItemsVoucherList,
             currentSum: itemPrice,
             itemList: allOrderItemsInfo,
             updateStockAmountInfo: updateStockAmountInfo.vouchers,
@@ -259,6 +278,7 @@ export class OrderService {
           itemPrice = this.findEachItemDataAndMutateTotalSumAndData({
             currentSum: itemPrice,
             itemList: allOrderItemsInfo,
+            orderItemsProductList: orderItemsPackageList,
             updateStockAmountInfo: updateStockAmountInfo.packages,
             itemInfo: packageVoucher,
             itemAmount: item.amount,
@@ -285,6 +305,7 @@ export class OrderService {
     updateStockAmountInfo,
     itemInfo,
     allOrderItemsId,
+    orderItemsProductList,
     appliedDiscountStatus,
     orderId,
   }: {
@@ -293,6 +314,7 @@ export class OrderService {
     itemList: CreateOrderItemInfo[];
     updateStockAmountInfo: UpdateStockAmountEachInfo[];
     allOrderItemsId: OrderItemDomain['id'][];
+    orderItemsProductList: OrderItemsProductList;
     itemInfo: AnyItemDomain;
     appliedDiscountStatus:
       | VoucherDiscountStatusEnum
@@ -320,14 +342,31 @@ export class OrderService {
     currentSum = CalculatorService.add(currentSum, totalPriceOfItems);
     // FINISH Calculate price part
 
-    if (itemInfo instanceof PackageVoucherDomain) {
+    if (
+      itemInfo instanceof PackageVoucherDomain &&
+      orderItemsProductList.type === 'package'
+    ) {
       // Ensure itemList is an object (not an array)
 
       // console.log(itemInfo.rewardVouchers);
       for (const item of itemInfo.rewardVouchers) {
         const { amount, voucherId } = item;
+
+        const totalItemAmount = CalculatorService.multiply(itemAmount, amount);
+
+        const orderItemReward: CreateOrderItemInfo = {
+          id: null,
+          orderId,
+          countNumber: null,
+          qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
+          code: null,
+          usableAt,
+          usableExpiredAt,
+        };
+
         const orderItemDetail: CreateOrderItemPackageInfo = {
           id: String(this.uuidService.make()),
+          orderItemId: null,
           packageId: itemInfo.id,
           voucherId,
           reward: true,
@@ -340,33 +379,32 @@ export class OrderService {
           };
         }
 
-        const orderItemReward: CreateOrderItemInfo = {
-          id: null,
-          orderId,
-          qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
-          code: null,
-          usableAt,
-          usableExpiredAt,
-          detail: orderItemDetail,
-        };
-
-        const rewardsVoucherArr = Array(
-          CalculatorService.multiply(itemAmount, amount),
-        )
-          .fill({
-            orderItemReward,
-          })
-          .map((item) => {
-            item.id = String(this.uuidService.make());
+        const orderItemsPackageRewardArr: CreateOrderItemPackageInfo[] =
+          Array(totalItemAmount).fill(orderItemDetail);
+        // OrderItem array
+        const rewardsVoucherArr: CreateOrderItemInfo[] = Array(totalItemAmount)
+          .fill(orderItemReward)
+          .map((item, index) => {
+            const orderItemId = String(this.uuidService.make());
+            item.id = orderItemId;
+            item.countNumber = index + 1;
+            orderItemsPackageRewardArr[index].orderItemId = orderItemId;
             allOrderItemsId.push(item.id);
             return item;
           });
 
         itemList.push(...rewardsVoucherArr);
+        orderItemsProductList.items.push(...orderItemsPackageRewardArr);
       }
+
+      const totalItemAmount = CalculatorService.multiply(
+        itemAmount,
+        itemInfo.quotaAmount,
+      );
 
       const quotaVoucherDetail: CreateOrderItemPackageInfo = {
         id: String(this.uuidService.make()),
+        orderItemId: null,
         packageId: itemInfo.id,
         voucherId: itemInfo.quotaVoucherId,
         reward: false,
@@ -379,30 +417,42 @@ export class OrderService {
         };
       }
 
+      const orderItemsPackageQuotaArr: CreateOrderItemPackageInfo[] =
+        Array(totalItemAmount).fill(quotaVoucherDetail);
+
       const quotaVoucher: CreateOrderItemInfo = {
         id: null,
         code: null,
+        countNumber: null,
         usableAt,
         usableExpiredAt,
-        detail: quotaVoucherDetail,
         orderId,
         qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
       };
-      const quotaVoucherArr = Array(
-        CalculatorService.multiply(itemAmount, itemInfo.quotaAmount),
-      )
+      const quotaVoucherArr: CreateOrderItemInfo[] = Array(totalItemAmount)
         .fill(quotaVoucher)
-        .map((item) => {
-          item.id = String(this.uuidService.make());
+        .map((item, index): CreateOrderItemInfo => {
+          const orderItemId = String(this.uuidService.make());
+          item.id = orderItemId;
+          item.countNumber = index + 1;
+          orderItemsPackageQuotaArr[index].orderItemId = orderItemId;
           allOrderItemsId.push(item.id);
           return item;
         });
       itemList.push(...quotaVoucherArr);
+      orderItemsProductList.items.push(...orderItemsPackageQuotaArr);
     } else {
       if (!Array.isArray(itemList))
         throw new Error('Expected an array, but got an object.');
+
+      if (orderItemsProductList.type !== 'voucher')
+        throw new Error(
+          'Expected an order items voucher array, but got an other-type instead.',
+        );
+
       const orderItemVoucherInfo: CreateOrderItemVoucherInfo = {
         id: String(this.uuidService.make()),
+        orderItemId: null,
         voucherId: itemInfo.id,
       };
 
@@ -413,25 +463,33 @@ export class OrderService {
         };
       }
 
+      const orderItemVoucherArr: CreateOrderItemVoucherInfo[] =
+        Array(itemAmount).fill(orderItemVoucherInfo);
+
       const orderItemInfo: CreateOrderItemInfo = {
         id: null,
         code: null,
+        countNumber: null,
         usableAt,
         usableExpiredAt,
         orderId,
         qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
-        detail: orderItemVoucherInfo,
       };
 
       itemList.push(
         ...Array(itemAmount)
           .fill(orderItemInfo)
-          .map((item) => {
-            item.id = String(this.uuidService.make());
+          .map((item, index) => {
+            const orderItemId = String(this.uuidService.make());
+            item.id = orderItemId;
+            item.countNumber = index + 1;
+            orderItemVoucherArr[index].orderItemId = orderItemId;
             allOrderItemsId.push(item.id);
             return item;
           }),
       );
+
+      orderItemsProductList.items.push(...orderItemVoucherArr);
     }
 
     // Finding if any items is duplicate
@@ -482,9 +540,18 @@ export class OrderService {
   }
 
   private async assignCodeForData(
-    createOrderData: CreateOrderAndTransactionInput,
+    createOrderItemsList: CreateOrderItemInfo[],
     numsOfItems: number,
-  ): Promise<CreateOrderAndTransactionInput> {
+  ): Promise<CreateOrderItemInfo[]> {
+    if (
+      createOrderItemsList.length === 0 ||
+      createOrderItemsList.length < numsOfItems
+    ) {
+      throw ErrorApiResponse.internalServerError(
+        'The order items to provide code is less than the number of items to create. Please contact developer to fix the issue.',
+      );
+    }
+
     const allUniqueGeneratedCode =
       await this.generateCodeForOrderItem(numsOfItems);
     if (allUniqueGeneratedCode.length !== numsOfItems) {
@@ -492,19 +559,12 @@ export class OrderService {
         `Not enough generated code: ${allUniqueGeneratedCode.length} for ${numsOfItems} order items. Please contact developer to fix the issue.`,
       );
     }
-    const createOrderDataWithAssignCode: CreateOrderAndTransactionInput = {
-      ...createOrderData,
-    };
 
-    // 3) Attach these codes to each item (in the same order they were gathered)
     let codeIndex: number = 0;
-    if (createOrderDataWithAssignCode.allOrderItemsInfo.length > 0) {
-      createOrderDataWithAssignCode.allOrderItemsInfo.forEach((item) => {
-        item.code = allUniqueGeneratedCode[codeIndex++];
-      });
-    }
-
-    return createOrderDataWithAssignCode;
+    return createOrderItemsList.map((item) => {
+      item.code = allUniqueGeneratedCode[codeIndex++];
+      return item;
+    });
   }
 
   // --------------------------------------------------------------------------//

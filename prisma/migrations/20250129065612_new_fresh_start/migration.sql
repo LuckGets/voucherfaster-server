@@ -190,7 +190,7 @@ CREATE TABLE "order_item" (
     "id" UUID NOT NULL,
     "order_id" UUID NOT NULL,
     "countNumber" INTEGER NOT NULL,
-    "qrcode_img_path" TEXT NOT NULL,
+    "qrcode_image_path" TEXT NOT NULL,
     "code" VARCHAR(40) NOT NULL,
     "updated_at" TIMESTAMPTZ(3) NOT NULL,
     "usable_at" TIMESTAMPTZ(3) NOT NULL,
