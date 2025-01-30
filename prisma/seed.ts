@@ -3,29 +3,23 @@ import * as bcrypt from 'bcrypt';
 import {
   categories,
   tags,
+  voucherDiscounts,
   voucherImg,
-  voucherPromotions,
   vouchers,
-  vouchersTermAndCondEn,
-  vouchersTermAndCondTh,
 } from './seeds-data/voucher.seed';
 import { config } from 'dotenv';
-import { execSync } from 'child_process';
+import { exec, execFile, execSync } from 'child_process';
 import {
   packageImgs,
   packageRewardVouchers,
   packages,
-  packageTermAndCondEN,
-  packageTermAndCondTH,
 } from './seeds-data/package.seed';
 import { ownerImg, ownerInfo } from './seeds-data/owner.seed';
 import {
   orderItems,
   orderItemsPackage,
-  orderItemsPromotion,
   orderItemsVouher,
   orders,
-  usableDaysAfterPurchased,
 } from './seeds-data/order.seed';
 import { accounts } from './seeds-data/account.seed';
 import {
@@ -33,7 +27,9 @@ import {
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
-config({ path: '.env.development' });
+import * as util from 'util';
+import * as path from 'path';
+config({ path: '.env.development', override: true });
 
 const prisma = new PrismaClient();
 
@@ -53,6 +49,7 @@ const seedingFunc = async (
     console.log(`...FINISH SEEDING ${str}...`);
   } catch (err) {
     console.error(err);
+    throw err;
   }
 };
 
@@ -61,6 +58,9 @@ const seed = async (): Promise<void> => {
     console.log('-------- START SEEDING PROCESS --------');
     const password = bcrypt.hashSync('Qwerty', 10);
     // const ownerPasswordForRedeem = CryptoService.encrypt(password, process.env.PASSWORD_FOR_REDEEM_SECRET);
+
+    console.log('accounts:', accounts);
+    console.log('categories:', categories);
 
     /**
      * Function to seed data to database
@@ -71,7 +71,7 @@ const seed = async (): Promise<void> => {
 
     await Promise.all([
       seedingFunc(prisma.account.createMany, accounts, 'accounts'),
-      seedingFunc(prisma.voucherCategory.createMany, categories, 'categories'),
+      seedingFunc(prisma.category.createMany, categories, 'categories'),
     ]);
     await seedingFunc(prisma.voucherTag.createMany, tags, 'voucher-tag');
     await seedingFunc(prisma.voucher.createMany, vouchers, 'vouchers');
@@ -82,11 +82,6 @@ const seed = async (): Promise<void> => {
     );
     await seedingFunc(prisma.owner.createMany, ownerInfo, 'owner-information');
     await seedingFunc(
-      prisma.usableDaysAfterPurchased.createMany,
-      usableDaysAfterPurchased,
-      'Usable days after purchased.',
-    );
-    await seedingFunc(
       prisma.transactionSystem.create,
       transactionSystem,
       'Transaction-system.',
@@ -96,34 +91,14 @@ const seed = async (): Promise<void> => {
     await Promise.all([
       seedingFunc(prisma.voucherImg.createMany, voucherImg, 'voucher-img'),
       seedingFunc(
-        prisma.voucherTermAndCondEN.createMany,
-        vouchersTermAndCondEn,
-        'voucher-term-and-condition-EN',
-      ),
-      seedingFunc(
-        prisma.voucherTermAndCondTh.createMany,
-        vouchersTermAndCondTh,
-        'voucher-term-and-condition-TH',
-      ),
-      seedingFunc(
-        prisma.voucherPromotion.createMany,
-        voucherPromotions,
+        prisma.voucherDiscount.createMany,
+        voucherDiscounts,
         'voucher-promotion',
       ),
       seedingFunc(
         prisma.packageRewardVoucher.createMany,
         packageRewardVouchers,
         'package-reward-vouchers',
-      ),
-      seedingFunc(
-        prisma.packageVoucherTermAndCondTH.createMany,
-        packageTermAndCondTH,
-        'package-voucher-term-and-condition-TH',
-      ),
-      seedingFunc(
-        prisma.packageVoucherTermAndCondEN.createMany,
-        packageTermAndCondEN,
-        'package-voucher-term-and-condition-EN',
       ),
       seedingFunc(prisma.packageImg.createMany, packageImgs, 'package-image'),
       seedingFunc(prisma.ownerImg.createMany, ownerImg, 'owner-images'),
@@ -136,11 +111,6 @@ const seed = async (): Promise<void> => {
         prisma.orderItemVoucher.createMany,
         orderItemsVouher,
         'order-items-voucher',
-      ),
-      seedingFunc(
-        prisma.orderItemPromotion.createMany,
-        orderItemsPromotion,
-        'order-items-promotion',
       ),
       seedingFunc(
         prisma.orderItemPackage.createMany,
@@ -159,13 +129,40 @@ const seed = async (): Promise<void> => {
   }
 };
 
+async function resetDB() {
+  try {
+    const execPromise = util.promisify(execFile);
+    // Use explicit paths to avoid path length issues
+    const prismaPath = path.join('./node_modules/.bin/prisma.cmd');
+
+    const { stderr } = await execPromise(
+      prismaPath,
+      ['migrate', 'reset', '--force'],
+      { windowsVerbatimArguments: true },
+    );
+    if (stderr) {
+      console.error(stderr);
+    }
+  } catch (err) {
+    console.error('Error resetting database:', err);
+    throw err;
+  }
+}
+
 async function main() {
   try {
     console.log('--- START --- \n--- RESET DB --- \n--- PROCESS ---');
 
+    console.log('Connect to database...');
     await prisma.$connect();
+    console.log('Connect to database success!');
 
-    execSync('pnpx prisma migrate reset --force');
+    console.log('RESET ALL THE DATABASE DATA...');
+    await resetDB();
+    console.log('RESET SUCCESS');
+    // Verify reset (optional)
+    const existingCategories = await prisma.category.findMany();
+    console.log('Existing categories after reset:', existingCategories); // Should be empty
     await seed();
     console.log('SEEDING COMPLETED SUCCESSFULLY');
   } catch (err) {

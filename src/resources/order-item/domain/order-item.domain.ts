@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AccountDomain } from '@resources/account/domain/account.domain';
 import {
   PackageImgDomain,
   PackageVoucherDomain,
@@ -12,10 +11,6 @@ import {
 import { OrderDomain } from '../../order/domain/order.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
-
-export type OrderItemDetailDiscountField = {
-  discountId: VoucherDiscountDomain['id'] | PackageDiscountDomain['id'];
-};
 
 export type OrderItemDetailPackageField = {
   packageId: PackageVoucherDomain['id'];
@@ -32,20 +27,38 @@ export class OrderItemDetails {
     | VoucherDiscountDomain['discountedPrice']
     | PackageDiscountDomain['discountedPrice'];
   category: CategoryDomain['name'];
-  usableExpiredAt: Date | string;
   img: VoucherImgDomain['imgPath'] | PackageImgDomain['imgPath'];
-  discount?: OrderItemDetailDiscountField;
+  discountId?: VoucherDiscountDomain['id'] | PackageDiscountDomain['id'];
   package?: OrderItemDetailPackageField;
 
+  constructor({
+    voucherId,
+    title,
+    price,
+    category,
+    img,
+    discountId,
+    packageDetail,
+  }: {
+    voucherId: OrderItemDetails['voucherId'];
+    title: OrderItemDetails['title'];
+    price: OrderItemDetails['price'];
+    category: OrderItemDetails['category'];
+    img: OrderItemDetails['img'];
+    discountId?: OrderItemDetails['discountId'];
+    packageDetail?: OrderItemDetails['package'];
+  }) {
+    this.voucherId = voucherId;
+    this.title = title;
+    this.price = price;
+    this.category = category;
+    this.img = img;
+    this.discountId = discountId;
+    this.package = packageDetail;
+  }
+
   public static getVoucherRequiredFields(): Array<keyof OrderItemDetails> {
-    return [
-      'voucherId',
-      'title',
-      'price',
-      'category',
-      'usableExpiredAt',
-      'img',
-    ];
+    return ['voucherId', 'title', 'price', 'category', 'img'];
   }
   public static getPackageRequiredFields(): string[] {
     return [...this.getVoucherRequiredFields(), 'package'];
@@ -61,7 +74,6 @@ export enum OrderItemRedeemStatusEnum {
 
 export enum OrderItemTypeEnum {
   VOUCHER = 'VOUCHER',
-  PROMOTION = 'PROMOTION',
   PACKAGE = 'PACKAGE',
   ALL = 'ALL',
 }
@@ -92,7 +104,7 @@ export class OrderItemDomain {
   @ApiProperty({ type: Number })
   countNumber: number;
   @ApiProperty({ type: String })
-  order?: Pick<OrderDomain, 'account' | 'transaction' | 'usableDay' | 'id'>;
+  order?: Pick<OrderDomain, 'account' | 'transaction' | 'id'>;
   @ApiProperty({ type: Date })
   usableAt: Date;
   @ApiProperty({ type: () => Date })
@@ -101,8 +113,43 @@ export class OrderItemDomain {
   redeemedAt?: Date | string;
   @ApiProperty({ type: Date })
   updatedAt?: Date;
-  @ApiProperty({ type: () => OrderItemDetails })
+  @ApiProperty({ type: () => Object })
   detail: OrderItemDetails;
+
+  constructor({
+    id,
+    qrcodeImagePath,
+    code,
+    countNumber,
+    order,
+    usableAt,
+    usableExpiredAt,
+    redeemedAt,
+    updatedAt,
+    detail,
+  }: {
+    id: OrderItemDomain['id'];
+    qrcodeImagePath: OrderItemDomain['qrcodeImagePath'];
+    code: OrderItemDomain['code'];
+    countNumber: OrderItemDomain['countNumber'];
+    order?: OrderItemDomain['order'];
+    usableAt: OrderItemDomain['usableAt'];
+    usableExpiredAt: OrderItemDomain['usableExpiredAt'];
+    redeemedAt?: OrderItemDomain['redeemedAt'];
+    updatedAt?: OrderItemDomain['updatedAt'];
+    detail: OrderItemDomain['detail'];
+  }) {
+    this.id = id;
+    this.qrcodeImagePath = qrcodeImagePath;
+    this.code = code;
+    this.countNumber = countNumber;
+    this.order = order;
+    this.usableAt = usableAt;
+    this.usableExpiredAt = usableExpiredAt;
+    this.redeemedAt = redeemedAt;
+    this.updatedAt = updatedAt;
+    this.detail = detail;
+  }
 
   public static waitForUploadQrCodeImagePath(): string {
     return 'WAITFORUPLOAD';

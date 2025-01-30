@@ -1,4 +1,4 @@
-import { Account, Order, UsableDaysAfterPurchased } from '@prisma/client';
+import { Account, Order } from '@prisma/client';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import {
@@ -13,13 +13,11 @@ import { CalculatorService } from '@utils/services/calculator.service';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { AccountMapper } from '../../account/prisma-relational/account.mapper';
-import { RoleEnum } from '@resources/account/types/account.type';
 
 export type AllOrderInformation = Order & {
   account?: Partial<Account>;
   Transaction?: TransactionAndSystem;
   OrderItem?: OrderItemAndDetails[];
-  usableDaysAfterPurchased?: Pick<UsableDaysAfterPurchased, 'usableDays'>;
 };
 
 export class OrderMapper {
@@ -37,65 +35,54 @@ export class OrderMapper {
   ): OrderDomain {
     if (ObjectHelper.isObjectEmpty(orderAndTransactionEntity)) return null;
     // EXTRACT DATA
-    const {
-      Transaction,
-      usableDaysAfterPurchased,
-      OrderItem,
-      account,
-      ...order
-    } = orderAndTransactionEntity;
+    const { Transaction, OrderItem, account, ...order } =
+      orderAndTransactionEntity;
 
     // ORDER MAPPING PART
-    const orderDomain = new OrderDomain();
-    orderDomain.id = order.id;
 
-    if (!ObjectHelper.isObjectEmpty(account)) {
-      orderDomain.account = {
-        id: account.id,
-        email: account.email,
-        fullname: account.fullname,
-        phone: account.phone,
-        verifiedAt: account.verifiedAt,
-        role: AccountMapper.toRoleDomain(account.role),
-      };
-    }
-
-    orderDomain.totalPrice = order.totalPrice.toNumber();
-    orderDomain.createdAt = order.createdAt;
-    orderDomain.updatedAt = order.updatedAt;
-
-    if (ObjectHelper.isObjectEmpty(usableDaysAfterPurchased)) {
+    if (ObjectHelper.isObjectEmpty(account)) {
       throw ErrorApiResponse.internalServerError(
-        `There is no usable day for this order. So it could not be processed.`,
+        `Account is empty for order ID: ${order.id}`,
       );
     }
-    // Find Usable day part.
-    const resetCreatedDate = new Date(
-      new Date(orderAndTransactionEntity.createdAt).setHours(0, 0, 0, 0),
-    );
-    orderDomain.usableDay = new Date(
-      resetCreatedDate.getTime() +
-        CalculatorService.changedayToMilliseconde(
-          usableDaysAfterPurchased?.usableDays,
-        ),
-    );
-
+    const accountDetail = {
+      id: account.id,
+      email: account.email,
+      fullname: account.fullname,
+      phone: account.phone,
+      verifiedAt: account.verifiedAt,
+      role: AccountMapper.toRoleDomain(account.role),
+    };
     // TRANSACTION MAPPING PART
-    if (Transaction && Object.keys(Transaction).length > 0) {
-      const transaction: TransactionDomain =
-        TransactionMapper.toDomain(Transaction);
-
-      orderDomain.transaction = { ...transaction };
+    if (Transaction && Object.keys(Transaction).length === 0) {
+      throw ErrorApiResponse.internalServerError(
+        `Transaction is empty for order ID: ${order.id}`,
+      );
     }
 
-    if (OrderItem && OrderItem.length > 0) {
-      orderDomain.orderItems = [
-        ...OrderItem.map((item) =>
-          OrderItemMapper.toDomain(item, { allInfo: false }),
-        ),
-      ];
-    }
+    const transaction: TransactionDomain =
+      TransactionMapper.toDomain(Transaction);
 
-    return orderDomain;
+    if (OrderItem && OrderItem.length === 0) {
+      throw ErrorApiResponse.internalServerError(
+        `OrderItem is empty for order ID: ${order.id}`,
+      );
+    }
+    const orderItems = [
+      ...OrderItem.map((item) =>
+        OrderItemMapper.toDomain(item, { allInfo: false }),
+      ),
+    ];
+
+    return new OrderDomain({
+      id: order.id,
+      totalPrice: order.totalPrice.toNumber(),
+      account: accountDetail,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      deletedAt: order.deletedAt ?? null,
+      transaction,
+      orderItems,
+    });
   }
 }

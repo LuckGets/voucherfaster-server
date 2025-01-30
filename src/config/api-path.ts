@@ -44,7 +44,7 @@ export const VoucherPath = {
   DiscountQuery: 'd',
 } as const;
 
-const CATEGORIES_CONST = {
+export const CATEGORIES_CONST = {
   NAME: 'categories',
   PARAM_ID: 'categoryId',
   TAG_NAME: 'tags',

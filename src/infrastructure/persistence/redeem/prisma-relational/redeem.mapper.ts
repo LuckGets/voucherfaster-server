@@ -12,7 +12,6 @@ export type RedeemItemEntity = RedeemedOrderItem & {
 export class RedeemItemMapper {
   public static toDomain(entity: RedeemItemEntity): OrderItemDomain {
     const { orderItem, id, updatedAt } = entity;
-    console.log('order', orderItem.order);
     return OrderItemMapper.toDomain({
       ...orderItem,
       RedeemOrderItem: { id, updatedAt },

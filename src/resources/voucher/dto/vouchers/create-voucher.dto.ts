@@ -90,11 +90,14 @@ export const createVoucherFormDataDocumentation: ApiBodyOptions = {
 
 export class CreateVoucherDto {
   @IsString()
+  @ApiProperty({ type: String })
   title: string;
   @IsString()
+  @ApiProperty({ type: String })
   description: string;
   @IsPositive()
   @Transform(({ value }) => Number(value))
+  @ApiProperty({ type: Number })
   price: number;
   @IsPositive()
   @Transform(({ value }) => Number(value))

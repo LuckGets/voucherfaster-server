@@ -5,8 +5,8 @@ import {
   OrderItemTypeEnum,
 } from '@resources/order-item/domain/order-item.domain';
 import { NullAble } from '@utils/types/common.type';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { ISortOption } from 'src/common/types/pagination.type';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 export abstract class OrderItemRepository {
   abstract findById(
@@ -21,7 +21,7 @@ export abstract class OrderItemRepository {
     type,
   }: {
     cursor?: OrderItemDomain['id'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     sortQuery?: ISortOption[];
     status?: OrderItemRedeemStatusEnum;
     type?: OrderItemTypeEnum;

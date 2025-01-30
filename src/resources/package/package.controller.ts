@@ -60,7 +60,6 @@ import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CompactService } from 'src/common/service/compact.service';
-import { isUUID } from 'class-validator';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })

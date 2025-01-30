@@ -43,9 +43,9 @@ export class RedeemService {
         `Order Item ID: ${itemId} could not be found.`,
       );
 
-    if (new Date(orderItem.order.usableDay) > new Date())
+    if (new Date(orderItem.usableAt) > new Date())
       throw ErrorApiResponse.conflictRequest(
-        `The item code ${orderItem.code} is not available to redeem yet. Please try again after ${orderItem.order.usableDay.toLocaleString()}.`,
+        `The item code ${orderItem.code} is not available to redeem yet. Please try again after ${orderItem.usableAt.toLocaleString()}.`,
       );
 
     if (orderItem.order.transaction.status !== TransactionStatusEnum.SUCCESS)
@@ -58,9 +58,9 @@ export class RedeemService {
     //     `The account which owned order ID: ${orderItem.order.id} is now un-verified account. Please verify account before redeeming the item.`,
     //   );
 
-    if (orderItem.detail.usableExpiredAt < new Date())
+    if (orderItem.usableExpiredAt < new Date())
       throw ErrorApiResponse.conflictRequest(
-        `The item code ${orderItem.code} can't be redeem due to the item is expired. Expired at : ${orderItem.detail.usableExpiredAt.toLocaleString()}.`,
+        `The item code ${orderItem.code} can't be redeem due to the item is expired. Expired at : ${orderItem.usableExpiredAt.toLocaleString()}.`,
       );
 
     if (orderItem.redeemedAt)

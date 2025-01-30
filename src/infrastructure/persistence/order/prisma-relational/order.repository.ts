@@ -155,15 +155,6 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     // Initialize the create order items
     // promise to provide in transaction
     try {
-      // const { vouchers, packages, promotions, allOrderItems } =
-      //   this.generateOrderItemsQuery({
-      //     voucherIdList,
-      //     promotionIdList,
-      //     packageIdList,
-      //     orderId: payload.id,
-      //   });
-      // Find the transaction system
-
       const transactionSystem =
         await this.prismaService.transactionSystem.findFirst({
           where: {

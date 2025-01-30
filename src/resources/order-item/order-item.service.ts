@@ -9,10 +9,10 @@ import {
 import { OrderItemRepository } from 'src/infrastructure/persistence/order-item/order-item.repository';
 import { UpdateOrderItemDto } from '../redeem/dto/update.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ISortOption, SORT_DIRECTION } from 'src/common/types/pagination.type';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Injectable()
 export class OrderItemService {
@@ -43,7 +43,7 @@ export class OrderItemService {
   }: {
     sortOption?: string;
     cursor?: OrderItemDomain['id'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     status?: OrderItemRedeemStatusEnum;
     type?: OrderItemTypeEnum;
   }) {

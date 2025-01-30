@@ -1,6 +1,6 @@
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { OwnerDomain } from '@resources/owner/domain/owner.domain';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { DateFormatterService } from '@utils/services/date-formatter.service';
 import { ObjectHelper } from '@utils/services/object.helper';
 
@@ -13,12 +13,11 @@ export class HandleBarContextHelper {
     itemCode: OrderItemDomain['code'];
     qrcodePath: OrderItemDomain['qrcodeImagePath'];
     qrcodeUrl: string;
-    expiredDate: Date;
-    countNumber: number;
+    expiredDate: OrderItemDomain['usableExpiredAt'];
+    countNumber: OrderItemDomain['countNumber'];
     total: number;
-    category: VoucherCategoryDomain['name'];
-    promotion?: OrderItemDomain['detail']['promotion'];
-    rewardVoucher?: OrderItemDomain['detail']['package']['reward'];
+    category: CategoryDomain['name'];
+    rewardVoucher?: OrderItemDomain['detail'];
   }): Record<string, unknown> {
     const {
       ownerName,
@@ -32,7 +31,6 @@ export class HandleBarContextHelper {
       countNumber,
       total,
       category,
-      promotion,
       rewardVoucher,
     } = param;
 
@@ -54,14 +52,11 @@ export class HandleBarContextHelper {
       requiredFields,
       `${itemName} in prepare-context for sending email.`,
     );
-
-    const reward: boolean = rewardVoucher ? true : false;
-    let isPromotion: boolean = false;
-    let _promotionName = '';
-    if (promotion && Object.keys(promotion).length > 0) {
-      if (!promotion.name) throw new Error('Promotion name is required');
-      isPromotion = true;
-      _promotionName = promotion.name;
+    let reward: boolean = false;
+    let rewardImg: string;
+    if (!ObjectHelper.isObjectEmpty(rewardVoucher)) {
+      reward = rewardVoucher?.package?.reward;
+      rewardImg = rewardVoucher.img;
     }
 
     const { date, time } =
@@ -72,7 +67,7 @@ export class HandleBarContextHelper {
       owner_name: ownerName,
       app_name: appName,
       item_name: itemName,
-      item_img: itemImg,
+      item_img: rewardImg ?? itemImg,
       item_code: itemCode,
       qrcode_path: qrcodePath,
       qrcode_url: qrcodeUrl,
@@ -80,8 +75,6 @@ export class HandleBarContextHelper {
       expired_time: time,
       reward_voucher: reward,
       number_total: numberAndTotal,
-      promotion_voucher: isPromotion,
-      promotion_name: _promotionName,
       voucher_category: category,
     };
   }

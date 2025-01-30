@@ -5,7 +5,6 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
 import {
-  IsBoolean,
   IsDate,
   IsOptional,
   IsPositive,

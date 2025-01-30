@@ -10,8 +10,6 @@ export class OrderDomain {
   id: string;
   @ApiProperty({ type: String })
   totalPrice: number;
-  @ApiProperty({ type: () => Date })
-  usableDay: Date;
   @ApiProperty({ type: String })
   account: Pick<
     AccountDomain,
@@ -29,4 +27,33 @@ export class OrderDomain {
   transaction?: TransactionDomain;
   @ApiProperty({ type: () => [OrderItemDomain] })
   orderItems?: OrderItemDomain[];
+
+  constructor({
+    id,
+    totalPrice,
+    account,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    transaction,
+    orderItems,
+  }: {
+    id: OrderDomain['id'];
+    totalPrice: OrderDomain['totalPrice'];
+    account: OrderDomain['account'];
+    createdAt?: OrderDomain['createdAt'];
+    updatedAt?: OrderDomain['updatedAt'];
+    deletedAt?: OrderDomain['deletedAt'];
+    transaction?: OrderDomain['transaction'];
+    orderItems?: OrderDomain['orderItems'];
+  }) {
+    this.id = id;
+    this.totalPrice = totalPrice;
+    this.account = account;
+    this.createdAt = createdAt ?? null;
+    this.updatedAt = updatedAt ?? null;
+    this.deletedAt = deletedAt ?? null;
+    this.transaction = transaction;
+    this.orderItems = orderItems;
+  }
 }

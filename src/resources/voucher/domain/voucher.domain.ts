@@ -20,7 +20,7 @@ export class VoucherDomain {
   id: string;
   @ApiProperty({ type: String })
   title: string;
-  @ApiProperty({ type: () => VoucherStatusEnum })
+  @ApiProperty({ type: () => Object, enum: VoucherStatusEnum })
   status: VoucherStatusEnum;
   @ApiProperty({ type: Number })
   stockAmount: number;
@@ -46,7 +46,7 @@ export class VoucherDomain {
     example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
   })
   img?: Partial<VoucherImgDomain>[];
-  @ApiProperty({ type: () => VoucherDiscountDomain, nullable: true })
+  @ApiProperty({ type: () => Object, nullable: true })
   discount?: VoucherDiscountDomain;
   @ApiProperty({ type: () => String })
   category: CategoryDomain['name'];

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VoucherCategoryDomain } from './category.domain';
+import { CategoryDomain } from './category.domain';
 
 /**
  * The Domain
@@ -9,7 +9,7 @@ export class VoucherTagDomain {
   @ApiProperty({ type: String })
   id: string;
   @ApiProperty({ type: String })
-  category: VoucherCategoryDomain['name'];
+  category: CategoryDomain['name'];
   @ApiProperty({ type: String })
   name: string;
   @ApiProperty({ type: Date })

@@ -1,6 +1,6 @@
 import { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { utcToTimeZoneMiddleware } from '@utils/prisma/service';
+// import { utcToTimeZoneMiddleware } from '@utils/prisma/service';
 
 export class PrismaService
   extends PrismaClient

@@ -49,14 +49,14 @@ export class CreatePackageVoucherDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   price: number;
-  @ApiProperty({ type: () => [CreateRewardVoucherDto] })
+  // @ApiProperty({ type: () => [CreateRewardVoucherDto] })
   @Transform(({ value }) =>
     plainArrayTransformer(value, CreateRewardVoucherDto),
   )
   description: PackageVoucherDomain['description'];
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateRewardVoucherDto)
+  @Type(() => Object)
   rewardVouchers: CreateRewardVoucherDto[];
   @ApiProperty({ type: String })
   @IsString()

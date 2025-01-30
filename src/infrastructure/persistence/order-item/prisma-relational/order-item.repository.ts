@@ -14,10 +14,10 @@ import { Prisma } from '@prisma/client';
 import { getRedeemAbleOrderItemRawQuery } from '../../../../utils/prisma/getRedeemAbleOrderItemQuery';
 import { OrderItemAndDetails, OrderItemMapper } from './order-item.mapper';
 import { Inject } from '@nestjs/common';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { ISortOption } from 'src/common/types/pagination.type';
 import { TransactionStatusEnum } from '@resources/transaction/domain/transaction.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 export class OrderItemRelationPrismaORMRepository
   implements OrderItemRepository
@@ -32,18 +32,12 @@ export class OrderItemRelationPrismaORMRepository
     },
     voucherTag: {
       include: {
-        voucherCategory: true,
+        category: true,
       },
     },
   };
 
   private orderIncludeQuery: Prisma.OrderInclude = {
-    usableDaysAfterPurchased: {
-      select: {
-        id: true,
-        usableDays: true,
-      },
-    },
     Transaction: {
       include: {
         transactionSystem: {
@@ -70,16 +64,7 @@ export class OrderItemRelationPrismaORMRepository
     voucher: {
       include: this.voucherIncludeQuery,
     },
-  };
-
-  private orderItemPromotionIncludeQuery: Prisma.OrderItemPromotionInclude = {
-    voucherPromotion: {
-      include: {
-        voucher: {
-          include: this.voucherIncludeQuery,
-        },
-      },
-    },
+    VoucherDiscount: true,
   };
 
   private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
@@ -102,6 +87,7 @@ export class OrderItemRelationPrismaORMRepository
         },
       },
     },
+    PackageDiscount: true,
   };
 
   private includeQuery: Prisma.OrderItemInclude = {
@@ -111,13 +97,15 @@ export class OrderItemRelationPrismaORMRepository
     OrderItemVoucher: {
       include: this.orderItemVoucherIncludeQuery,
     },
-    OrderItemPromotion: {
-      include: this.orderItemPromotionIncludeQuery,
-    },
     order: {
       include: this.orderIncludeQuery,
     },
     RedeemOrderItem: {
+      where: {
+        deletedAt: {
+          equals: null,
+        },
+      },
       select: {
         id: true,
         updatedAt: true,
@@ -156,11 +144,6 @@ export class OrderItemRelationPrismaORMRepository
               ...acc,
               OrderItemPackage: {
                 package: {
-                  usableExpiredAt: direction,
-                },
-              },
-              OrderItemPromotion: {
-                voucherPromotion: {
                   usableExpiredAt: direction,
                 },
               },
@@ -205,10 +188,10 @@ export class OrderItemRelationPrismaORMRepository
   }
 
   private async generateFindCategoryWhereQuery(
-    categoryName?: VoucherCategoryDomain['name'],
+    categoryName?: CategoryDomain['name'],
   ): Promise<Prisma.OrderItemWhereInput> {
     if (!categoryName) return {};
-    const category = await this.prismaService.voucherCategory.findFirst({
+    const category = await this.prismaService.category.findFirst({
       where: {
         name: {
           contains: categoryName,
@@ -249,11 +232,6 @@ export class OrderItemRelationPrismaORMRepository
             voucherId: { in: allVoucherIds },
           },
         },
-        {
-          OrderItemPromotion: {
-            voucherPromotionId: { in: allVoucherIds },
-          },
-        },
       ],
     };
   }
@@ -282,13 +260,6 @@ export class OrderItemRelationPrismaORMRepository
           },
           OrderItemVoucher: {
             voucher: {
-              usableExpiredAt: {
-                lte: currentDate,
-              },
-            },
-          },
-          OrderItemPromotion: {
-            voucherPromotion: {
               usableExpiredAt: {
                 lte: currentDate,
               },
@@ -328,12 +299,6 @@ export class OrderItemRelationPrismaORMRepository
       case OrderItemTypeEnum.VOUCHER:
         return {
           OrderItemVoucher: {
-            isNot: null,
-          },
-        };
-      case OrderItemTypeEnum.PROMOTION:
-        return {
-          OrderItemPromotion: {
             isNot: null,
           },
         };
@@ -386,7 +351,7 @@ export class OrderItemRelationPrismaORMRepository
     type,
   }: {
     cursor?: OrderItemDomain['id'];
-    category?: VoucherCategoryDomain['name'];
+    category?: CategoryDomain['name'];
     sortQuery?: ISortOption[];
     status?: OrderItemRedeemStatusEnum;
     type?: OrderItemTypeEnum;
@@ -436,7 +401,7 @@ export class OrderItemRelationPrismaORMRepository
                 id: item.id,
               },
               data: {
-                qrcodeImgPath: item.qrcodeImagePath,
+                qrcodeImagePath: item.qrcodeImagePath,
               },
               include: this.includeQuery,
             });

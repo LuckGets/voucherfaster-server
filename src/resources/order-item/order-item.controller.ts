@@ -8,13 +8,13 @@ import {
   OrderItemRedeemStatusEnum,
   OrderItemTypeEnum,
 } from '@resources/order-item/domain/order-item.domain';
-import { VoucherCategoryDomain } from '@resources/voucher/domain/voucher.domain';
 import {
   GetByOrderItemIdResponse,
   GetPaginationOrderItemsResponse,
 } from './dto/get-order-item';
 import { isUUID } from 'class-validator';
 import { ErrorApiResponse } from 'src/common/core-api-response';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Controller({ path: OrderItemPath.Base, version: '1' })
 export class OrderItemController {
@@ -67,7 +67,6 @@ export class OrderItemController {
     enum: [
       OrderItemTypeEnum.ALL,
       OrderItemTypeEnum.VOUCHER,
-      OrderItemTypeEnum.PROMOTION,
       OrderItemTypeEnum.PACKAGE,
     ],
     default: OrderItemTypeEnum.ALL,
@@ -80,7 +79,7 @@ export class OrderItemController {
   @Get()
   async getPaginationOrderItems(
     @Query(OrderItemPath.SortQuery) sortOption: string,
-    @Query(OrderItemPath.CategoryQuery) category: VoucherCategoryDomain['name'],
+    @Query(OrderItemPath.CategoryQuery) category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: OrderItemDomain['id'],
     @Query(OrderItemPath.StatusQuery) status: OrderItemRedeemStatusEnum,
     @Query(OrderItemPath.TypeQuery) type: OrderItemTypeEnum,

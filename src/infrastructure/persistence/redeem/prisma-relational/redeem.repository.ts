@@ -18,18 +18,12 @@ export class RedeemRelationaPrismaORMRepository
     },
     voucherTag: {
       include: {
-        voucherCategory: true,
+        category: true,
       },
     },
   };
 
   private orderIncludeQuery: Prisma.OrderInclude = {
-    usableDaysAfterPurchased: {
-      select: {
-        id: true,
-        usableDays: true,
-      },
-    },
     Transaction: {
       include: {
         transactionSystem: {
@@ -56,16 +50,7 @@ export class RedeemRelationaPrismaORMRepository
     voucher: {
       include: this.voucherIncludeQuery,
     },
-  };
-
-  private orderItemPromotionIncludeQuery: Prisma.OrderItemPromotionInclude = {
-    voucherPromotion: {
-      include: {
-        voucher: {
-          include: this.voucherIncludeQuery,
-        },
-      },
-    },
+    VoucherDiscount: true,
   };
 
   private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
@@ -88,6 +73,7 @@ export class RedeemRelationaPrismaORMRepository
         },
       },
     },
+    PackageDiscount: true,
   };
 
   private orderItemIncludeQuery: Prisma.OrderItemInclude = {
@@ -96,9 +82,6 @@ export class RedeemRelationaPrismaORMRepository
     },
     OrderItemVoucher: {
       include: this.orderItemVoucherIncludeQuery,
-    },
-    OrderItemPromotion: {
-      include: this.orderItemPromotionIncludeQuery,
     },
     order: {
       include: this.orderIncludeQuery,

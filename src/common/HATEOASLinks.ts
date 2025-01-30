@@ -1,14 +1,14 @@
 import {
   AccountPath,
   AuthPath,
-  VoucherCategoryPath,
+  CATEGORIES_CONST,
+  CategoryPath,
 } from 'src/config/api-path';
 import { HTTPMethod } from './http.type';
 import { UUIDTypes } from 'uuid';
-import {
-  VoucherCategoryDomain,
-  VoucherTagDomain,
-} from '@resources/voucher/domain/voucher.domain';
+import {} from '@resources/voucher/domain/voucher.domain';
+import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 const generateVerfifiedAccountLink = (accountId: string) => ({
   account: {
@@ -58,45 +58,45 @@ export const GenerateAccountResponseHATEOASLink = (
 // };
 
 export const generateVoucherCategoryResponseHATEOASLink = (
-  voucherCategoryId: VoucherCategoryDomain['id'],
+  voucherCategoryId: CategoryDomain['id'],
   voucherTagId?: VoucherTagDomain['id'],
 ) => {
   const links = {
     category: {
       update: {
         method: HTTPMethod.Patch,
-        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}`,
+        path: `${CategoryPath.Base}/${voucherCategoryId}`,
       },
     },
     tags: {
       create: {
         method: HTTPMethod.Post,
-        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}`,
+        path: `${CategoryPath.Base}/${voucherCategoryId}/${CATEGORIES_CONST.TAG_NAME}`,
       },
     },
   };
   if (voucherTagId) {
     links.tags['update'] = {
       method: HTTPMethod.Patch,
-      path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}/${voucherTagId}`,
+      path: `${CategoryPath.Base}/${voucherCategoryId}/${CATEGORIES_CONST.TAG_NAME}/${voucherTagId}`,
     };
   }
   return links;
 };
 
 export const generateVoucherTagResponseHATEOASLink = (
-  voucherCategoryId: VoucherCategoryDomain['id'],
+  voucherCategoryId: CategoryDomain['id'],
   voucherTagId: VoucherTagDomain['id'],
 ) => {
   return {
     tags: {
       create: {
         method: HTTPMethod.Post,
-        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}`,
+        path: `${CategoryPath.Base}/${voucherCategoryId}/${CATEGORIES_CONST.TAG_NAME}`,
       },
       update: {
         method: HTTPMethod.Patch,
-        path: `${VoucherCategoryPath.Base}/${voucherCategoryId}/${VoucherCategoryPath.TagsName}/${voucherTagId}`,
+        path: `${CategoryPath.Base}/${voucherCategoryId}/${CATEGORIES_CONST.TAG_NAME}/${voucherTagId}`,
       },
     },
   };

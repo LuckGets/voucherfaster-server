@@ -26,7 +26,8 @@ export class CreateOrderItem {
   @IsUUID(7)
   id: VoucherDomain['id'] | PackageVoucherDomain['id'];
   @ApiProperty({
-    type: () => ProductTypeEnum,
+    type: () => String,
+    enum: ProductTypeEnum,
     description:
       'There is two type of voucher. "voucher", "package". Please provide only three of these enum.',
   })

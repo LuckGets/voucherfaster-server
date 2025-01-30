@@ -21,13 +21,16 @@ export class VoucherTagRelationalPrismaORMRepository
   private categoryIncludeQuery: Prisma.VoucherTagInclude = {
     category: true,
   };
-  findById(id: VoucherTagDomain['id']): Promise<NullAble<VoucherTagDomain>> {
-    return this.prismaService.voucherTag.findUnique({
+  async findById(
+    id: VoucherTagDomain['id'],
+  ): Promise<NullAble<VoucherTagDomain>> {
+    const voucherTag = await this.prismaService.voucherTag.findUnique({
       where: {
         id,
       },
       include: this.categoryIncludeQuery,
     });
+    return VoucherTagMapper.toDomain(voucherTag);
   }
 
   async findMany({
@@ -91,30 +94,4 @@ export class VoucherTagRelationalPrismaORMRepository
 
     return VoucherTagMapper.toDomain(updatedTag);
   }
-
-  //   create(
-  //     data: Omit<VoucherTagDomain, 'createdAt' | 'updatedAt' | 'deletedAt'>,
-  //   ): Promise<VoucherTagDomain> {
-  //     const createdInput: Prisma.VoucherTagCreateInput = {
-  //       id: data.id,
-  //       name: data.name,
-  //       voucherCategory: { connect: { id: data.categoryId } },
-  //     };
-  //     return this.prismaService.voucherTag.create({ data: createdInput });
-  //   }
-  //   update(
-  //     tagId: VoucherDomain['id'],
-  //     payload:
-  //       | Partial<VoucherTagDomain>
-  //       | Partial<
-  //           VoucherTagDomain & { updateCategoryId: VoucherCategoryDomain['id'] }
-  //         >,
-  //   ): Promise<VoucherTagDomain> {
-  //     return this.prismaService.voucherTag.update({
-  //       where: {
-  //         id: tagId,
-  //       },
-  //       data: payload,
-  //     });
-  //   }
 }

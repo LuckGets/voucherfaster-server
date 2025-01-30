@@ -12,7 +12,6 @@ import {
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { Transporter } from 'nodemailer';
 import { OwnerDomain } from '@resources/owner/domain/owner.domain';
-import { DateFormatterService } from '@utils/services/date-formatter.service';
 import { HandleBarContextHelper } from './templates/mail-context.helper';
 
 export type MailTransporter = Transporter;
@@ -117,6 +116,7 @@ export class MailService {
   ): Promise<void> {
     const { data } = mailData;
     const title = MAIL_ORDER_ITEM_CONSTANT.generateTitle(ownerName, data.code);
+    const isRewardVoucher = data.detail?.package?.reward ? data.detail : null;
     const context = HandleBarContextHelper.orderItem({
       ownerName,
       itemName: data.detail?.title,
@@ -125,12 +125,11 @@ export class MailService {
       itemCode: data.code,
       qrcodePath: data.qrcodeImagePath,
       qrcodeUrl: data.qrCodeUrl,
-      expiredDate: new Date(data.detail?.usableExpiredAt),
+      expiredDate: new Date(data.usableExpiredAt),
       countNumber: data.countNumber,
       total: data.total,
       category: data.detail?.category,
-      promotion: data.detail?.promotion,
-      rewardVoucher: data.detail.package?.reward,
+      rewardVoucher: isRewardVoucher,
     });
 
     console.log(`Sending Order item voucher to email: ${mailData.to}...`);
