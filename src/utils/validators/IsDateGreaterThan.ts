@@ -17,7 +17,7 @@ export class IsDateGreaterThanValidator
 
     // Ensure both values are instances of Date
     if (value instanceof Date && propertyValue instanceof Date) {
-      return value > propertyValue; // Check if the decorated date is greater than the compared one
+      return value >= propertyValue; // Check if the decorated date is greater than the compared one
     }
 
     return false; // If either value isn't a Date, return false
@@ -28,7 +28,7 @@ export class IsDateGreaterThanValidator
   }
 }
 
-export function IsDateGreaterThan(
+export function IsDateGreaterOrEqual(
   property: string,
   validationOptions?: ValidationOptions,
 ) {

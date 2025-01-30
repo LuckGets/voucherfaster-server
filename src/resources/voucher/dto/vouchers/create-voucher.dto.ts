@@ -7,7 +7,7 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { VoucherDomain } from '../../domain/voucher.domain';
 import { AuthPath } from 'src/config/api-path';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
-import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
+import { IsDateGreaterOrEqual } from '@utils/validators/IsDateGreaterThan';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 type CreateVoucherDataType = Omit<VoucherDomain, 'img'>;
@@ -103,11 +103,11 @@ export class CreateVoucherDto {
   @Transform(({ value }) => Number(value))
   @ApiProperty({ type: Number })
   stockAmount: number;
-  @IsDateGreaterThan('sellStartedAt')
+  @IsDateGreaterOrEqual('sellStartedAt')
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usableAt: Date;
-  @IsDateGreaterThan('usableAt')
+  @IsDateGreaterOrEqual('usableAt')
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usableExpiredAt: Date;
@@ -115,7 +115,7 @@ export class CreateVoucherDto {
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   sellStartedAt: Date;
-  @IsDateGreaterThan('sellStartedAt')
+  @IsDateGreaterOrEqual('sellStartedAt')
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   sellExpiredAt: Date;
@@ -150,46 +150,36 @@ export class CreateVoucherResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: `{
-        "id": "01948e7f-845f-774d-ad8d-29e5f496eacd",
-        "stockAmount": 10000,
-        "description": "CRISPY BURGER",
-        "price": 30000,
-        "usableAt": "12/25/2025, 12:00:00 AM",
-        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
-        "sellStartedAt": "10/24/2025, 12:00:00 AM",
-        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
-        "title": "CRISPY BURGER",
-        "status": "ACTIVE",
-        "tag": "main courses",
-        "category": "Yok chinese restaurant",
-        "img": [
-            {
-                "id": "01948e7f-8460-717e-b372-509aebfcf5f3",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737557508730_rocks.jpg",
-                "mainImg": true
-            }
-        ],
-        "termAndCond": {
-            "th": [
-                {
-                    "id": "01948e7f-8460-717e-b372-4339444a35eb",
-                    "description": "เคี้ยวมันส์ๆ"
-                }
-            ],
-            "en": [
-                {
-                    "id": "01948e7f-8460-717e-b372-4752ec43a770",
-                    "description": "Enjoy eating"
-                },
-                {
-                    "id": "01948e7f-8460-717e-b372-487aeb43ca87",
-                    "description": "Have fun"
-                }
-            ]
+    example: {
+      id: '0194b80c-4d87-777c-8563-52531cdd4bf8',
+      title: 'ไก่เจียว',
+      status: 'ACTIVE',
+      stockAmount: 10000,
+      description: 'ไก่เจียวในไข่ทอดสูตรกวางจง',
+      price: 199,
+      usableAt: '2025-01-31T17:00:00.000Z',
+      usableExpiredAt: '2025-12-25T17:00:00.000Z',
+      termAndCondition: 'Enjoy eating and Have fun',
+      sellStartedAt: '2025-01-31T17:00:00.000Z',
+      sellExpiredAt: '2025-12-25T17:00:00.000Z',
+      img: [
+        {
+          id: '0194b80c-4d8e-7db1-876c-cb64e84ff5a2',
+          imgPath:
+            'd22pq9rbvhh9yl.cloudfront.net/voucher-img/1738254601296_cute-dog.jpg',
+          mainImg: true,
         },
-        "promotion": []
-    }`,
+      ],
+      discount: {
+        id: '0194b80c-4d87-777c-8563-5569c95a6491',
+        discountedPrice: 99,
+        createdAt: '2025-01-30T16:30:01.614Z',
+        updatedAt: '2025-01-30T16:30:01.614Z',
+        status: 'ACTIVE',
+      },
+      category: 'หอยทอด แม่กลอง',
+      tag: 'หาดใหญ่แก๊งค์',
+    },
   })
   public data: CreateVoucherDataType;
 

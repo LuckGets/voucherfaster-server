@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiBodyOptions, ApiProperty } from '@nestjs/swagger';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
-import { IsDateGreaterThan } from '@utils/validators/IsDateGreaterThan';
+import { IsDateGreaterOrEqual } from '@utils/validators/IsDateGreaterThan';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
@@ -69,7 +69,7 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) => new Date(value))
   sellStartedAt: Date;
   @ApiProperty({ type: Date })
-  @IsDateGreaterThan('sellStartedAt')
+  @IsDateGreaterOrEqual('sellStartedAt')
   @Transform(({ value }) => new Date(value))
   sellExpiredAt: Date;
   @ApiProperty({ type: Date })
@@ -77,7 +77,7 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) => new Date(value))
   usableAt: Date;
   @ApiProperty({ type: Date })
-  @IsDateGreaterThan('usableAt')
+  @IsDateGreaterOrEqual('usableAt')
   @Transform(({ value }) => new Date(value))
   usableExpiredAt: Date;
   @IsOptional()

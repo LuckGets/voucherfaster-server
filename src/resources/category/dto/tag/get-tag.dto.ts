@@ -15,7 +15,7 @@ export class GetManyVoucherTagResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: `${HTTPMethod.Get} ${CategoryPath.GetManyTagByCategory} successfully.`,
+    example: `${HTTPMethod.Get} ${CategoryPath.GetManyTag} successfully.`,
   })
   public message: string;
   @ApiProperty({

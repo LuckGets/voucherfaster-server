@@ -115,7 +115,6 @@ export class VoucherDomain {
       'category',
       'tag',
       'price',
-      'discount',
       'img',
       'stockAmount',
       'termAndCondition',

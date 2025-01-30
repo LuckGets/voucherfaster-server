@@ -33,9 +33,15 @@ import {
   CreateCategoryDto,
   CreateCategoryResponse,
 } from './dto/category/create-category.dto';
-import { GetManyCategoryResponse } from './dto/category/get-category.dto';
+import {
+  GetCategoryByIdResponse,
+  GetManyCategoryResponse,
+} from './dto/category/get-category.dto';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
-import { UpdateVoucherTagDto } from './dto/tag/update-tag.dto';
+import {
+  UpdateVoucherTagDto,
+  UpdateVoucherTagResponse,
+} from './dto/tag/update-tag.dto';
 import { CategoryDomain } from './domain/category.domain';
 import { VoucherTagDomain } from './domain/tag.domain';
 import { GetManyVoucherTagResponse } from './dto/tag/get-tag.dto';
@@ -141,11 +147,14 @@ export class CategoryController {
   })
   @UseGuards(AdminGuard)
   @Patch(CategoryPath.UpdateTag)
-  async updateVoucherTag(@Body() body: UpdateVoucherTagDto) {
-    return this.voucherTagService.updateVoucherTag(body);
+  async updateVoucherTag(
+    @Body() body: UpdateVoucherTagDto,
+  ): Promise<UpdateVoucherTagResponse> {
+    const updatedTag = await this.voucherTagService.updateVoucherTag(body);
+    return UpdateVoucherTagResponse.success(updatedTag);
   }
 
-  @ApiParam({
+  @ApiQuery({
     name: CategoryPath.CategoryQuery,
   })
   @ApiQuery({
@@ -157,10 +166,10 @@ export class CategoryController {
   @SerializeOptions({
     groups: [RoleEnum.Admin, RoleEnum.User],
   })
-  @Get(CategoryPath.GetManyTagByCategory)
+  @Get(CategoryPath.GetManyTag)
   async getPaginationVoucherTag(
-    @Param(CategoryPath.CategoryQuery)
-    category: CategoryDomain['id'],
+    @Query(CategoryPath.CategoryQuery)
+    category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherTagDomain['id'],
   ): Promise<GetManyVoucherTagResponse> {
     const voucherTagList = await this.voucherTagService.getPaginationVoucherTag(
@@ -171,5 +180,18 @@ export class CategoryController {
     );
 
     return GetManyVoucherTagResponse.success(voucherTagList, category);
+  }
+
+  // GET CATEGORY BY ID
+  @ApiParam({ name: CATEGORIES_CONST.PARAM_ID })
+  @SerializeOptions({
+    groups: [RoleEnum.Admin, RoleEnum.User],
+  })
+  @Get(CategoryPath.GetCategoryById)
+  async getCategoryById(
+    @Param(CATEGORIES_CONST.PARAM_ID) id: CategoryDomain['id'],
+  ): Promise<GetCategoryByIdResponse> {
+    const category = await this.categoryService.getById(id);
+    return GetCategoryByIdResponse.success(category);
   }
 }

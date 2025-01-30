@@ -127,7 +127,7 @@ export abstract class VoucherRepository {
     discount?: PaginationDiscountQueryEnum;
     sortOption?: unknown;
     status?: VoucherDomain['status'];
-    sellDate: PaginationSellDateQueryEnum;
+    sellDate?: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]>;
 
   abstract update(data: UpdateVoucherRepositoryInput): Promise<VoucherDomain>;

@@ -54,12 +54,12 @@ export const CATEGORIES_CONST = {
 export const CategoryPath = {
   Name: `${CATEGORIES_CONST.NAME}`,
   Base: `/${CATEGORIES_CONST.NAME}`,
-
+  GetCategoryById: `/:${CATEGORIES_CONST.PARAM_ID}`,
   UpdateCategory: `:${CATEGORIES_CONST.PARAM_ID}`,
   DeleteCategory: `/:${CATEGORIES_CONST.PARAM_ID}`,
-  GetManyTagByCategory: `/:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}`,
+  GetManyTag: `${CATEGORIES_CONST.TAG_NAME}`,
   CreateTag: `/:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}`,
-  UpdateTag: `:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}/:${CATEGORIES_CONST.PARAM_TAG_ID}`,
+  UpdateTag: `:${CATEGORIES_CONST.PARAM_ID}/${CATEGORIES_CONST.TAG_NAME}`,
   CategoryQuery: 'category',
 } as const;
 

@@ -65,6 +65,13 @@ export class CategoryService {
     return this.categoryRespository.update(payload);
   }
 
+  public getById(id: CategoryDomain['id']): Promise<CategoryDomain> {
+    if (!id || !isUUID(id, 7))
+      throw ErrorApiResponse.badRequest(`Invalid ID format.`);
+
+    return this.categoryRespository.findById(id);
+  }
+
   public async delete(id: CategoryDomain['id']): Promise<void> {
     if (!id || !isUUID(id, 7))
       throw ErrorApiResponse.badRequest(`Invalid ID format.`);

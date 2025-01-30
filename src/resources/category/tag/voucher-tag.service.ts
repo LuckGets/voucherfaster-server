@@ -38,14 +38,17 @@ export class VoucherTagService {
       );
     }
 
-    const isTagNameDuplicate = voucherCategory.voucherTags.filter(
-      (tag) => tag.name === data.name,
-    );
+    const { voucherTags } = voucherCategory;
 
-    if (isTagNameDuplicate.length > 0) {
-      throw ErrorApiResponse.conflictRequest(
-        `The tag name: ${data.name} already exist in this category ID: ${data.categoryId}.`,
+    if (voucherTags && voucherTags.length > 0) {
+      const isTagNameDuplicate = voucherTags.filter(
+        (tag) => tag.name === data.name,
       );
+      if (isTagNameDuplicate.length > 0) {
+        throw ErrorApiResponse.conflictRequest(
+          `The tag name: ${data.name} already exist in this category ID: ${data.categoryId}.`,
+        );
+      }
     }
 
     return this.voucherTagRepository.create({
@@ -92,6 +95,12 @@ export class VoucherTagService {
       throw ErrorApiResponse.notFoundRequest(
         `The tag ID: ${data.tagId} could not be found on this server.`,
       );
+
+    if (data.name && data.name === isVoucherTagExist.name) {
+      throw ErrorApiResponse.conflictRequest(
+        `The tag name: ${data.name} already the same. name: ${isVoucherTagExist.name}.`,
+      );
+    }
 
     if (data.updateCategoryId) {
       const isCategoryExist: CategoryDomain =

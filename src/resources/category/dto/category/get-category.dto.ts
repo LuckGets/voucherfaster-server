@@ -94,3 +94,87 @@ export class GetManyCategoryResponse extends CoreApiResponse {
     );
   }
 }
+
+export class GetCategoryByIdResponse extends CoreApiResponse {
+  @ApiProperty({
+    type: Number,
+    example: HttpStatus.OK,
+  })
+  public HTTPStatusCode: number;
+  @ApiProperty({
+    type: Number,
+    example: 'GET /categories/123 successfully.',
+  })
+  public message: string;
+  @ApiProperty({
+    type: Object,
+    example: `{"logout": ${AuthPath.Logout}}`,
+  })
+  public links: HATEOSLink;
+  @ApiProperty({
+    type: Object,
+    example: [
+      {
+        id: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+        name: 'All-international',
+        createdAt: '2025-01-30T11:06:44.308Z',
+        updatedAt: '2025-01-30T11:06:44.308Z',
+        deletedAt: null,
+        VoucherTags: [
+          {
+            id: '0194b6e4-49d3-7399-b682-898de4627fef',
+            name: 'Breakfast',
+            categoryId: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+            createdAt: '2025-01-30T11:06:44.436Z',
+            updatedAt: '2025-01-30T11:06:44.436Z',
+            deletedAt: null,
+          },
+          {
+            id: '0194b6e4-49d3-7399-b682-8cde0e8bb8cb',
+            name: 'Lunch',
+            categoryId: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+            createdAt: '2025-01-30T11:06:44.436Z',
+            updatedAt: '2025-01-30T11:06:44.436Z',
+            deletedAt: null,
+          },
+          {
+            id: '0194b6e4-49d3-7399-b682-90f35d1a1513',
+            name: 'Dinner',
+            categoryId: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+            createdAt: '2025-01-30T11:06:44.436Z',
+            updatedAt: '2025-01-30T11:06:44.436Z',
+            deletedAt: null,
+          },
+        ],
+      },
+    ],
+  })
+  public data: CategoryDomain;
+
+  constructor(
+    code: GetCategoryByIdResponse['HTTPStatusCode'],
+    message: GetCategoryByIdResponse['message'],
+    link: GetCategoryByIdResponse['links'],
+    data: GetCategoryByIdResponse['data'],
+  ) {
+    super(code, message, link);
+    this.data = data;
+  }
+
+  public static success(
+    data: CategoryDomain,
+    message?: string,
+    link?: HATEOSLink,
+    statusCode?: number,
+  ): GetCategoryByIdResponse {
+    const responseMessage =
+      message ?? `${HTTPMethod.Get} ${CategoryPath.Base} successfully.`;
+    const responseCode = statusCode ?? HttpStatus.OK;
+    return new GetCategoryByIdResponse(
+      responseCode,
+      responseMessage,
+      link,
+      data,
+    );
+  }
+}

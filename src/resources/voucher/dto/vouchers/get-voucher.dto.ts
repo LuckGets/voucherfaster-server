@@ -38,27 +38,36 @@ export class GetManyVoucherResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: `[{
-            "id": "01948e4f-ceee-779e-bb82-d5509924f01f",
-            "stockAmount": 10000,
-            "description": "Spicy and hot tofu.",
-            "price": 210,
-            "usableAt": "1/1/2025, 12:00:00 AM",
-            "usableExpiredAt": "12/26/2025, 12:00:00 AM",
-            "sellStartedAt": "12/26/2024, 12:00:00 AM",
-            "sellExpiredAt": "12/26/2025, 12:00:00 AM",
-            "title": "Mapo tofu",
-            "status": "ACTIVE",
-            "tag": "main courses",
-            "category": "Yok chinese restaurant",
-            "img": [
-                {
-                    "id": "01948e4f-ceee-779e-bb83-007291c47fb0",
-                    "imgPath": "https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/กะเพาะปลาน้ำแดง.jpg"
-                }
-            ],
-            "promotion": []
-        }]`,
+    example: [
+      {
+        id: '0194b6e4-49d3-7399-b682-a2f68f72b9be',
+        title: 'Burger with fries',
+        status: 'ACTIVE',
+        stockAmount: 10000,
+        description: 'Juicy burgers with crispy french fries.',
+        price: 300,
+        usableAt: '2024-12-31T17:00:00.000Z',
+        usableExpiredAt: '2025-12-25T17:00:00.000Z',
+        sellStartedAt: '2024-12-25T17:00:00.000Z',
+        sellExpiredAt: '2025-12-25T17:00:00.000Z',
+        img: [
+          {
+            id: '0194b6e4-49d3-7399-b682-cc1e1db7b121',
+            imgPath:
+              'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp',
+          },
+        ],
+        discount: {
+          id: '0194b6e4-49d3-7399-b682-f939c52bdf91',
+          discountedPrice: 199,
+          createdAt: '2025-01-30T11:06:44.623Z',
+          updatedAt: '2025-01-30T11:06:44.623Z',
+          status: 'ACTIVE',
+        },
+        category: 'All-international',
+        tag: 'Lunch',
+      },
+    ],
   })
   public data: VoucherDomain[];
   @ApiProperty({

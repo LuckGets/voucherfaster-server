@@ -64,7 +64,9 @@ export class VoucherTagRelationalPrismaORMRepository
     const voucherTagLists = await this.prismaService.voucherTag.findMany({
       ...paginatedQueryOptiion,
       where: categoryWhereQuery,
+      include: this.categoryIncludeQuery,
     });
+
     return voucherTagLists.map(VoucherTagMapper.toDomain);
   }
 
@@ -78,13 +80,16 @@ export class VoucherTagRelationalPrismaORMRepository
   }
 
   async update(payload: UpdateVoucherTagDto): Promise<VoucherTagDomain> {
-    const { tagId, updateCategoryId, ...restData } = payload;
+    const { tagId, updateCategoryId, name } = payload;
 
-    const data: Prisma.VoucherTagUpdateInput = {
-      ...restData,
-    };
+    const data: Prisma.VoucherTagUpdateInput = {};
 
-    if (updateCategoryId) data.category.update = { id: updateCategoryId };
+    if (name) data.name = name;
+
+    if (updateCategoryId)
+      data.category = {
+        connect: { id: updateCategoryId },
+      };
 
     const updatedTag = await this.prismaService.voucherTag.update({
       where: { id: tagId },

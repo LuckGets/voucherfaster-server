@@ -13,7 +13,8 @@ export class VoucherTagMapper {
     if (ObjectHelper.isObjectEmpty(voucherTagEntity)) return null;
     const { category, ...voucherTag } = voucherTagEntity;
     let categoryName = '';
-    if (!ObjectHelper.isObjectEmpty) categoryName = category.name;
+
+    if (!ObjectHelper.isObjectEmpty(category)) categoryName = category.name;
 
     return new VoucherTagDomain({ ...voucherTag, category: categoryName }); // VoucherTagDomain
   }

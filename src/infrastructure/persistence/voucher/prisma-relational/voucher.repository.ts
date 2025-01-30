@@ -13,7 +13,6 @@ import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { VoucherMapper } from './voucher.mapper';
-import { UpdateVoucherDto } from '@resources/voucher/dto/vouchers/update-voucher.dto';
 import { VoucherDiscountCreateInput } from '@resources/voucher/domain/voucher-discount.domain';
 import {
   PaginationDiscountQueryEnum,
@@ -111,8 +110,6 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   ): Prisma.VoucherWhereInput {
     const currentDate = new Date();
     switch (sellDate) {
-      case PaginationSellDateQueryEnum.ALL:
-        return {};
       case PaginationSellDateQueryEnum.NOW:
         return {
           AND: [
@@ -189,15 +186,23 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           id: tagId,
         },
       },
-      VoucherDiscount: {
-        create: voucherDiscount,
-      },
       VoucherImg: {
         createMany: {
-          data: image,
+          data: image.map((item) => ({
+            imgPath: item.imgPath,
+            mainImg: item.mainImg,
+          })),
         },
       },
     };
+
+    if (voucherDiscount)
+      createVoucherData.VoucherDiscount = {
+        create: {
+          id: voucherDiscount.id,
+          discountedPrice: voucherDiscount.discountedPrice,
+        },
+      };
     const createdVoucher = await this.prismaService.$transaction(
       async (txUnit) => {
         return txUnit.voucher.create({
@@ -247,8 +252,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     cursor?: VoucherDomain['id'];
     discount: PaginationDiscountQueryEnum;
     sortOption?: any;
-    status: VoucherDomain['status'];
-    sellDate: PaginationSellDateQueryEnum;
+    status?: VoucherDomain['status'];
+    sellDate?: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]> {
     const paginatedQueryOptiion = generatePaginationQueryOption({
       cursor,
@@ -293,6 +298,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       where: whereQueryOption,
       include: voucherJoinQuery,
     });
+
     return voucherList.map((item) =>
       VoucherMapper.toDomain(item, { allInfo: false }),
     );

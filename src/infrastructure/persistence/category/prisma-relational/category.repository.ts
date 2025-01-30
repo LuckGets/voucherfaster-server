@@ -41,6 +41,7 @@ export class CategoryRelationalPrismaORMRepository
       where: {
         id,
       },
+      include: this.includeTagsQuery,
     });
   }
 
