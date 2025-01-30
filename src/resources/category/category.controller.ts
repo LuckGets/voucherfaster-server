@@ -145,11 +145,8 @@ export class CategoryController {
     return this.voucherTagService.updateVoucherTag(body);
   }
 
-  @ApiQuery({
-    name: 'category',
-    description: 'Tag name of the voucher to filter by.',
-    required: false,
-    type: String, // Adjust to the correct type if needed
+  @ApiParam({
+    name: CategoryPath.CategoryQuery,
   })
   @ApiQuery({
     name: 'cursor',
@@ -162,8 +159,8 @@ export class CategoryController {
   })
   @Get(CategoryPath.GetManyTagByCategory)
   async getPaginationVoucherTag(
-    @Query(CategoryPath.CategoryQuery)
-    category: CategoryDomain['name'],
+    @Param(CategoryPath.CategoryQuery)
+    category: CategoryDomain['id'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherTagDomain['id'],
   ): Promise<GetManyVoucherTagResponse> {
     const voucherTagList = await this.voucherTagService.getPaginationVoucherTag(
@@ -173,6 +170,6 @@ export class CategoryController {
       },
     );
 
-    return GetManyVoucherTagResponse.success(voucherTagList);
+    return GetManyVoucherTagResponse.success(voucherTagList, category);
   }
 }
