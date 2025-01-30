@@ -24,7 +24,41 @@ export class GetManyCategoryResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: [
+      {
+        id: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+        name: 'All-international',
+        createdAt: '2025-01-30T11:06:44.308Z',
+        updatedAt: '2025-01-30T11:06:44.308Z',
+        deletedAt: null,
+        VoucherTags: [
+          {
+            id: '0194b6e4-49d3-7399-b682-898de4627fef',
+            name: 'Breakfast',
+            categoryId: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+            createdAt: '2025-01-30T11:06:44.436Z',
+            updatedAt: '2025-01-30T11:06:44.436Z',
+            deletedAt: null,
+          },
+          {
+            id: '0194b6e4-49d3-7399-b682-8cde0e8bb8cb',
+            name: 'Lunch',
+            categoryId: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+            createdAt: '2025-01-30T11:06:44.436Z',
+            updatedAt: '2025-01-30T11:06:44.436Z',
+            deletedAt: null,
+          },
+          {
+            id: '0194b6e4-49d3-7399-b682-90f35d1a1513',
+            name: 'Dinner',
+            categoryId: '0194b6e4-49d2-7141-8f77-7e06138207fc',
+            createdAt: '2025-01-30T11:06:44.436Z',
+            updatedAt: '2025-01-30T11:06:44.436Z',
+            deletedAt: null,
+          },
+        ],
+      },
+    ],
   })
   public data: CategoryDomain[];
   public cursor: string;
@@ -43,7 +77,6 @@ export class GetManyCategoryResponse extends CoreApiResponse {
 
   public static success(
     data: CategoryDomain[],
-    cursor: string,
     message?: string,
     link?: HATEOSLink,
     statusCode?: number,
@@ -51,12 +84,13 @@ export class GetManyCategoryResponse extends CoreApiResponse {
     const responseMessage =
       message ?? `${HTTPMethod.Get} ${CategoryPath.Base} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
+    const nxtPageCursor = data.length > 0 ? data[data.length - 1].id : null;
     return new GetManyCategoryResponse(
       responseCode,
       responseMessage,
       link,
       data,
-      cursor,
+      nxtPageCursor,
     );
   }
 }

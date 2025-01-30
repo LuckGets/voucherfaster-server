@@ -134,7 +134,6 @@ export class VoucherDomain {
       'category',
       'tag',
       'price',
-      'discount',
       'img',
       'stockAmount',
       'usableExpiredAt',

@@ -55,14 +55,18 @@ export class VoucherMapper {
     // Convert status to VoucherStatusEnum
     const voucherStatus = VoucherStatusEnum[status];
 
+    let voucherDiscount = null;
     // Create a VoucherDiscountDomain object
-    const voucherDiscount = new VoucherDiscountDomain({
-      id: VoucherDiscount?.id,
-      discountedPrice: VoucherDiscount?.discountedPrice.toNumber(),
-      createdAt: VoucherDiscount?.createdAt,
-      updatedAt: VoucherDiscount?.updatedAt,
-      status: VoucherDiscountStatusEnum[VoucherDiscount?.status],
-    });
+    if (VoucherDiscount)
+      voucherDiscount = new VoucherDiscountDomain({
+        id: VoucherDiscount?.id,
+        discountedPrice: VoucherDiscount?.discountedPrice.toNumber(),
+        createdAt: VoucherDiscount?.createdAt,
+        updatedAt: VoucherDiscount?.updatedAt,
+        status: VoucherDiscountStatusEnum[VoucherDiscount?.status],
+      });
+
+    if (!options.allInfo) delete voucherInfo.termAndCondition;
 
     // Construct the VoucherDomain object
     const voucherDomain = new VoucherDomain({

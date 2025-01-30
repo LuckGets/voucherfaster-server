@@ -5,12 +5,14 @@ import { CategoryDomain } from './domain/category.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { UUIDService } from '@utils/services/uuid.service';
 import { NullAble } from '@utils/types/common.type';
+import { UpdateCategoryDto } from './dto/category/update-category.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class CategoryService {
   constructor(
     private readonly categoryRespository: CategoryRepository,
-    private uuidService: UUIDService,
+    private readonly uuidService: UUIDService,
   ) {}
   // -------------------------------------------------------------------- //
   // ------------------------- VOUCHER CATEGORY PART -------------------- //
@@ -50,5 +52,29 @@ export class CategoryService {
     cursor: CategoryDomain['id'];
   }): Promise<NullAble<CategoryDomain[]>> {
     return this.categoryRespository.findManyWithPagination({ cursor });
+  }
+
+  public update(payload: UpdateCategoryDto): Promise<CategoryDomain> {
+    const isCategoryExist = this.categoryRespository.findById(payload.id);
+
+    if (!isCategoryExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `The voucher category ID: ${payload.id} could not be found on this server.`,
+      );
+
+    return this.categoryRespository.update(payload);
+  }
+
+  public async delete(id: CategoryDomain['id']): Promise<void> {
+    if (!id || !isUUID(id, 7))
+      throw ErrorApiResponse.badRequest(`Invalid ID format.`);
+
+    const isCategoryExist = await this.categoryRespository.findById(id);
+    if (!isCategoryExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `The voucher category ID: ${id} could not be found on this server.`,
+      );
+
+    return this.categoryRespository.delete(id);
   }
 }

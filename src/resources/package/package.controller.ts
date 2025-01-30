@@ -59,15 +59,11 @@ import { DeletePackageVoucherImgResponse } from './dto/images/delete-package-ima
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { CompactService } from 'src/common/service/compact.service';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
-  constructor(
-    private packageVoucherService: PackageVoucherService,
-    private compactService: CompactService,
-  ) {}
+  constructor(private packageVoucherService: PackageVoucherService) {}
 
   // -------------------------------------------------------------------- //
   // ------------------------- PACKAGE PART ----------------------------- //
@@ -161,10 +157,6 @@ export class PackageVoucherController {
     @Query(PackageVoucherPath.GetPackageSellDateQuery)
     sellDate: PackageSellDateQueryEnum,
   ): Promise<GetPaginationPackageVoucherResponse> {
-    if (cursor) {
-      cursor = this.compactService.compactBase64toUUID(cursor);
-    }
-
     const packageVoucherQueryList =
       await this.packageVoucherService.getAllPackageVoucher({
         cursor,
@@ -173,17 +165,7 @@ export class PackageVoucherController {
         sellDate,
       });
 
-    const nextPackageCursor =
-      packageVoucherQueryList.length > 0
-        ? this.compactService.compactUUIDtoBase64(
-            packageVoucherQueryList[packageVoucherQueryList.length - 1].id,
-          )
-        : null;
-
-    return GetPaginationPackageVoucherResponse.success(
-      packageVoucherQueryList,
-      nextPackageCursor,
-    );
+    return GetPaginationPackageVoucherResponse.success(packageVoucherQueryList);
   }
 
   @ApiParam({ name: PackageVoucherPath.PackageParamId })

@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
@@ -9,7 +9,6 @@ import {
   generateVoucherTagResponseHATEOASLink,
 } from 'src/common/HATEOASLinks';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
-import { CategoryRelationalPersistenceModule } from 'src/infrastructure/persistence/category/category-relational.module';
 
 export class CreateCategoryDto {
   @ApiProperty({
@@ -17,6 +16,7 @@ export class CreateCategoryDto {
     examples: ['Coffee Shop', 'Yok Chinese Restaurant'],
   })
   @IsString()
+  @IsNotEmpty()
   name: string;
 }
 
@@ -38,7 +38,13 @@ export class CreateCategoryResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: 'sdfsdf',
+    example: {
+      id: '0194b796-e6f8-72b0-911c-df83f4786c0d',
+      name: 'DOGGO',
+      createdAt: '2025-01-30T14:21:47.643Z',
+      updatedAt: '2025-01-30T14:21:47.643Z',
+      deletedAt: null,
+    },
   })
   public data: CategoryDomain;
 

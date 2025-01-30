@@ -8,7 +8,7 @@ import {
   vouchers,
 } from './seeds-data/voucher.seed';
 import { config } from 'dotenv';
-import { exec, execFile, execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import {
   packageImgs,
   packageRewardVouchers,
@@ -27,8 +27,6 @@ import {
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
-import * as util from 'util';
-import * as path from 'path';
 config({ path: '.env.development', override: true });
 
 const prisma = new PrismaClient();
@@ -58,9 +56,6 @@ const seed = async (): Promise<void> => {
     console.log('-------- START SEEDING PROCESS --------');
     const password = bcrypt.hashSync('Qwerty', 10);
     // const ownerPasswordForRedeem = CryptoService.encrypt(password, process.env.PASSWORD_FOR_REDEEM_SECRET);
-
-    console.log('accounts:', accounts);
-    console.log('categories:', categories);
 
     /**
      * Function to seed data to database
@@ -129,45 +124,71 @@ const seed = async (): Promise<void> => {
   }
 };
 
-async function resetDB() {
-  try {
-    const execPromise = util.promisify(execFile);
-    // Use explicit paths to avoid path length issues
-    const prismaPath = path.join('./node_modules/.bin/prisma.cmd');
+const resetDb = () => {
+  const reset = spawnSync('npx', ['prisma', 'migrate', 'reset', '--force'], {
+    stdio: 'inherit',
+    shell: true,
+  });
 
-    const { stderr } = await execPromise(
-      prismaPath,
-      ['migrate', 'reset', '--force'],
-      { windowsVerbatimArguments: true },
-    );
-    if (stderr) {
-      console.error(stderr);
-    }
-  } catch (err) {
-    console.error('Error resetting database:', err);
-    throw err;
+  if (reset.status !== 0) {
+    throw new Error('Prisma migrate reset failed');
   }
-}
+
+  // 3. Regenerate Prisma client explicitly
+  console.log('\nREGENERATING PRISMA CLIENT...');
+  const generate = spawnSync('npx', ['prisma', 'generate'], {
+    stdio: 'inherit',
+    shell: true,
+  });
+
+  if (generate.status !== 0) {
+    throw new Error('Prisma generate failed');
+  }
+
+  // Continue with seeding data...
+  console.log('\nSEEDING DATA...');
+  // Your seeding logic here
+};
 
 async function main() {
   try {
-    console.log('--- START --- \n--- RESET DB --- \n--- PROCESS ---');
+    console.log('--- START ---\n--- RESET DB ---\n--- PROCESS ---');
 
-    console.log('Connect to database...');
+    // // 1. Clean up existing connections
+    // console.log('Disconnecting from database...');
+    // await prisma.$disconnect();
+
+    // // 2. Reset database with clean client generation
+    // console.log('\nRESETTING DATABASE...');
+    // resetDb();
+
+    // // 4. Regenerate Prisma client explicitly
+    // console.log('\nREGENERATING PRISMA CLIENT...');
+    execSync('prisma generate', { stdio: 'inherit' });
+
+    // 5. Reconnect with fresh client
+    console.log('\nRECONNECTING TO DATABASE...');
     await prisma.$connect();
-    console.log('Connect to database success!');
 
-    console.log('RESET ALL THE DATABASE DATA...');
-    await resetDB();
-    console.log('RESET SUCCESS');
-    // Verify reset (optional)
-    const existingCategories = await prisma.category.findMany();
-    console.log('Existing categories after reset:', existingCategories); // Should be empty
+    // 6. Verify and seed
+    console.log('\nVERIFYING DATABASE STATE...');
+
+    console.log('\nSEEDING DATABASE...');
     await seed();
-    console.log('SEEDING COMPLETED SUCCESSFULLY');
   } catch (err) {
     console.error(err);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-main();
+main()
+  .then(async () => {
+    console.log('...FINISH SEEDING...');
+    await prisma.$disconnect();
+  })
+  .catch(async (err) => {
+    console.error(err);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

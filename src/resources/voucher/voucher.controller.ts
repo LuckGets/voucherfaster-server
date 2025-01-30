@@ -60,16 +60,12 @@ import {
 } from './dto/vouchers/get-voucher.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { DeleteVoucherImgByIdResponse } from './dto/voucher-img/delete-voucher-img.dto';
-import { CompactService } from 'src/common/service/compact.service';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 
 @Controller({ path: VoucherPath.Base, version: '1' })
 export class VoucherController {
-  constructor(
-    private voucherService: VoucherService,
-    private compactService: CompactService,
-  ) {}
+  constructor(private voucherService: VoucherService) {}
 
   // -------------------------------------------------------------------- //
   // ------------------------- VOUCHER PART ----------------------------- //
@@ -188,19 +184,13 @@ export class VoucherController {
     const voucherQueryList = await this.voucherService.getPaginationVoucher({
       tag,
       category,
-      cursor: this.compactService.compactBase64toUUID(cursor),
+      cursor: cursor,
       status,
       discount,
       sellDate,
     });
-    const voucherListCursor =
-      voucherQueryList.length > 0
-        ? this.compactService.compactUUIDtoBase64(
-            voucherQueryList[voucherQueryList.length - 1].id,
-          )
-        : null;
 
-    return GetManyVoucherResponse.success(voucherQueryList, voucherListCursor);
+    return GetManyVoucherResponse.success(voucherQueryList);
   }
 
   // GET
@@ -244,21 +234,11 @@ export class VoucherController {
       {
         sellDate,
         status,
-        cursor: this.compactService.compactBase64toUUID(cursor),
+        cursor,
       },
     );
 
-    const voucherCursor =
-      voucher.length > 0
-        ? this.compactService.compactUUIDtoBase64(
-            voucher[voucher.length - 1].id,
-          )
-        : null;
-    return GetVoucherBySearchContentResponse.success(
-      voucher,
-      searchContent,
-      voucherCursor,
-    );
+    return GetVoucherBySearchContentResponse.success(voucher, searchContent);
   }
 
   @ApiParam({ name: VoucherPath.VoucherIdParm })

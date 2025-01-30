@@ -1,4 +1,5 @@
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { UpdateCategoryDto } from '@resources/category/dto/category/update-category.dto';
 import { NullAble } from '@utils/types/common.type';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 
@@ -24,4 +25,8 @@ export abstract class CategoryRepository {
     sortOption?: any;
     cursor?: CategoryDomain['id'];
   }): Promise<CategoryDomain[]>;
+
+  abstract update(payload: UpdateCategoryDto): Promise<CategoryDomain>;
+
+  abstract delete(id: CategoryDomain['id']): Promise<void>;
 }

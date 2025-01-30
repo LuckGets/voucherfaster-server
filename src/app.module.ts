@@ -19,11 +19,13 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RedeemModule } from './resources/redeem/redeem.module';
 import { CategoryModule } from './resources/category/category.module';
 
+const env = process.env.NODE_ENV || '';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['./.env.development'],
+      envFilePath: ['.env', `./.env.${env}`],
       load: [appConfig, clientConfig],
     }),
     EventEmitterModule.forRoot({

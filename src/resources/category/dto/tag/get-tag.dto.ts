@@ -14,7 +14,7 @@ export class GetManyVoucherTagResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: `${HTTPMethod.Get} ${CategoryPath.GetManyTag} successfully.`,
+    example: `${HTTPMethod.Get} ${CategoryPath.GetManyTagByCategory} successfully.`,
   })
   public message: string;
   @ApiProperty({
@@ -44,22 +44,23 @@ export class GetManyVoucherTagResponse extends CoreApiResponse {
 
   public static success(
     data: GetManyVoucherTagResponse['data'],
-    cursor: string,
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
   ): GetManyVoucherTagResponse {
     const responseMessage =
-      message ?? `${HTTPMethod.Get} ${CategoryPath.GetManyTag} successfully.`;
+      message ??
+      `${HTTPMethod.Get} ${CategoryPath.GetManyTagByCategory} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
+    const nxtPageCursor = data.length > 0 ? data[data.length - 1].id : null;
     return new GetManyVoucherTagResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
-      cursor,
+      nxtPageCursor,
     );
   }
 }

@@ -83,7 +83,6 @@ export class GetManyVoucherResponse extends CoreApiResponse {
 
   public static success(
     data: VoucherDomain[],
-    cursor: VoucherDomain['id'],
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
@@ -93,15 +92,15 @@ export class GetManyVoucherResponse extends CoreApiResponse {
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    const response = new GetManyVoucherResponse(
+    const nxtPageCursor = data.length > 0 ? data[data.length - 1].id : null;
+
+    return new GetManyVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
-      cursor,
+      nxtPageCursor,
     );
-
-    return response;
   }
 }
 
@@ -181,7 +180,6 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
   public static success(
     data: VoucherDomain[],
     searchContent: string,
-    cursor: VoucherDomain['id'],
     links?: HATEOSLink,
     statusCode?: number,
   ): GetVoucherBySearchContentResponse {
@@ -189,12 +187,14 @@ export class GetVoucherBySearchContentResponse extends CoreApiResponse {
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
+    const nxtPageCursor = data.length > 0 ? data[data.length - 1].id : null;
+
     return new GetVoucherBySearchContentResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
-      cursor,
+      nxtPageCursor,
     );
   }
 }

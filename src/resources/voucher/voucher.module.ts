@@ -8,7 +8,6 @@ import { diskStorage } from 'multer';
 import { MediaModule } from '@application/media/media.module';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
-import { CompactService } from 'src/common/service/compact.service';
 import { ProductDomainHelper } from 'src/common/product.helper';
 import { CategoryModule } from '@resources/category/category.module';
 
@@ -32,7 +31,6 @@ import { CategoryModule } from '@resources/category/category.module';
     VoucherService,
     UUIDService,
     UnlinkFileInterceptor,
-    CompactService,
     ProductDomainHelper,
   ],
   exports: [VoucherService],

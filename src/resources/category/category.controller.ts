@@ -1,21 +1,26 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpStatus,
+  Param,
   Patch,
   Post,
   Query,
   SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
-import { CategoryPath } from 'src/config/api-path';
+import { CATEGORIES_CONST, CategoryPath } from 'src/config/api-path';
 import { CategoryService } from './category.service';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiParam,
   ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { AdminGuard } from 'src/common/guards/admin.guard';
@@ -30,18 +35,21 @@ import {
 } from './dto/category/create-category.dto';
 import { GetManyCategoryResponse } from './dto/category/get-category.dto';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
-import { CompactService } from 'src/common/service/compact.service';
 import { UpdateVoucherTagDto } from './dto/tag/update-tag.dto';
 import { CategoryDomain } from './domain/category.domain';
 import { VoucherTagDomain } from './domain/tag.domain';
 import { GetManyVoucherTagResponse } from './dto/tag/get-tag.dto';
+import {
+  UpdateCategoryDto,
+  UpdateCategoryResponse,
+} from './dto/category/update-category.dto';
+import { DeleteCategoryResponse } from './dto/category/delete-category.dto';
 
 @Controller({ version: '1', path: CategoryPath.Base })
 export class CategoryController {
   constructor(
     private categoryService: CategoryService,
     private voucherTagService: VoucherTagService,
-    private compactService: CompactService,
   ) {}
 
   // -------------------------------------------------------------------- //
@@ -62,32 +70,52 @@ export class CategoryController {
     return CreateCategoryResponse.success(createdCategory);
   }
 
-  @ApiOkResponse({ type: () => GetManyCategoryResponse })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: () => GetManyCategoryResponse,
+  })
   @ApiQuery({
     name: QUERY_FIELD_NAME.CURSOR,
     description: 'Cursor for pagination.',
     required: false,
   })
   @Get()
-  async getPaginationVoucherCategory(
+  async getPaginationCategory(
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: string,
   ): Promise<GetManyCategoryResponse> {
-    const prevCursor = this.compactService.compactBase64toUUID(cursor);
-
     const categoriesList =
       await this.categoryService.getPaginationVoucherCategory({
-        cursor: prevCursor,
+        cursor,
       });
-
-    const categoryCursor =
-      categoriesList.length > 0
-        ? this.compactService.compactUUIDtoBase64(
-            categoriesList[categoriesList.length - 1].id,
-          )
-        : null;
-
-    return GetManyCategoryResponse.success(categoriesList, categoryCursor);
+    return GetManyCategoryResponse.success(categoriesList);
   }
+
+  @ApiBearerAuth()
+  @ApiBody({ type: () => UpdateCategoryDto })
+  @ApiOkResponse({ type: () => UpdateCategoryResponse })
+  @SerializeOptions({
+    groups: [RoleEnum.Admin],
+  })
+  @UseGuards(AdminGuard)
+  @Patch(CategoryPath.UpdateCategory)
+  async updateCategory(
+    @Body() body: UpdateCategoryDto,
+  ): Promise<UpdateCategoryResponse> {
+    const updatedCategory = await this.categoryService.update(body);
+    return UpdateCategoryResponse.success(updatedCategory);
+  }
+
+  @ApiBearerAuth()
+  @ApiParam({ name: CATEGORIES_CONST.PARAM_ID })
+  @UseGuards(AdminGuard)
+  @Delete(CategoryPath.DeleteCategory)
+  async deleteCategory(
+    @Param(CATEGORIES_CONST.PARAM_ID) id: CategoryDomain['id'],
+  ): Promise<DeleteCategoryResponse> {
+    await this.categoryService.delete(id);
+    return DeleteCategoryResponse.success(id);
+  }
+
   // -------------------------------------------------------------------- //
   // ------------------------- VOUCHER TAG PART -------------------------
   // -------------------------------------------------------------------- //
@@ -132,28 +160,19 @@ export class CategoryController {
   @SerializeOptions({
     groups: [RoleEnum.Admin, RoleEnum.User],
   })
-  @Get(CategoryPath.GetManyTag)
+  @Get(CategoryPath.GetManyTagByCategory)
   async getPaginationVoucherTag(
     @Query(CategoryPath.CategoryQuery)
     category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherTagDomain['id'],
   ): Promise<GetManyVoucherTagResponse> {
-    const prevCursor = this.compactService.compactBase64toUUID(cursor);
-
     const voucherTagList = await this.voucherTagService.getPaginationVoucherTag(
       {
         category,
-        cursor: prevCursor,
+        cursor,
       },
     );
 
-    const voucherTagCursor =
-      voucherTagList.length > 0
-        ? this.compactService.compactUUIDtoBase64(
-            voucherTagList[voucherTagList.length - 1].id,
-          )
-        : null;
-
-    return GetManyVoucherTagResponse.success(voucherTagList, voucherTagCursor);
+    return GetManyVoucherTagResponse.success(voucherTagList);
   }
 }

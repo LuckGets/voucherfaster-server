@@ -89,7 +89,6 @@ export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
 
   public static success(
     data: GetPaginationPackageVoucherResponse['data'],
-    cursor: GetPaginationPackageVoucherResponse['cursor'],
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
@@ -97,13 +96,14 @@ export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
     const responseMessage = message ?? `GET :: /packages successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
+    const nxtPageCursor = data.length > 0 ? data[data.length - 1].id : null;
     // generateVoucherReponseHATEOASLink(data.id);
     return new GetPaginationPackageVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,
       data,
-      cursor,
+      nxtPageCursor,
     );
   }
 }
