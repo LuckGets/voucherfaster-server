@@ -1,7 +1,13 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiBodyOptions, ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsDate,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { VoucherDomain } from '../../domain/voucher.domain';
@@ -111,7 +117,7 @@ export class CreateVoucherDto {
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   usableExpiredAt: Date;
-  @IsFutureDate()
+  @IsDate()
   @Transform(({ value }) => new Date(value))
   @IsNotEmpty()
   sellStartedAt: Date;

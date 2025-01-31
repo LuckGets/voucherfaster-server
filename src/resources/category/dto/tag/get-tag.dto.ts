@@ -45,14 +45,13 @@ export class GetManyVoucherTagResponse extends CoreApiResponse {
 
   public static success(
     data: GetManyVoucherTagResponse['data'],
-    categoryId: CategoryDomain['id'],
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
   ): GetManyVoucherTagResponse {
     const responseMessage =
       message ??
-      `${HTTPMethod.Get} ${CategoryPath.Base}/${categoryId}/${CATEGORIES_CONST.TAG_NAME} successfully.`;
+      `${HTTPMethod.Get} ${CategoryPath.Base}${CATEGORIES_CONST.TAG_NAME} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);

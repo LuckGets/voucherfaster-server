@@ -78,14 +78,14 @@ CREATE TABLE "voucher" (
     "title" VARCHAR(191) NOT NULL,
     "status" "VoucherStatus" NOT NULL DEFAULT 'ACTIVE',
     "description" TEXT NOT NULL,
-    "termAndCondition" TEXT NOT NULL,
+    "term_and_condition" TEXT NOT NULL,
     "price" DECIMAL(8,2) NOT NULL,
     "stock_amount" INTEGER NOT NULL,
     "tag_id" UUID NOT NULL,
     "usable_at" TIMESTAMPTZ(3) NOT NULL,
     "usage_expired_at" TIMESTAMPTZ(3) NOT NULL,
     "sell_started_at" TIMESTAMPTZ(3) NOT NULL,
-    "sale_expired_at" TIMESTAMPTZ(3) NOT NULL,
+    "sell_expired_at" TIMESTAMPTZ(3) NOT NULL,
     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
@@ -169,6 +169,7 @@ CREATE TABLE "package_reward_voucher" (
     "reward_voucher_id" UUID NOT NULL,
     "amount" INTEGER NOT NULL,
     "package_id" UUID NOT NULL,
+    "img" VARCHAR(255),
 
     CONSTRAINT "package_reward_voucher_pkey" PRIMARY KEY ("id")
 );

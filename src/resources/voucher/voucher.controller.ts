@@ -57,6 +57,7 @@ import {
   GetVoucherBySearchContentResponse,
   PaginationDiscountQueryEnum,
   PaginationSellDateQueryEnum,
+  PaginationStatusQueryEnum,
 } from './dto/vouchers/get-voucher.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { DeleteVoucherImgByIdResponse } from './dto/voucher-img/delete-voucher-img.dto';
@@ -134,11 +135,15 @@ export class VoucherController {
   })
   @ApiQuery({
     name: VoucherPath.StatusQuery,
-    description: `Status of the voucher. If not provided, default will be ${VoucherStatusEnum.ACTIVE}`,
+    description: `Status of the voucher. If not provided, default will be ${PaginationStatusQueryEnum.ACTIVE}`,
     required: false,
     enumName: 'VoucherStatusEnum',
-    enum: [VoucherStatusEnum.ACTIVE, VoucherStatusEnum.INACTIVE],
-    default: VoucherStatusEnum.ACTIVE,
+    enum: [
+      PaginationStatusQueryEnum.ALL,
+      PaginationStatusQueryEnum.ACTIVE,
+      PaginationStatusQueryEnum.INACTIVE,
+    ],
+    default: PaginationStatusQueryEnum.ACTIVE,
     type: String,
   })
   @ApiQuery({
@@ -177,7 +182,7 @@ export class VoucherController {
     @Query(VoucherPath.TagQuery) tag: VoucherTagDomain['name'],
     @Query(VoucherPath.CategoryQuery) category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherDomain['id'],
-    @Query(VoucherPath.StatusQuery) status: VoucherStatusEnum,
+    @Query(VoucherPath.StatusQuery) status: PaginationStatusQueryEnum,
     @Query(VoucherPath.DiscountQuery) discount: PaginationDiscountQueryEnum,
     @Query(VoucherPath.SellDateQuery) sellDate: string,
   ): Promise<GetManyVoucherResponse> {
@@ -197,10 +202,14 @@ export class VoucherController {
   // voucher via search content
   @ApiQuery({
     name: VoucherPath.StatusQuery,
-    description: `Status of the voucher. If not provided, default will be ${VoucherStatusEnum.ACTIVE}`,
+    description: `Status of the voucher. If not provided, default will be ${PaginationStatusQueryEnum.ACTIVE}`,
     required: false,
-    enumName: 'status',
-    enum: [VoucherStatusEnum.ACTIVE, VoucherStatusEnum.INACTIVE],
+    enumName: 'PaginationStatusQueryEnum',
+    enum: [
+      PaginationStatusQueryEnum.ALL,
+      PaginationStatusQueryEnum.ACTIVE,
+      PaginationStatusQueryEnum.INACTIVE,
+    ],
     default: VoucherStatusEnum.ACTIVE,
     type: String,
   })
@@ -225,7 +234,7 @@ export class VoucherController {
   @Get(VoucherPath.SearchVoucher)
   async getSearchVoucher(
     @Param(VoucherPath.SearchVoucherParam) searchContent: string,
-    @Query(VoucherPath.StatusQuery) status: VoucherStatusEnum,
+    @Query(VoucherPath.StatusQuery) status: PaginationStatusQueryEnum,
     @Query(VoucherPath.SellDateQuery) sellDate: string,
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherDomain['id'],
   ): Promise<GetVoucherBySearchContentResponse> {

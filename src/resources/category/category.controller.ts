@@ -172,6 +172,7 @@ export class CategoryController {
     category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherTagDomain['id'],
   ): Promise<GetManyVoucherTagResponse> {
+    console.log('Hello');
     const voucherTagList = await this.voucherTagService.getPaginationVoucherTag(
       {
         category,
@@ -179,7 +180,7 @@ export class CategoryController {
       },
     );
 
-    return GetManyVoucherTagResponse.success(voucherTagList, category);
+    return GetManyVoucherTagResponse.success(voucherTagList);
   }
 
   // GET CATEGORY BY ID

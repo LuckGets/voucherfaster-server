@@ -18,7 +18,7 @@ import { ProductTypeEnum } from 'src/common/types/product.type';
 
 type AllVoucherInformation = Voucher & {
   VoucherImg?: Pick<VoucherImg, 'id' | 'imgPath' | 'mainImg'>[];
-  VoucherDiscount?: Partial<VoucherDiscount>;
+  VoucherDiscount?: Partial<VoucherDiscount>[];
   voucherTag?: Partial<VoucherTag> & {
     category?: Partial<Category>;
   };
@@ -56,15 +56,24 @@ export class VoucherMapper {
     const voucherStatus = VoucherStatusEnum[status];
 
     let voucherDiscount = null;
+    console.log(VoucherDiscount);
     // Create a VoucherDiscountDomain object
-    if (VoucherDiscount)
-      voucherDiscount = new VoucherDiscountDomain({
-        id: VoucherDiscount?.id,
-        discountedPrice: VoucherDiscount?.discountedPrice.toNumber(),
-        createdAt: VoucherDiscount?.createdAt,
-        updatedAt: VoucherDiscount?.updatedAt,
-        status: VoucherDiscountStatusEnum[VoucherDiscount?.status],
-      });
+    if (VoucherDiscount && VoucherDiscount.length > 0) {
+      if (VoucherDiscount.length > 1 && VoucherDiscount[1].deletedAt === null)
+        throw new Error(
+          `Voucher ID:${voucherEntity.id} has many discount active at the moment`,
+        );
+
+      const [activeVoucherDiscount] = VoucherDiscount;
+      if (!activeVoucherDiscount.deletedAt)
+        voucherDiscount = new VoucherDiscountDomain({
+          id: activeVoucherDiscount?.id,
+          discountedPrice: activeVoucherDiscount?.discountedPrice.toNumber(),
+          createdAt: activeVoucherDiscount?.createdAt,
+          updatedAt: activeVoucherDiscount?.updatedAt,
+          status: VoucherDiscountStatusEnum[activeVoucherDiscount?.status],
+        });
+    }
 
     if (!options.allInfo) delete voucherInfo.termAndCondition;
 

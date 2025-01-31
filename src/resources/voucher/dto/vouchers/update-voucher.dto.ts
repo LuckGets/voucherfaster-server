@@ -87,6 +87,7 @@ export class UpdateVoucherDto {
   @IsOptional()
   tagId?: string;
   @ApiProperty({ type: () => String, required: false })
+  @IsOptional()
   @IsString()
   termAndCond?: VoucherDomain['termAndCondition'];
   @ApiProperty({ type: String, enum: VoucherStatusEnum, required: false })

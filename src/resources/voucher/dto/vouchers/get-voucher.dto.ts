@@ -20,6 +20,12 @@ export enum PaginationDiscountQueryEnum {
   ALL = 'ALL',
 }
 
+export enum PaginationStatusQueryEnum {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  ALL = 'ALL',
+}
+
 export class GetManyVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,

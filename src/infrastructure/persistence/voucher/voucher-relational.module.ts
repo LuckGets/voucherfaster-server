@@ -7,6 +7,7 @@ import {
 import { VoucherRelationalPrismaORMRepository } from './prisma-relational/voucher.repository';
 import { PrismaModule } from '../config/prisma.module';
 import { VoucherImgRelationalPrismaORMRepository } from './prisma-relational/voucher-img/voucher-img.repository';
+import { VoucherPrismaRawQueryBuilder } from 'prisma/sql/voucher';
 // import { VoucherDiscountRelationalPrismaORMRepository } from './prisma-relational/voucher-discount/voucher-discount.repository';
 
 @Module({

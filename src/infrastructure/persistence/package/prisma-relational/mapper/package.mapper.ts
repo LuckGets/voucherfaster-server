@@ -30,7 +30,7 @@ type AllPackageVoucherEntityInformation = PackageVoucher & {
     voucher?: NestedVoucherTagAndCategory;
   })[];
   PackageImg?: Partial<PackageImg>[];
-  PackageDiscount?: PackageDiscount;
+  PackageDiscount?: PackageDiscount[];
 };
 
 export class PackageVoucherMapper {
@@ -57,9 +57,13 @@ export class PackageVoucherMapper {
 
     let packageDiscount: PackageVoucherDomain['discount'];
 
-    if (!ObjectHelper.isObjectEmpty(PackageDiscount)) {
+    if (PackageDiscount && PackageDiscount.length > 0) {
+      if (PackageDiscount.length > 1)
+        throw new Error(
+          `Package voucher should have only one currently active discount but package ID: ${packageVoucherEntity.id} has more than one discount.`,
+        );
       const { id, discountedPrice, createdAt, status, updatedAt } =
-        PackageDiscount;
+        PackageDiscount[0];
       const discountStatus = PackageDiscountStatusEnum[status];
       packageDiscount = new PackageDiscountDomain({
         id,

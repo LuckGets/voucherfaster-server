@@ -1,6 +1,7 @@
 import {
   VoucherDiscountCreateInput,
   VoucherDiscountDomain,
+  VoucherDiscountStatusEnum,
 } from '@resources/voucher/domain/voucher-discount.domain';
 import {
   VoucherDomain,
@@ -11,6 +12,7 @@ import {
 import {
   PaginationDiscountQueryEnum,
   PaginationSellDateQueryEnum,
+  PaginationStatusQueryEnum,
 } from '@resources/voucher/dto/vouchers/get-voucher.dto';
 import {
   UpdateVoucherDiscountDto,
@@ -27,8 +29,8 @@ export type UpdateVoucherRepositoryInput = Omit<
   'discount'
 > & {
   discount?: {
-    update: UpdateVoucherDiscountDto;
-    create: {
+    update?: UpdateVoucherDiscountDto;
+    create?: {
       id: VoucherDiscountDomain['id'];
       discountedPrice: VoucherDiscountDomain['discountedPrice'];
     };
@@ -70,7 +72,10 @@ export abstract class VoucherRepository {
    * Find the voucher in database by ID which can be
    * the voucher domain or null
    */
-  abstract findById(id: VoucherDomain['id']): Promise<NullAble<VoucherDomain>>;
+  abstract findById(
+    id: VoucherDomain['id'],
+    discountStatus?: PaginationDiscountQueryEnum,
+  ): Promise<NullAble<VoucherDomain>>;
 
   /**
    *
@@ -101,7 +106,7 @@ export abstract class VoucherRepository {
       cursor,
     }: {
       sellDate: PaginationSellDateQueryEnum;
-      status: VoucherDomain['status'];
+      status: PaginationStatusQueryEnum;
       cursor: VoucherDomain['id'];
     },
   ): Promise<VoucherDomain[]>;
@@ -126,7 +131,7 @@ export abstract class VoucherRepository {
     cursor?: VoucherDomain['id'];
     discount?: PaginationDiscountQueryEnum;
     sortOption?: unknown;
-    status?: VoucherDomain['status'];
+    status?: PaginationStatusQueryEnum;
     sellDate?: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]>;
 

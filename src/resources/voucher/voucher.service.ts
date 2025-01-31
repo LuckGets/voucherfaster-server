@@ -29,6 +29,7 @@ import { ProductDomainHelper } from 'src/common/product.helper';
 import {
   PaginationDiscountQueryEnum,
   PaginationSellDateQueryEnum,
+  PaginationStatusQueryEnum,
 } from './dto/vouchers/get-voucher.dto';
 import { ProductTypeEnum } from 'src/common/types/product.type';
 import { VoucherTagService } from '@resources/category/tag/voucher-tag.service';
@@ -161,10 +162,10 @@ export class VoucherService {
     discount?: PaginationDiscountQueryEnum;
     cursor?: VoucherDomain['id'];
     sortOption?: unknown;
-    status?: VoucherDomain['status'];
+    status?: PaginationStatusQueryEnum;
     sellDate?: string;
   }): Promise<VoucherDomain[]> {
-    const statusToQuery: VoucherStatusEnum =
+    const statusToQuery: PaginationStatusQueryEnum =
       this.checkVoucherStatusQuery(status);
     const sellDateQuery: PaginationSellDateQueryEnum =
       this.checkSellDateQuery(sellDate);
@@ -219,7 +220,7 @@ export class VoucherService {
       cursor,
     }: {
       sellDate: string;
-      status: VoucherDomain['status'];
+      status: PaginationStatusQueryEnum;
       cursor: VoucherDomain['id'];
     },
   ): Promise<NullAble<VoucherDomain[]>> {
@@ -237,20 +238,23 @@ export class VoucherService {
   }
 
   private checkVoucherStatusQuery(
-    status: VoucherDomain['status'],
-  ): VoucherStatusEnum {
+    status: PaginationStatusQueryEnum,
+  ): PaginationStatusQueryEnum {
     if (!status) {
-      return VoucherStatusEnum.ACTIVE;
+      return PaginationStatusQueryEnum.ACTIVE;
     }
 
     if (
-      !EnumCheckerHelper.checkEnumValue(VoucherStatusEnum, status.toUpperCase())
+      !EnumCheckerHelper.checkEnumValue(
+        PaginationStatusQueryEnum,
+        status.toUpperCase(),
+      )
     ) {
       throw ErrorApiResponse.badRequest(
         `${status} is not valid enumerable for status. Value provided should be one of the ${EnumCheckerHelper.allEnumValue(VoucherStatusEnum).join(', ')} value`,
       );
     }
-    return VoucherStatusEnum[status.toUpperCase()];
+    return PaginationStatusQueryEnum[status.toUpperCase()];
   }
 
   private checkSellDateQuery(sellQuery: string): PaginationSellDateQueryEnum {
@@ -278,7 +282,10 @@ export class VoucherService {
    */
   public async updateVoucher(data: UpdateVoucherDto): Promise<VoucherDomain> {
     // Find the voucher via id
-    const voucher = await this.voucherRepository.findById(data.id);
+    const voucher = await this.voucherRepository.findById(
+      data.id,
+      PaginationDiscountQueryEnum.ALL,
+    );
 
     // If the voucher does not exist, throw an error
     if (!voucher) {
@@ -317,14 +324,18 @@ export class VoucherService {
         ObjectHelper.isObjectEmpty(voucher.discount) ||
         !voucher.discount.id
       ) {
-        updateData.discount.create = {
-          id: String(this.uuidService.make()),
-          discountedPrice: discount.discountedPrice,
+        updateData.discount = {
+          create: {
+            id: String(this.uuidService.make()),
+            discountedPrice: discount.discountedPrice,
+          },
         };
       } else {
-        updateData.discount.update = {
-          ...discount,
-          currentDiscountId: voucher.discount.id,
+        updateData.discount = {
+          update: {
+            ...discount,
+            currentDiscountId: voucher.discount.id,
+          },
         };
         if (discount.discountedPrice)
           updateData.discount.update.newId = String(this.uuidService.make());

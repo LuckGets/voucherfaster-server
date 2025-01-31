@@ -13,10 +13,15 @@ import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { VoucherMapper } from './voucher.mapper';
-import { VoucherDiscountCreateInput } from '@resources/voucher/domain/voucher-discount.domain';
+import {
+  VoucherDiscountCreateInput,
+  VoucherDiscountDomain,
+  VoucherDiscountStatusEnum,
+} from '@resources/voucher/domain/voucher-discount.domain';
 import {
   PaginationDiscountQueryEnum,
   PaginationSellDateQueryEnum,
+  PaginationStatusQueryEnum,
 } from '@resources/voucher/dto/vouchers/get-voucher.dto';
 import { CreateVoucherDto } from '@resources/voucher/dto/vouchers/create-voucher.dto';
 import { isUUID } from 'class-validator';
@@ -27,13 +32,11 @@ import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
-  private activeDiscountIncludeQuery: Prisma.VoucherDiscountWhereInput = {
-    deletedAt: {
-      equals: null,
+  private currentlyDiscountIncludeQuery: Prisma.Voucher$VoucherDiscountArgs = {
+    orderBy: {
+      createdAt: 'desc',
     },
-    status: {
-      equals: DiscountStatus.ACTIVE,
-    },
+    take: 1,
   };
 
   private tagAndCategoryIncludeQuery: Prisma.VoucherInclude = {
@@ -58,9 +61,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         imgPath: true,
       },
     },
-    VoucherDiscount: {
-      where: this.activeDiscountIncludeQuery,
-    },
+    VoucherDiscount: this.currentlyDiscountIncludeQuery,
     ...this.tagAndCategoryIncludeQuery,
   };
 
@@ -73,9 +74,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
         mainImg: true,
       },
     },
-    VoucherDiscount: {
-      where: this.activeDiscountIncludeQuery,
-    },
+    VoucherDiscount: this.currentlyDiscountIncludeQuery,
   };
 
   private generateCategoryWhereQuery(
@@ -141,27 +140,50 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       case PaginationDiscountQueryEnum.ACTIVE:
         return {
           VoucherDiscount: {
-            is: {
+            some: {
               status: VoucherStatus.ACTIVE,
+              deletedAt: {
+                equals: null,
+              },
             },
           },
         };
       case PaginationDiscountQueryEnum.INACTIVE:
         return {
           VoucherDiscount: {
-            is: {
+            some: {
               status: VoucherStatus.INACTIVE,
             },
           },
         };
       case PaginationDiscountQueryEnum.NONE:
         return {
-          VoucherDiscount: null,
+          VoucherDiscount: {
+            none: {},
+          },
         };
       default:
         return {};
     }
   }
+
+  private generateStatusWhereQuery(
+    status: PaginationStatusQueryEnum,
+  ): Prisma.VoucherWhereInput {
+    switch (status) {
+      case PaginationStatusQueryEnum.ACTIVE:
+        return {
+          status: VoucherStatus.ACTIVE,
+        };
+      case PaginationStatusQueryEnum.INACTIVE:
+        return {
+          status: VoucherStatus.INACTIVE,
+        };
+      default:
+        return {};
+    }
+  }
+
   /**
    * We need to
    * creating a voucher
@@ -252,7 +274,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     cursor?: VoucherDomain['id'];
     discount: PaginationDiscountQueryEnum;
     sortOption?: any;
-    status?: VoucherDomain['status'];
+    status?: PaginationStatusQueryEnum;
     sellDate?: PaginationSellDateQueryEnum;
   }): Promise<VoucherDomain[]> {
     const paginatedQueryOptiion = generatePaginationQueryOption({
@@ -275,12 +297,13 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       };
 
     const discountQuery = this.generateDiscountWhereQuery(discount);
+    const statusQuery = this.generateStatusWhereQuery(status);
 
     // Prepare the variable
     // for using as prisma where query
     const whereQueryOption: Prisma.VoucherWhereInput = {
       AND: [
-        { status },
+        statusQuery,
         this.generateSellDateWhereQuery(sellDate),
         categoryWhereOption,
         tagWhereOption,
@@ -289,14 +312,13 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     };
 
     // Voucher Join query
-    const voucherJoinQuery = this.voucherListJoinQuery;
 
     // If the request provide category query
 
     const voucherList = await this.prismaService.voucher.findMany({
       ...paginatedQueryOptiion,
       where: whereQueryOption,
-      include: voucherJoinQuery,
+      include: this.voucherListJoinQuery,
     });
 
     return voucherList.map((item) =>
@@ -312,7 +334,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       cursor,
     }: {
       sellDate: PaginationSellDateQueryEnum;
-      status: VoucherDomain['status'];
+      status: PaginationStatusQueryEnum;
       cursor: VoucherDomain['id'];
     },
   ): Promise<VoucherDomain[]> {
@@ -325,10 +347,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       sellDateWhereQuery = this.generateSellDateWhereQuery(sellDate);
     }
 
-    const statusWhereQuery: Prisma.VoucherWhereInput = {
-      status: status ?? VoucherStatus.ACTIVE,
-    };
-
+    const statusWhereQuery: Prisma.VoucherWhereInput =
+      this.generateStatusWhereQuery(status);
     const voucherTitleWhereQuery: Prisma.VoucherWhereInput = {
       title: {
         contains: searchContent,
@@ -347,12 +367,19 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
 
     const categoryWhereQuery: Prisma.VoucherWhereInput =
       this.generateCategoryWhereQuery(searchContent);
+
     const voucherList = await this.prismaService.voucher.findMany({
       ...paginationQueryOption,
       where: {
-        OR: [voucherTitleWhereQuery, tagNameWhereQuery, categoryWhereQuery],
-        AND: [statusWhereQuery, sellDateWhereQuery],
+        AND: [
+          {
+            OR: [voucherTitleWhereQuery, tagNameWhereQuery, categoryWhereQuery],
+          },
+          statusWhereQuery,
+          sellDateWhereQuery,
+        ],
       },
+      include: this.voucherAllDetailJoinQuery,
     });
 
     return voucherList.map((item) =>
@@ -374,7 +401,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     const updateData: Prisma.VoucherUpdateInput = data;
 
     if (tagId && isUUID(tagId)) {
-      updateData.voucherTag = { update: { id: tagId } };
+      updateData.voucherTag = { connect: { id: tagId } };
     }
 
     if (!ObjectHelper.isObjectEmpty(discount)) {
@@ -389,7 +416,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           updateData.VoucherDiscount = {
             update: {
               where: { id: currentDiscountId },
-              data: { deletedAt: currentTime, status: DiscountStatus.ACTIVE },
+              data: { deletedAt: currentTime, status: DiscountStatus.INACTIVE },
             },
             create: {
               id: newId,
@@ -398,10 +425,11 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
             },
           };
         } else {
+          const { currentDiscountId, discountedPrice, newId, ...data } = update;
           updateData.VoucherDiscount = {
             update: {
-              where: { id: update.currentDiscountId },
-              data: update,
+              where: { id: currentDiscountId },
+              data: data,
             },
           };
         }

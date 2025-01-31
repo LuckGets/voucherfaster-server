@@ -16,7 +16,7 @@
     "stop:db": "docker-compose --file docker-compose.db.yaml down",
     "db:reset": "dotenv -e .env.development npx prisma migrate reset --force",
     "db:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
-    "migrate:dev": "dotenv -e .env.development pnpx prisma migrate dev",
+    "migrate:dev": "dotenv -e .env.development npx prisma migrate dev && ts-node -r tsconfig-paths/register prisma/seed.ts",
     "prisma:sql": "dotenv -e .env.development pnpm prisma generate --sql",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",

@@ -171,6 +171,8 @@ export class PackageRewardVoucherDomain {
   amount: number;
   @ApiProperty({ type: String })
   packageId?: string;
+  @ApiProperty({ type: String, nullable: true })
+  img?: string;
 }
 
 export type PackageRewardVoucherCreateInput = {
@@ -178,4 +180,5 @@ export type PackageRewardVoucherCreateInput = {
   rewardVoucherId: string;
   amount: number;
   packageId: string;
+  img?: string;
 };

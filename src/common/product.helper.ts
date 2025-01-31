@@ -19,9 +19,12 @@ export interface IUpdateDataToCheck {
   title?: VoucherDomain['title'] | PackageVoucherDomain['title'];
   description?: VoucherDomain['description'];
   price?: VoucherDomain['price'] | PackageVoucherDomain['price'];
-  discountedPrice?:
-    | VoucherDiscountDomain['discountedPrice']
-    | PackageDiscountDomain['discountedPrice'];
+  discount?: {
+    discountedPrice?:
+      | VoucherDiscountDomain['discountedPrice']
+      | PackageDiscountDomain['discountedPrice'];
+    status?: VoucherDiscountDomain['status'] | PackageDiscountDomain['status'];
+  };
   stockAmount?: number;
   status?: VoucherDomain['status'] | PackageVoucherDomain['status'];
 }
@@ -140,55 +143,59 @@ export class ProductDomainHelper {
       );
     }
 
-    if (
-      (data.discountedPrice && data.discountedPrice === product.price) ||
-      (data.discountedPrice && data.discountedPrice > product.price)
-    ) {
+    const { discountedPrice, status } = data.discount;
+
+    const neverHasDiscount = ObjectHelper.isObjectEmpty(product.discount);
+
+    if (status) {
+      if (neverHasDiscount) {
+        throw ErrorApiResponse.conflictRequest(
+          `The ${productType} ID: does not have created discount.`,
+        );
+      }
+    }
+    if (discountedPrice) {
+      if (
+        discountedPrice === product.price ||
+        discountedPrice > product.price
+      ) {
+        throw ErrorApiResponse.conflictRequest(
+          `The updated discounted price: ${discountedPrice} should not be equal or greater than ${productType} price: ${product.price}.`,
+        );
+      }
+
+      if (!neverHasDiscount) {
+        if (discountedPrice === product.discount.discountedPrice)
+          throw ErrorApiResponse.conflictRequest(
+            `The updated discounted price: ${discountedPrice} is the same as existed ${productType} discounted price: ${product.discount.discountedPrice}.`,
+          );
+      }
+    }
+
+    if (data.title && product.title && data.title === product.title) {
       throw ErrorApiResponse.conflictRequest(
-        `The updated discounted price: ${data.discountedPrice} should not be equal or greater than ${productType} price: ${product.price}.`,
+        `The updated title: ${data.title} is the same as existed ${productType} title: ${product.title}.`,
       );
     }
 
-    // if (data.title && product.title && data.title === product.title) {
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `The updated title: ${data.title} is the same as existed ${productType} title: ${product.title}.`,
-    //   );
-    // }
+    if (
+      data.description &&
+      product.description &&
+      data.description === product.description
+    ) {
+      throw ErrorApiResponse.conflictRequest(
+        `The updated description: ${data.description} is the same as existed ${productType} description : ${product.description}.`,
+      );
+    }
 
-    // if (
-    //   data.description &&
-    //   product.description &&
-    //   data.description === product.description
-    // ) {
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `The updated description: ${data.description} is the same as existed ${productType} description : ${product.description}.`,
-    //   );
-    // }
-
-    // if (data.price && product.price && data.price === product.price) {
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `The updated price: ${data.price} is the same as existed ${productType} price: ${product.price}.`,
-    //   );
-    // }
-
-    // if (
-    //   data.discountedPrice &&
-    //   product.discount.discountedPrice &&
-    //   data.discountedPrice === product.discount.discountedPrice
-    // ) {
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `The updated promotion price: ${data.discountedPrice} is the same as existed ${productType} promotion price: ${product.discount.discountedPrice}.`,
-    //   );
-    // }
-
-    // if (
-    //   data.stockAmount &&
-    //   product.stockAmount &&
-    //   data.stockAmount === product.stockAmount
-    // )
-    //   throw ErrorApiResponse.conflictRequest(
-    //     `The updated stock amount: ${data.stockAmount} is the same as existed ${productType} stock amount: ${product.stockAmount}.`,
-    //   );
+    if (
+      data.stockAmount &&
+      product.stockAmount &&
+      data.stockAmount === product.stockAmount
+    )
+      throw ErrorApiResponse.conflictRequest(
+        `The updated stock amount: ${data.stockAmount} is the same as existed ${productType} stock amount: ${product.stockAmount}.`,
+      );
   }
 
   public checkDiscountAvailability(
