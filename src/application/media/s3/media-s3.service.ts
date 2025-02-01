@@ -57,6 +57,7 @@ export class MediaS3Service implements MediaService {
       return linkUrl;
     } catch (err) {
       console.error(err);
+      throw new Error(err);
     }
   }
 

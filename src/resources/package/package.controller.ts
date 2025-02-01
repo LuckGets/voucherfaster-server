@@ -30,7 +30,10 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  AnyFilesInterceptor,
+  FileFieldsInterceptor,
+} from '@nestjs/platform-express';
 import { RoleEnum } from '@resources/account/types/account.type';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 import { AdminGuard } from 'src/common/guards/admin.guard';
@@ -76,21 +79,12 @@ export class PackageVoucherController {
     type: () => CreatePackageVoucherResponse,
   })
   @SerializeOptions({ groups: [RoleEnum.Admin] })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: PACKAGE_FILE_FIELD.MAIN_IMG, maxCount: 1 },
-      { name: PACKAGE_FILE_FIELD.PACKAGE_IMG },
-    ]),
-    UnlinkFileInterceptor,
-  )
+  @UseInterceptors(AnyFilesInterceptor(), UnlinkFileInterceptor)
   @UseGuards(AdminGuard)
   @Post()
   async createPackageVoucher(
     @UploadedFiles()
-    files: {
-      [PACKAGE_FILE_FIELD.MAIN_IMG]: Express.Multer.File[];
-      [PACKAGE_FILE_FIELD.PACKAGE_IMG]: Express.Multer.File[];
-    },
+    files,
     @Body() body: CreatePackageVoucherDto,
   ): Promise<CreatePackageVoucherResponse> {
     if (ObjectHelper.isObjectEmpty(files))
@@ -101,10 +95,10 @@ export class PackageVoucherController {
     const createPackage = await this.packageVoucherService.createPackageVoucher(
       {
         data: body,
-        mainImg: files[PACKAGE_FILE_FIELD.MAIN_IMG],
-        packageImg: files[PACKAGE_FILE_FIELD.PACKAGE_IMG],
+        packageImg: files,
       },
     );
+
     return CreatePackageVoucherResponse.success(createPackage);
   }
 

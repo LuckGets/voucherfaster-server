@@ -105,18 +105,12 @@ export class PackageVoucherRelationalPrismaORMRepository
     switch (sellDate) {
       case PackageSellDateQueryEnum.NOW:
         return {
-          AND: [
-            {
-              sellStartedAt: {
-                lte: currentDate,
-              },
-            },
-            {
-              sellExpiredAt: {
-                gt: currentDate,
-              },
-            },
-          ],
+          sellStartedAt: {
+            lte: currentDate,
+          },
+          sellExpiredAt: {
+            gt: currentDate,
+          },
         };
       case PackageSellDateQueryEnum.ALL:
         return {};
@@ -163,19 +157,42 @@ export class PackageVoucherRelationalPrismaORMRepository
     packageImage: PackageImgCreateInput[];
     packageRewardVoucher: PackageRewardVoucherCreateInput[];
   }): Promise<PackageVoucherDomain> {
-    const { quotaVoucherId, ...restPackageInfo } = packageVoucherCreateInput;
+    const { quotaVoucherId, tagId, ...restPackageInfo } =
+      packageVoucherCreateInput;
 
     const createPackageData: Prisma.PackageVoucherCreateInput = {
       ...restPackageInfo,
+      voucherTag: { connect: { id: tagId } },
       voucher: { connect: { id: quotaVoucherId } },
-      PackageImg: { createMany: { data: packageImage } },
-      PackageRewardVoucher: { createMany: { data: packageRewardVoucher } },
+      PackageImg: {
+        createMany: {
+          data: packageImage.map((item) => ({
+            id: item.id,
+            imgPath: item.imgPath,
+            mainImg: item.mainImg,
+          })),
+        },
+      },
+      PackageRewardVoucher: {
+        createMany: {
+          data: packageRewardVoucher.map((item) => ({
+            id: item.id,
+            amount: item.amount,
+            rewardVoucherId: item.rewardVoucherId,
+            img: item.img ?? null,
+          })),
+        },
+      },
     };
 
+    console.log('Package Discount in create repo', packageDiscount);
+
     if (!ObjectHelper.isObjectEmpty(packageDiscount))
-      createPackageData.PackageDiscount.create = {
-        id: packageDiscount.id,
-        discountedPrice: packageDiscount.discountedPrice,
+      createPackageData.PackageDiscount = {
+        create: {
+          id: packageDiscount.id,
+          discountedPrice: packageDiscount.discountedPrice,
+        },
       };
 
     const createdVoucher = await this.prismaService.$transaction(
@@ -186,7 +203,6 @@ export class PackageVoucherRelationalPrismaORMRepository
         });
       },
     );
-
     return PackageVoucherMapper.toDomain(createdVoucher, { allInfo: true });
   }
 
@@ -213,7 +229,7 @@ export class PackageVoucherRelationalPrismaORMRepository
     const statusQuery = this.generateStatusWhereQuery(status);
 
     const allWhereQuery: Prisma.PackageVoucherWhereInput = {
-      AND: [categoryWhereQuery, sellDateQuery, statusQuery],
+      AND: [categoryWhereQuery, statusQuery, sellDateQuery],
     };
 
     const packageVoucherQueryList =
@@ -222,6 +238,7 @@ export class PackageVoucherRelationalPrismaORMRepository
         include: this.findManyJoinQuery,
         ...paginateQueryOption,
       });
+
     return packageVoucherQueryList.map((item) =>
       PackageVoucherMapper.toDomain(item, { allInfo: false }),
     );

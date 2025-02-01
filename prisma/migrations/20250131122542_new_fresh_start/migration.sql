@@ -137,7 +137,8 @@ CREATE TABLE "package_voucher" (
     "title" VARCHAR(191) NOT NULL,
     "description" TEXT NOT NULL,
     "stock_amount" INTEGER NOT NULL,
-    "termAndCondition" TEXT NOT NULL,
+    "term_and_condition" TEXT NOT NULL,
+    "tag_id" UUID NOT NULL,
     "price" DECIMAL(8,2) NOT NULL,
     "quota_amount" SMALLINT NOT NULL,
     "sell_started_at" TIMESTAMPTZ(3) NOT NULL,
@@ -315,12 +316,6 @@ CREATE UNIQUE INDEX "session_account_id_key" ON "session"("account_id");
 CREATE UNIQUE INDEX "category_name_key" ON "category"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "voucher_discount_voucher_id_key" ON "voucher_discount"("voucher_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "package_discount_voucher_id_key" ON "package_discount"("voucher_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "order_item_code_key" ON "order_item"("code");
 
 -- CreateIndex
@@ -358,6 +353,9 @@ ALTER TABLE "package_discount" ADD CONSTRAINT "package_discount_voucher_id_fkey"
 
 -- AddForeignKey
 ALTER TABLE "package_voucher" ADD CONSTRAINT "package_voucher_quota_voucher_id_fkey" FOREIGN KEY ("quota_voucher_id") REFERENCES "voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "package_voucher" ADD CONSTRAINT "package_voucher_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "voucher_tag"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "package_img" ADD CONSTRAINT "package_img_package_id_fkey" FOREIGN KEY ("package_id") REFERENCES "package_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

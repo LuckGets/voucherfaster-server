@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { v7 as uuidv7 } from 'uuid';
-import { vouchers } from './voucher.seed';
+import { tags, vouchers } from './voucher.seed';
 
 export const packageVoucherId = Array(2)
   .fill('')
@@ -35,6 +35,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     id: packageVoucherId[0],
     title: 'โปรโมชั่นแพ็คเกจ ซื้อ1แถม1',
     description: 'โปรโมชั่นซื้อ 1 แถม 1',
+    tagId: tags[1].id,
     termAndCondition: termAndConditionSeedInfo,
     quotaVoucherId: vouchers[0].id,
     quotaAmount: 1,
@@ -51,6 +52,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     description: 'เป็ดฮ่องกงแซ่บๆ 2 แถม 1',
     termAndCondition: termAndConditionSeedInfo,
     stockAmount: 100,
+    tagId: tags[3].id,
     quotaVoucherId: vouchers[5].id,
     quotaAmount: 2,
     price: 1200,

@@ -77,9 +77,7 @@ export class VoucherController {
     groups: [RoleEnum.Admin],
   })
   @ApiConsumes('multipart/formdata')
-  @ApiBody({
-    ...createVoucherFormDataDocumentation,
-  })
+  @ApiBody(createVoucherFormDataDocumentation)
   @ApiCreatedResponse({ type: () => CreateVoucherResponse })
   @UseInterceptors(
     FileFieldsInterceptor([

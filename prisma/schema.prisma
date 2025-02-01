@@ -78,14 +78,15 @@ model Category {
 }
 
 model VoucherTag {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  name       String    @db.VarChar(90)
-  categoryId String    @map("category_id") @db.Uuid
-  category   Category  @relation(fields: [categoryId], references: [id])
-  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime  @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
-  Voucher    Voucher[]
+  id             String           @id @default(uuid(7)) @db.Uuid
+  name           String           @db.VarChar(90)
+  categoryId     String           @map("category_id") @db.Uuid
+  category       Category         @relation(fields: [categoryId], references: [id])
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  Voucher        Voucher[]
+  PackageVoucher PackageVoucher[]
 
   @@map("voucher_tag")
 }
@@ -163,7 +164,9 @@ model PackageVoucher {
   description          String                 @db.Text
   voucher              Voucher                @relation(fields: [quotaVoucherId], references: [id])
   stockAmount          Int                    @map("stock_amount") @db.Integer()
-  termAndCondition     String                 @db.Text
+  termAndCondition     String                 @map("term_and_condition") @db.Text
+  tagId                String                 @map("tag_id") @db.Uuid
+  voucherTag           VoucherTag             @relation(fields: [tagId], references: [id])
   price                Decimal                @map("price") @db.Decimal(8, 2)
   quotaAmount          Int                    @map("quota_amount") @db.SmallInt
   sellStartedAt        DateTime               @map("sell_started_at") @db.Timestamptz(3)

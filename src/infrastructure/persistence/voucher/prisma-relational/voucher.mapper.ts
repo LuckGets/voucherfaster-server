@@ -56,7 +56,6 @@ export class VoucherMapper {
     const voucherStatus = VoucherStatusEnum[status];
 
     let voucherDiscount = null;
-    console.log(VoucherDiscount);
     // Create a VoucherDiscountDomain object
     if (VoucherDiscount && VoucherDiscount.length > 0) {
       if (VoucherDiscount.length > 1 && VoucherDiscount[1].deletedAt === null)

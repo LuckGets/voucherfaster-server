@@ -3,6 +3,7 @@ import { RoleEnum } from '@resources/account/types/account.type';
 import { Expose } from 'class-transformer';
 import { PackageDiscountDomain } from './package-discount.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 export enum PackageStatusEnum {
   ACTIVE = 'ACTIVE',
@@ -14,6 +15,8 @@ export class PackageVoucherDomain {
   id: string;
   @ApiProperty({ type: String })
   category: CategoryDomain['name'];
+  @ApiProperty({ type: String })
+  tag: VoucherTagDomain['name'];
   @ApiProperty({ type: () => String })
   description: string;
   @ApiProperty({ type: String })
@@ -64,6 +67,7 @@ export class PackageVoucherDomain {
     sellStartedAt,
     stockAmount,
     title,
+    tag,
     rewardVouchers,
     termAndCondition,
     usableAt,
@@ -77,6 +81,7 @@ export class PackageVoucherDomain {
     images: PackageVoucherDomain['images'];
     price: PackageVoucherDomain['price'];
     discount: PackageVoucherDomain['discount'];
+    tag: PackageVoucherDomain['tag'];
     status: PackageVoucherDomain['status'];
     quotaAmount: PackageVoucherDomain['quotaAmount'];
     quotaVoucherId: PackageVoucherDomain['quotaVoucherId'];
@@ -84,7 +89,7 @@ export class PackageVoucherDomain {
     sellStartedAt: PackageVoucherDomain['sellStartedAt'];
     stockAmount: PackageVoucherDomain['stockAmount'];
     title: PackageVoucherDomain['title'];
-    rewardVouchers: PackageVoucherDomain['rewardVouchers'];
+    rewardVouchers?: PackageVoucherDomain['rewardVouchers'];
     termAndCondition: PackageVoucherDomain['termAndCondition'];
     usableAt: PackageVoucherDomain['usableAt'];
     usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
@@ -98,13 +103,14 @@ export class PackageVoucherDomain {
     this.price = price;
     this.discount = discount;
     this.status = status;
+    this.tag = tag;
     this.quotaAmount = quotaAmount;
     this.quotaVoucherId = quotaVoucherId;
     this.sellExpiredAt = sellExpiredAt;
     this.sellStartedAt = sellStartedAt;
     this.stockAmount = stockAmount;
     this.title = title;
-    this.rewardVouchers = rewardVouchers;
+    if (rewardVouchers) this.rewardVouchers = rewardVouchers;
     this.termAndCondition = termAndCondition;
     this.usableAt = usableAt;
     this.usableExpiredAt = usableExpiredAt;
@@ -119,7 +125,6 @@ export class PackageVoucherDomain {
       'description',
       'images',
       'price',
-      'discount',
       'status',
       'quotaAmount',
       'quotaVoucherId',
@@ -127,11 +132,9 @@ export class PackageVoucherDomain {
       'sellStartedAt',
       'stockAmount',
       'title',
-      'rewardVouchers',
       'usableAt',
       'usableExpiredAt',
       'createdAt',
-      'discount',
     ];
   }
 
@@ -179,6 +182,6 @@ export type PackageRewardVoucherCreateInput = {
   id: string;
   rewardVoucherId: string;
   amount: number;
-  packageId: string;
+  packageId?: string;
   img?: string;
 };

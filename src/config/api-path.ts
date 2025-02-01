@@ -1,5 +1,3 @@
-import { UpdateOwnerPasswordForRedeem } from '@resources/owner/dto/update-owner.dto';
-
 export enum AccountPath {
   Name = 'account',
   Base = '/account',
@@ -84,9 +82,9 @@ export const PackageVoucherPath = {
   CreatePackageImage: '/images',
   UpdatePackageImage: '/images/:imageId',
   DeletePackageImage: '/images/:imageId',
-  GetPackageCategoryQuery: 'category',
-  GetPackageSellDateQuery: 'sellDate',
-  GetPackageStatusQuery: 'status',
+  GetPackageCategoryQuery: 'c',
+  GetPackageSellDateQuery: 'sd',
+  GetPackageStatusQuery: 's',
 } as const;
 
 export const UsableDaysPath = {
@@ -142,4 +140,5 @@ export const OwnerPath = {
 export const FRONTEND_PATH = {
   VERIFIY: 'confirm-email',
   REDEEM_ORDER_ITEM: 'redeem-order-item',
+  GOOGLE_SUCCESS: 'google-success',
 };

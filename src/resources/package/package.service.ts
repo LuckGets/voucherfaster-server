@@ -53,39 +53,39 @@ export class PackageVoucherService {
     private prductDomainHelper: ProductDomainHelper,
   ) {}
 
+  // CREATE PACKAGE VOUCHER PATH //
   async createPackageVoucher({
     data,
-    mainImg,
     packageImg,
   }: {
     data: CreatePackageVoucherDto;
-    mainImg: Express.Multer.File[];
-    packageImg?: Express.Multer.File[];
+    packageImg: Express.Multer.File[];
   }): Promise<PackageVoucherDomain> {
-    if (!mainImg || mainImg.length === 0)
-      throw ErrorApiResponse.badRequest('Main image for voucher is required.');
+    const filesAndFieldsMap = this.parseFileAndFields(packageImg);
+
+    const mainImgFile = filesAndFieldsMap.get('main') || [];
+
+    const mainImgAndPackageBuffer: Express.Multer.File[] = [
+      ...mainImgFile,
+      ...(filesAndFieldsMap.get('package') || []),
+    ];
+
+    const mainImgAndPackageLength = mainImgAndPackageBuffer.length;
+
     // Extract reward voucher ID from package voucher data
     const { rewardVouchers, discountedPrice, ...restData } = data;
+    const packageId: PackageVoucherDomain['id'] = String(
+      this.uuidService.make(),
+    );
 
-    const rewardVoucherIdSet = new Set<VoucherDomain['id']>();
-    const rewardVoucherData: PackageRewardVoucherCreateInput[] = [];
-    // Extract reward voucher ID from package voucher data
-    const packageId = String(this.uuidService.make());
-    const idList = [data.quotaVoucherId];
-    for (const item of data.rewardVouchers) {
-      if (rewardVoucherIdSet.has(item.voucherId))
-        throw ErrorApiResponse.badRequest(
-          `Reward voucher ID: ${item.voucherId} was duplicated. If desired to add more amount of the same voucher, please add the number in the amount of the desired voucher ID field.`,
-        );
-      rewardVoucherIdSet.add(item.voucherId);
-      rewardVoucherData.push({
-        id: String(this.uuidService.make()),
-        amount: item.amount,
+    const { allImgBuffer, idList, imgIndexAndTypeMap, rewardVoucherData } =
+      this.prepareRewardVouchers({
+        filesAndFieldsMap,
+        mainImgAndPackageBuffer,
         packageId,
-        rewardVoucherId: item.voucherId,
+        quotaVoucherId: data.quotaVoucherId,
+        rewardVouchers,
       });
-      if (item.voucherId !== data.quotaVoucherId) idList.push(item.voucherId);
-    }
 
     // Check first if the voucher ID provided as
     // quota and reward is existing.
@@ -107,10 +107,6 @@ export class PackageVoucherService {
 
     // Upload the image and retrieve the image url path
     // to store in database.
-    const allImgBuffer: Express.Multer.File[] = [];
-
-    allImgBuffer.push(mainImg[0]);
-    if (packageImg && packageImg.length > 0) allImgBuffer.push(...packageImg);
 
     if (allImgBuffer.length < 1)
       throw ErrorApiResponse.conflictRequest('There is no image for upload.');
@@ -143,6 +139,16 @@ export class PackageVoucherService {
         };
       });
 
+    // create package reward voucher image.
+    if (allPackageImgLinks.length > mainImgAndPackageLength) {
+      rewardVoucherData.forEach((data) => {
+        const imgIndex = imgIndexAndTypeMap.get(data.rewardVoucherId);
+        if (imgIndex) {
+          data.img = allPackageImgLinks[imgIndex];
+        }
+      });
+    }
+
     let discountedData: PackageVoucherDiscountNestedCreateInput;
 
     if (discountedPrice)
@@ -155,9 +161,113 @@ export class PackageVoucherService {
       packageVoucherCreateInput: packageData,
       packageImage: packageImgCreateData,
       packageRewardVoucher: rewardVoucherData,
-      packageDiscountedPrice: discountedData,
+      packageDiscount: discountedData,
     });
   }
+
+  private parseFileAndFields(packageImg: Express.Multer.File[]) {
+    const filesAndFieldsMap = new Map<
+      string | 'main' | 'package',
+      Express.Multer.File[]
+    >();
+
+    for (const file of packageImg) {
+      switch (file.fieldname) {
+        case PACKAGE_FILE_FIELD.MAIN_IMG:
+          if (ObjectHelper.isObjectEmpty(file))
+            throw ErrorApiResponse.badRequest(
+              'Main image for voucher is required.',
+            );
+          const existingMainFile = filesAndFieldsMap.get('main') || [];
+
+          if (existingMainFile && existingMainFile.length > 0)
+            throw ErrorApiResponse.badRequest('Only one main image is allowed');
+          filesAndFieldsMap.set('main', [file]);
+          break;
+        case PACKAGE_FILE_FIELD.PACKAGE_IMG:
+          const packageFileArr = filesAndFieldsMap.get('package') || [];
+          packageFileArr.push(file);
+          filesAndFieldsMap.set('package', packageFileArr);
+          break;
+        default:
+          const existingFileArr = filesAndFieldsMap.get(file.fieldname) || [];
+          if (existingFileArr.length > 0)
+            throw ErrorApiResponse.badRequest(
+              `Only one file of ID:${file.fieldname} is allowed`,
+            );
+          else filesAndFieldsMap.set(file.fieldname, [file]);
+      }
+    }
+
+    const mainImgFile = filesAndFieldsMap.get('main') || [];
+    if (mainImgFile.length !== 1)
+      throw ErrorApiResponse.badRequest('Main image for voucher is required.');
+    return filesAndFieldsMap;
+  }
+
+  private prepareRewardVouchers({
+    quotaVoucherId,
+    rewardVouchers,
+    filesAndFieldsMap,
+    mainImgAndPackageBuffer,
+    packageId,
+  }: {
+    quotaVoucherId: string;
+    rewardVouchers: CreatePackageVoucherDto['rewardVouchers'];
+    filesAndFieldsMap: Map<string | 'main' | 'package', Express.Multer.File[]>;
+    mainImgAndPackageBuffer: Express.Multer.File[];
+    packageId: PackageVoucherDomain['id'];
+  }): {
+    rewardVoucherData: PackageRewardVoucherCreateInput[];
+    idList: VoucherDomain['id'][];
+    imgIndexAndTypeMap: Map<VoucherDomain['id'], number>;
+    allImgBuffer: Express.Multer.File[];
+  } {
+    const allImgBuffer = [...mainImgAndPackageBuffer];
+    const imgIndexAndTypeMap = new Map<VoucherDomain['id'], number>();
+    const rewardVoucherIdSet = new Set<VoucherDomain['id']>();
+    const rewardVoucherData: PackageRewardVoucherCreateInput[] = [];
+    // Extract reward voucher ID from package voucher data
+    const idList = [quotaVoucherId];
+    for (const item of rewardVouchers) {
+      if (rewardVoucherIdSet.has(item.voucherId))
+        throw ErrorApiResponse.badRequest(
+          `Reward voucher ID: ${item.voucherId} was duplicated. If desired to add more amount of the same voucher, please add the number in the amount of the desired voucher ID field.`,
+        );
+
+      if (filesAndFieldsMap.has(item.voucherId)) {
+        allImgBuffer.push(...filesAndFieldsMap.get(item.voucherId));
+        imgIndexAndTypeMap.set(item.voucherId, allImgBuffer.length - 1);
+      }
+
+      rewardVoucherIdSet.add(item.voucherId);
+      rewardVoucherData.push({
+        id: String(this.uuidService.make()),
+        amount: item.amount,
+        packageId,
+        rewardVoucherId: item.voucherId,
+      });
+      if (item.voucherId !== quotaVoucherId) idList.push(item.voucherId);
+    }
+    const filesFieldName = Array.from(filesAndFieldsMap.keys());
+
+    for (const field of filesFieldName) {
+      if (field === 'main' || field === 'package') continue;
+      if (!rewardVoucherIdSet.has(field))
+        throw ErrorApiResponse.badRequest(
+          `The file for voucher ID: ${field} could not be found on reward vouchers list.`,
+        );
+    }
+
+    return {
+      rewardVoucherData,
+      idList,
+      allImgBuffer,
+      imgIndexAndTypeMap,
+    };
+  }
+
+  // FINISH CREATE PACKAGE
 
   async getAllPackageVoucher({
     category,
@@ -178,8 +288,6 @@ export class PackageVoucherService {
         `Cursor: ${cursor} is not valid data type for searching.`,
       );
 
-    if (status) {
-    }
     return this.packageVoucherRepository.findManyPackageVoucher({
       cursor,
       category,

@@ -12,6 +12,7 @@ import {
   PackageDiscountStatusEnum,
 } from '@resources/package/domain/package-discount.domain';
 import {
+  PackageRewardVoucherDomain,
   PackageStatusEnum,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
@@ -54,6 +55,7 @@ export class PackageVoucherMapper {
       );
     }
     const categoryName = voucher?.voucherTag?.category?.name;
+    const tagName = voucher?.voucherTag?.name;
 
     let packageDiscount: PackageVoucherDomain['discount'];
 
@@ -62,14 +64,10 @@ export class PackageVoucherMapper {
         throw new Error(
           `Package voucher should have only one currently active discount but package ID: ${packageVoucherEntity.id} has more than one discount.`,
         );
-      const { id, discountedPrice, createdAt, status, updatedAt } =
-        PackageDiscount[0];
+      const { discountedPrice, status } = PackageDiscount[0];
       const discountStatus = PackageDiscountStatusEnum[status];
       packageDiscount = new PackageDiscountDomain({
-        id,
         discountedPrice: discountedPrice.toNumber(),
-        createdAt,
-        updatedAt,
         status: discountStatus,
       });
     }
@@ -85,22 +83,31 @@ export class PackageVoucherMapper {
     }
 
     const rewardVouchers: PackageVoucherDomain['rewardVouchers'] =
-      PackageRewardVoucher.map((item) => ({
-        id: item.id,
-        voucherId: item.rewardVoucherId,
-        amount: item.amount,
-        category: item.voucher?.voucherTag?.category?.name,
-      }));
+      PackageRewardVoucher.map((item) => {
+        const rewardVoucher: PackageRewardVoucherDomain = {
+          id: item.id,
+          voucherId: item.rewardVoucherId,
+          amount: item.amount,
+          category: item.voucher?.voucherTag?.category?.name,
+        };
+
+        if (options.allInfo) rewardVoucher.img = item.img;
+        return rewardVoucher;
+      });
+
+    if (!options.allInfo) delete packageInfo.termAndCondition;
 
     const packageVoucherDomain = new PackageVoucherDomain({
       ...packageInfo,
       price: packageInfo.price.toNumber(),
       status: PackageStatusEnum[packageInfo.status],
-      rewardVouchers,
+      tag: tagName,
       category: categoryName,
       images: packageImg,
       discount: packageDiscount,
     });
+
+    if (options.allInfo) packageVoucherDomain.rewardVouchers = rewardVouchers;
 
     switch (options.allInfo) {
       case true:

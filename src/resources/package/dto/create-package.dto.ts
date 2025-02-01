@@ -6,6 +6,7 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -18,6 +19,7 @@ import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { plainArrayTransformer } from '@utils/transformer/plainArrayTransformer';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 export const PACKAGE_FILE_FIELD = {
   MAIN_IMG: 'mainImg',
@@ -35,6 +37,8 @@ export class CreateRewardVoucherDto {
 
 export class CreatePackageVoucherDto {
   @IsUUID(7)
+  tagId: VoucherTagDomain['id'];
+  @IsUUID(7)
   @ApiProperty({ type: () => String, description: 'ID of the quota voucher' })
   quotaVoucherId: VoucherDomain['id'];
   @ApiProperty({ type: Number })
@@ -49,12 +53,13 @@ export class CreatePackageVoucherDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   price: number;
-  // @ApiProperty({ type: () => [CreateRewardVoucherDto] })
+  @IsString()
+  @IsNotEmpty()
+  description: PackageVoucherDomain['description'];
+  @IsArray()
   @Transform(({ value }) =>
     plainArrayTransformer(value, CreateRewardVoucherDto),
   )
-  description: PackageVoucherDomain['description'];
-  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => Object)
   rewardVouchers: CreateRewardVoucherDto[];
@@ -102,9 +107,14 @@ export const createPackageVoucherDtoSchemaDocument: ApiBodyOptions = {
       'sellExpiredAt',
       'usableAt',
       'usableExpiredAt',
+      `${PACKAGE_FILE_FIELD.MAIN_IMG}`,
     ],
     type: 'object',
     properties: {
+      tagId: {
+        type: 'string',
+        example: '0193f3cc-c977-7182-9627-debca7376208',
+      },
       quotaVoucherId: {
         type: 'string',
       },
@@ -152,6 +162,16 @@ export const createPackageVoucherDtoSchemaDocument: ApiBodyOptions = {
       discountedPrice: {
         type: 'number',
         nullable: true,
+      },
+      [PACKAGE_FILE_FIELD.MAIN_IMG]: {
+        type: 'string',
+        format: 'binary',
+        description: 'Main image of the package voucher',
+      },
+      [PACKAGE_FILE_FIELD.PACKAGE_IMG]: {
+        type: 'string',
+        format: 'binary',
+        description: 'Other images of the package voucher.',
       },
     },
   },

@@ -34,7 +34,6 @@ import {
   UpdateAccountDto,
   UpdateAccountResponse,
 } from './dto/update-account.dto';
-import { MediaService } from '@application/media/media.service';
 import { VerifyEmailDto, VerifyEmailResponse } from './dto/verify-emai.dto';
 import { UnlinkFileInterceptor } from 'src/common/interceptor/unlink-file.interceptor';
 

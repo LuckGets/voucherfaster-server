@@ -32,7 +32,7 @@ export class PackageDiscountDomain {
     updatedAt,
     status,
   }: {
-    id: string;
+    id?: string;
     discountedPrice: number;
     createdAt?: Date;
     updatedAt?: Date;

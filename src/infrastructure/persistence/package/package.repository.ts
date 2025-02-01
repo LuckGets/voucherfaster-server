@@ -6,6 +6,7 @@ import {
   PackageRewardVoucherCreateInput,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
+import { CreatePackageVoucherDto } from '@resources/package/dto/create-package.dto';
 import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
@@ -16,20 +17,10 @@ import {
 } from '@resources/package/dto/update-package.dto';
 import { NullAble } from '@utils/types/common.type';
 
-export type PackageVoucherCreateInput = {
-  id: string;
-  description: string;
-  quotaVoucherId: string;
-  quotaAmount: number;
-  stockAmount: number;
-  sellStartedAt: Date;
-  sellExpiredAt: Date;
-  usableAt: Date;
-  usableExpiredAt: Date;
-  price: number;
-  title: string;
-  termAndCondition: string;
-};
+export type PackageVoucherCreateInput = Omit<
+  CreatePackageVoucherDto,
+  'rewardVouchers' | 'discountedPrice'
+> & { id: PackageVoucherDomain['id'] };
 
 export type PackageVoucherDiscountNestedCreateInput = {
   id: PackageDiscountDomain['id'];
@@ -55,12 +46,12 @@ export type UpdatePackageVoucherRepositoryInput = Omit<
 export abstract class PackageVoucherRepository {
   abstract createPackageVoucher({
     packageVoucherCreateInput,
-    packageDiscountedPrice,
+    packageDiscount,
     packageImage,
     packageRewardVoucher,
   }: {
     packageVoucherCreateInput: PackageVoucherCreateInput;
-    packageDiscountedPrice?: PackageVoucherDiscountNestedCreateInput;
+    packageDiscount?: PackageVoucherDiscountNestedCreateInput;
     packageImage: PackageImgCreateInput[];
     packageRewardVoucher: PackageRewardVoucherCreateInput[];
   }): Promise<PackageVoucherDomain>;
