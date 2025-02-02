@@ -217,22 +217,6 @@ export class PackageVoucherController {
     return UpdatePackageVoucherResponse.success(updatedPackage);
   }
 
-  // @ApiBearerAuth()
-  // @ApiParam({ name: PackageVoucherPath.PackageParamId })
-  // @ApiOperation({
-  //   description: 'Setting the package voucher status as INACTIVE',
-  // })
-  // @ApiNoContentResponse({ type: () => DeletePackageVoucherByIdResponse })
-  // @UseGuards(AdminGuard)
-  // @Delete(PackageVoucherPath.DeletePackage)
-  // async deletePackageVoucherById(
-  //   @Param(PackageVoucherPath.PackageParamId)
-  //   paramId: PackageVoucherDomain['id'],
-  // ): Promise<DeletePackageVoucherByIdResponse> {
-  //   await this.packageVoucherService.deletePackageVoucherById(paramId);
-  //   return DeletePackageVoucherByIdResponse.success(paramId);
-  // }
-
   // -------------------------------------------------------------------- //
   // ------------------------- PACKAGE IMAGE PART ----------------------- //
   // -------------------------------------------------------------------- //
