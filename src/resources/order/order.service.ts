@@ -92,7 +92,7 @@ export class OrderService {
     );
 
     return this.orderRepository.createOrderAndTransaction({
-      payload: { id: String(this.uuidService.make()), totalPrice },
+      payload: { totalPrice },
       allOrderItemsInfo: createOrderItemsWithAssignedCode,
       accountId,
       updateStockAmountInfo,
@@ -121,8 +121,6 @@ export class OrderService {
     totalPrice: number;
     updateStockAmountInfo: UpdateStockAmountInfo;
   }> {
-    const creatingOrderId = String(this.uuidService.make());
-
     const allOrderItemsInfo: CreateOrderItemInfo[] = [];
 
     const updateStockAmountInfo: UpdateStockAmountInfo = {
@@ -146,7 +144,6 @@ export class OrderService {
       allOrderItemsId,
       allOrderItemsInfo,
       updateStockAmountInfo,
-      orderId: creatingOrderId,
       orderItemsVoucherList,
       orderItemsPackageList,
     });
@@ -232,7 +229,6 @@ export class OrderService {
     updateStockAmountInfo,
     orderItemsVoucherList,
     orderItemsPackageList,
-    orderId,
   }: {
     items: CreateOrderItem[];
     allOrderItemsInfo: CreateOrderItemInfo[];
@@ -240,7 +236,6 @@ export class OrderService {
     orderItemsVoucherList: OrderItemVoucherContainer;
     orderItemsPackageList: OrderItemPackageContainer;
     updateStockAmountInfo: UpdateStockAmountInfo;
-    orderId: OrderDomain['id'];
   }): Promise<number>[] {
     return items.map(async (item) => {
       let itemPrice = 0;
@@ -263,7 +258,6 @@ export class OrderService {
             itemAmount: item.amount,
             allOrderItemsId,
             appliedDiscountStatus: VoucherDiscountStatusEnum.ACTIVE,
-            orderId,
           });
           break;
         }
@@ -284,7 +278,6 @@ export class OrderService {
             itemAmount: item.amount,
             allOrderItemsId,
             appliedDiscountStatus: PackageDiscountStatusEnum.ACTIVE,
-            orderId,
           });
           break;
         }
@@ -307,7 +300,6 @@ export class OrderService {
     allOrderItemsId,
     orderItemsProductList,
     appliedDiscountStatus,
-    orderId,
   }: {
     itemAmount: number;
     currentSum: number;
@@ -319,7 +311,6 @@ export class OrderService {
     appliedDiscountStatus:
       | VoucherDiscountStatusEnum
       | PackageDiscountStatusEnum;
-    orderId: OrderDomain['id'];
   }): number {
     // Calculate price part
 
@@ -356,8 +347,6 @@ export class OrderService {
 
         const orderItemReward: CreateOrderItemInfo = {
           id: null,
-          orderId,
-          countNumber: null,
           qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
           code: null,
           usableAt,
@@ -373,25 +362,30 @@ export class OrderService {
         };
 
         if (isDiscountApplied) {
-          orderItemDetail.discount = {
-            id: discount.id,
-            discountedPrice: discount.discountedPrice,
-          };
+          orderItemDetail.discountId = discount.id;
         }
 
         const orderItemsPackageRewardArr: CreateOrderItemPackageInfo[] =
-          Array(totalItemAmount).fill(orderItemDetail);
-        // OrderItem array
-        const rewardsVoucherArr: CreateOrderItemInfo[] = Array(totalItemAmount)
-          .fill(orderItemReward)
-          .map((item, index) => {
+          Array.from({ length: totalItemAmount }, (_, index) => {
+            const newItem = { ...orderItemDetail };
             const orderItemId = String(this.uuidService.make());
-            item.id = orderItemId;
-            item.countNumber = index + 1;
+            newItem.id = orderItemId;
             orderItemsPackageRewardArr[index].orderItemId = orderItemId;
-            allOrderItemsId.push(item.id);
-            return item;
+            allOrderItemsId.push(newItem.id);
+            return newItem;
           });
+
+        const rewardsVoucherArr: CreateOrderItemInfo[] = Array.from(
+          { length: totalItemAmount },
+          (_, index) => {
+            const newItem = { ...orderItemReward };
+            const orderItemId = String(this.uuidService.make());
+            newItem.id = orderItemId;
+            orderItemsPackageRewardArr[index].orderItemId = orderItemId;
+            allOrderItemsId.push(newItem.id);
+            return newItem;
+          },
+        );
 
         itemList.push(...rewardsVoucherArr);
         orderItemsProductList.items.push(...orderItemsPackageRewardArr);
@@ -403,7 +397,7 @@ export class OrderService {
       );
 
       const quotaVoucherDetail: CreateOrderItemPackageInfo = {
-        id: String(this.uuidService.make()),
+        id: null,
         orderItemId: null,
         packageId: itemInfo.id,
         voucherId: itemInfo.quotaVoucherId,
@@ -411,34 +405,39 @@ export class OrderService {
       };
 
       if (isDiscountApplied) {
-        quotaVoucherDetail.discount = {
-          id: discount.id,
-          discountedPrice: discount.discountedPrice,
-        };
+        quotaVoucherDetail.discountId = discount.id;
       }
 
       const orderItemsPackageQuotaArr: CreateOrderItemPackageInfo[] =
-        Array(totalItemAmount).fill(quotaVoucherDetail);
+        Array.from({ length: totalItemAmount }, (_, index) => {
+          const newItem = { ...quotaVoucherDetail };
+          const orderItemId = String(this.uuidService.make());
+          newItem.id = orderItemId;
+          orderItemsPackageQuotaArr[index].orderItemId = orderItemId;
+          allOrderItemsId.push(newItem.id);
+          return newItem;
+        });
 
       const quotaVoucher: CreateOrderItemInfo = {
         id: null,
         code: null,
-        countNumber: null,
         usableAt,
         usableExpiredAt,
-        orderId,
         qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
       };
-      const quotaVoucherArr: CreateOrderItemInfo[] = Array(totalItemAmount)
-        .fill(quotaVoucher)
-        .map((item, index): CreateOrderItemInfo => {
+
+      const quotaVoucherArr: CreateOrderItemInfo[] = Array.from(
+        { length: totalItemAmount },
+        (_, index) => {
+          const newItem = { ...quotaVoucher };
           const orderItemId = String(this.uuidService.make());
-          item.id = orderItemId;
-          item.countNumber = index + 1;
+          newItem.id = orderItemId;
           orderItemsPackageQuotaArr[index].orderItemId = orderItemId;
-          allOrderItemsId.push(item.id);
-          return item;
-        });
+          allOrderItemsId.push(newItem.id);
+          return newItem;
+        },
+      );
+
       itemList.push(...quotaVoucherArr);
       orderItemsProductList.items.push(...orderItemsPackageQuotaArr);
     } else {
@@ -451,42 +450,43 @@ export class OrderService {
         );
 
       const orderItemVoucherInfo: CreateOrderItemVoucherInfo = {
-        id: String(this.uuidService.make()),
+        id: null,
         orderItemId: null,
         voucherId: itemInfo.id,
       };
 
       if (isDiscountApplied) {
-        orderItemVoucherInfo.discount = {
-          id: discount.id,
-          discountedPrice: discount.discountedPrice,
-        };
+        orderItemVoucherInfo.discountId = discount.id;
       }
 
-      const orderItemVoucherArr: CreateOrderItemVoucherInfo[] =
-        Array(itemAmount).fill(orderItemVoucherInfo);
+      const orderItemVoucherArr: CreateOrderItemVoucherInfo[] = Array.from(
+        { length: itemAmount },
+        (_, index) => {
+          return {
+            ...orderItemVoucherInfo,
+            id: String(this.uuidService.make()),
+          };
+        },
+      );
 
       const orderItemInfo: CreateOrderItemInfo = {
         id: null,
         code: null,
-        countNumber: null,
         usableAt,
         usableExpiredAt,
-        orderId,
         qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
       };
 
       itemList.push(
-        ...Array(itemAmount)
-          .fill(orderItemInfo)
-          .map((item, index) => {
-            const orderItemId = String(this.uuidService.make());
-            item.id = orderItemId;
-            item.countNumber = index + 1;
-            orderItemVoucherArr[index].orderItemId = orderItemId;
-            allOrderItemsId.push(item.id);
-            return item;
-          }),
+        ...Array.from({ length: itemAmount }, (_, index) => {
+          // Create a fresh copy of orderItemInfo for each element
+          const newItem = { ...orderItemInfo };
+          const orderItemId = String(this.uuidService.make());
+          newItem.id = orderItemId;
+          orderItemVoucherArr[index].orderItemId = orderItemId;
+          allOrderItemsId.push(newItem.id);
+          return newItem;
+        }),
       );
 
       orderItemsProductList.items.push(...orderItemVoucherArr);

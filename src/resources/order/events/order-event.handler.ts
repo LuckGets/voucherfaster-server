@@ -36,7 +36,6 @@ export class OrderEventHandler {
     });
   }
   private logger: Logger = new Logger(OrderEventHandler.name);
-  /*************  ✨ Codeium Command ⭐  *************/
   /**
    * Handle the ORDER_EVENT_CONSTANT.CREATED event.
    * This event is emitted when the OrderService create a new order.

@@ -104,7 +104,6 @@ export class OrderItemMapper {
       id: orderItem.id,
       qrcodeImagePath: orderItem.qrcodeImagePath,
       code: orderItem.code,
-      countNumber: orderItem.countNumber,
       order: orderDetail,
       usableAt: orderItem.usableAt,
       usableExpiredAt: orderItem.usableExpiredAt,

@@ -14,7 +14,7 @@ export class HandleBarContextHelper {
     qrcodePath: OrderItemDomain['qrcodeImagePath'];
     qrcodeUrl: string;
     expiredDate: OrderItemDomain['usableExpiredAt'];
-    countNumber: OrderItemDomain['countNumber'];
+    countNumber: number;
     total: number;
     category: CategoryDomain['name'];
     rewardVoucher?: OrderItemDomain['detail'];

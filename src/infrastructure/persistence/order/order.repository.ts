@@ -6,12 +6,13 @@ import { NullAble } from '@utils/types/common.type';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
+import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
 
 export type CreateOrderItemVoucherInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
   voucherId: VoucherDomain['id'];
-  discount?: Pick<PackageDiscountDomain, 'id' | 'discountedPrice'>;
+  discountId?: VoucherDiscountDomain['id'];
 };
 
 export type CreateOrderItemPackageInfo = {
@@ -20,7 +21,7 @@ export type CreateOrderItemPackageInfo = {
   voucherId: VoucherDomain['id'];
   packageId: PackageVoucherDomain['id'];
   reward: boolean;
-  discount?: Pick<PackageDiscountDomain, 'id' | 'discountedPrice'>;
+  discountId?: PackageDiscountDomain['id'];
 };
 
 export type UpdateStockAmountInfo = {
@@ -35,16 +36,14 @@ export type UpdateStockAmountEachInfo = {
 
 export type CreateOrderItemInfo = {
   id: OrderItemDomain['id'];
-  orderId: OrderDomain['id'];
   code: OrderItemDomain['code'];
   qrcodeImagePath: string;
-  countNumber: number;
   usableAt: PackageVoucherDomain['usableAt'];
   usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
 };
 
 export type CreateOrderAndTransactionInput = {
-  payload: { id: OrderDomain['id']; totalPrice: number };
+  payload: { totalPrice: number };
   accountId: AccountDomain['id'];
   updateStockAmountInfo: UpdateStockAmountInfo;
   transaction: Pick<TransactionDomain, 'status' | 'id'>;

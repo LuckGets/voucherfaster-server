@@ -101,8 +101,6 @@ export class OrderItemDomain {
   qrcodeImagePath: string;
   @ApiProperty({ type: String })
   code: string;
-  @ApiProperty({ type: Number })
-  countNumber: number;
   @ApiProperty({ type: String })
   order?: Pick<OrderDomain, 'account' | 'transaction' | 'id'>;
   @ApiProperty({ type: Date })
@@ -120,7 +118,6 @@ export class OrderItemDomain {
     id,
     qrcodeImagePath,
     code,
-    countNumber,
     order,
     usableAt,
     usableExpiredAt,
@@ -131,7 +128,6 @@ export class OrderItemDomain {
     id: OrderItemDomain['id'];
     qrcodeImagePath: OrderItemDomain['qrcodeImagePath'];
     code: OrderItemDomain['code'];
-    countNumber: OrderItemDomain['countNumber'];
     order?: OrderItemDomain['order'];
     usableAt: OrderItemDomain['usableAt'];
     usableExpiredAt: OrderItemDomain['usableExpiredAt'];
@@ -142,7 +138,6 @@ export class OrderItemDomain {
     this.id = id;
     this.qrcodeImagePath = qrcodeImagePath;
     this.code = code;
-    this.countNumber = countNumber;
     this.order = order;
     this.usableAt = usableAt;
     this.usableExpiredAt = usableExpiredAt;

@@ -227,7 +227,6 @@ model OrderItem {
   id              String   @id @default(uuid(7)) @db.Uuid
   orderId         String   @map("order_id") @db.Uuid
   order           Order    @relation(fields: [orderId], references: [id])
-  countNumber     Int      @db.Integer
   qrcodeImagePath String   @map("qrcode_image_path")
   code            String   @unique @db.VarChar(40)
   updatedAt       DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)

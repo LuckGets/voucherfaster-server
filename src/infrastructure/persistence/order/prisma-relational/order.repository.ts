@@ -71,8 +71,15 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           },
         },
         PackageDiscount: true,
-        voucher: {
-          include: this.voucherCategoryIncludeQuery,
+        voucherTag: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         },
         PackageRewardVoucher: {
           include: {
@@ -181,6 +188,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       const orderAndTransaction = await this.prismaService.$transaction(
         async (tx) => {
           // Generate the update stock transaction promise
+
           const updateStockTransactionPromise =
             this.generateUpdateStockAmountTransactionPromise(
               tx,
@@ -207,6 +215,8 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             transactionExpireTime.unit,
           );
 
+          console.log(allOrderItemsInfo);
+
           const createOrderPromise = tx.order.create({
             data: {
               ...payload,
@@ -215,7 +225,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
                 create: {
                   id: transaction.id,
                   transactionSystemId: transactionSystem.id,
-                  status: TransactionStatusEnum.PENDING,
+                  status: transaction.status,
                   createdAt: currentDate,
                   expiredAt: transactionExpiredAt,
                 },
@@ -228,11 +238,10 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             },
           });
 
+          await Promise.all(updateStockTransactionPromise);
+
           // Wait for all promises to be resolved
-          const [orderAndTransaction] = await Promise.all([
-            createOrderPromise,
-            ...updateStockTransactionPromise,
-          ]);
+          const orderAndTransaction = await createOrderPromise;
           await Promise.all(createOrderItemProductPromise);
 
           return tx.order.findUnique({
@@ -269,7 +278,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       updateStockAmountInfo.vouchers.length > 0
     ) {
       transactionForUpdateStockAmountPromiseArr.push(
-        this.transactionForUpdateVoucherStockAmount(
+        ...this.transactionForUpdateVoucherStockAmount(
           tx,
           updateStockAmountInfo.vouchers,
           'voucher',
@@ -282,7 +291,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       updateStockAmountInfo.packages.length > 0
     ) {
       transactionForUpdateStockAmountPromiseArr.push(
-        this.transactionForUpdateVoucherStockAmount(
+        ...this.transactionForUpdateVoucherStockAmount(
           tx,
           updateStockAmountInfo.packages,
           'package',
