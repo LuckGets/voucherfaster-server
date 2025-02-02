@@ -55,13 +55,13 @@ const seed = async (): Promise<void> => {
       },
     });
 
-    const isPackageExist = await prisma.packageVoucher.findUnique({
+    const isCategoryExist = await prisma.category.findFirst({
       where: {
-        id: packages[0].id,
+        name: categories[0].name,
       },
     });
 
-    if (isSeedingAccountExist && isPackageExist) {
+    if (isSeedingAccountExist || isCategoryExist) {
       console.log(
         'The database have already populated with data. STOP seeding process....',
       );
@@ -146,9 +146,6 @@ async function main() {
     // 5. Reconnect with fresh client
     console.log('\nRECONNECTING TO DATABASE...');
     await prisma.$connect();
-
-    // 6. Verify and seed
-    console.log('\nVERIFYING DATABASE STATE...');
 
     console.log('\nSEEDING DATABASE...');
     await seed();

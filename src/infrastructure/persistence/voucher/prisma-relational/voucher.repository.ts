@@ -106,7 +106,10 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     } else {
       baseQuery.voucherTag = {
         category: {
-          name: category,
+          name: {
+            contains: category,
+            mode: 'insensitive',
+          },
         },
       };
     }
