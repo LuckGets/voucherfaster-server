@@ -42,7 +42,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
     sellStartedAt: '2024-12-31T17:00:00.000Z',
-    sellExpiredAt: '2025-01-31T17:00:00.000Z',
+    sellExpiredAt: '2025-03-31T17:00:00.000Z',
     stockAmount: 100,
     price: 300,
   },
@@ -59,7 +59,7 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
     sellStartedAt: '2024-12-31T17:00:00.000Z',
-    sellExpiredAt: '2025-01-31T17:00:00.000Z',
+    sellExpiredAt: '2025-03-31T17:00:00.000Z',
   },
 ];
 

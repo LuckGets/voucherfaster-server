@@ -168,8 +168,6 @@ export class PackageRewardVoucherDomain {
   id: string;
   @ApiProperty({ type: String })
   voucherId: string;
-  @ApiProperty({ type: String })
-  category: CategoryDomain['name'];
   @ApiProperty({ type: Number })
   amount: number;
   @ApiProperty({ type: String })

@@ -102,7 +102,7 @@ export class UpdateVoucherImgResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: () => Object,
-    example: `{
+    example: {
       id: '01948db4-b175-71d9-a975-804f8c4b8dd6',
       imgPath:
         'd22pq9rbvhh9yl.cloudfront.net/voucher-img/1737549384989_610441.jpg',
@@ -110,7 +110,7 @@ export class UpdateVoucherImgResponse extends CoreApiResponse {
       mainImg: false,
       createdAt: '1/22/2025, 6:10:16 PM',
       updatedAt: '1/22/2025, 7:36:25 PM',
-    }`,
+    },
   })
   public data: VoucherImgDomain;
 

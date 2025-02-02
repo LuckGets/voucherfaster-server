@@ -26,7 +26,9 @@ type NestedVoucherTagAndCategory = Voucher & {
 };
 
 type AllPackageVoucherEntityInformation = PackageVoucher & {
-  voucher?: NestedVoucherTagAndCategory;
+  voucherTag?: VoucherTag & {
+    category?: Pick<Category, 'id' | 'name'>;
+  };
   PackageRewardVoucher?: (Partial<PackageRewardVoucher> & {
     voucher?: NestedVoucherTagAndCategory;
   })[];
@@ -42,7 +44,7 @@ export class PackageVoucherMapper {
     if (ObjectHelper.isObjectEmpty(packageVoucherEntity)) return null;
 
     const {
-      voucher,
+      voucherTag,
       PackageImg,
       PackageRewardVoucher,
       PackageDiscount,
@@ -54,8 +56,8 @@ export class PackageVoucherMapper {
         `Package voucher should have at least one reward voucher but package ID: ${packageVoucherEntity.id} does not have any reward voucher.`,
       );
     }
-    const categoryName = voucher?.voucherTag?.category?.name;
-    const tagName = voucher?.voucherTag?.name;
+    const categoryName = voucherTag?.category?.name;
+    const tagName = voucherTag?.name;
 
     let packageDiscount: PackageVoucherDomain['discount'];
 
@@ -88,7 +90,6 @@ export class PackageVoucherMapper {
           id: item.id,
           voucherId: item.rewardVoucherId,
           amount: item.amount,
-          category: item.voucher?.voucherTag?.category?.name,
         };
 
         if (options.allInfo) rewardVoucher.img = item.img;

@@ -8,7 +8,12 @@ import {
   UpdateVoucherRepositoryInput,
   VoucherRepository,
 } from '../voucher.repository';
-import { DiscountStatus, Prisma, VoucherStatus } from '@prisma/client';
+import {
+  DiscountStatus,
+  Prisma,
+  VoucherStatus,
+  VoucherTag,
+} from '@prisma/client';
 import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -77,31 +82,36 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     VoucherDiscount: this.currentlyDiscountIncludeQuery,
   };
 
-  private generateCategoryWhereQuery(
+  private generateCategoryOrTagWhereQuery(
     category: CategoryDomain['id'] | CategoryDomain['name'],
+    tag?: VoucherTagDomain['id'],
   ): Prisma.VoucherWhereInput {
-    if (!category) return {};
+    if (!category && !tag) return {};
+
+    const baseQuery: Prisma.VoucherWhereInput = {};
+
+    if (tag) {
+      baseQuery.voucherTag = {
+        id: tag,
+      };
+      return baseQuery;
+    }
 
     if (isUUID(category)) {
-      return {
-        voucherTag: {
-          category: {
-            id: category,
-          },
+      baseQuery.voucherTag = {
+        category: {
+          id: category,
         },
       };
     } else {
-      return {
-        voucherTag: {
-          category: {
-            name: {
-              contains: category,
-              mode: 'insensitive',
-            },
-          },
+      baseQuery.voucherTag = {
+        category: {
+          name: category,
         },
       };
     }
+
+    return baseQuery;
   }
 
   private generateSellDateWhereQuery(
@@ -153,6 +163,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
           VoucherDiscount: {
             some: {
               status: VoucherStatus.INACTIVE,
+              deletedAt: {
+                equals: null,
+              },
             },
           },
         };
@@ -282,19 +295,9 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       paginationOption,
       sortOption,
     });
-    const categoryWhereOption: Prisma.VoucherWhereInput =
-      this.generateCategoryWhereQuery(category);
-    let tagWhereOption: Prisma.VoucherWhereInput = {};
-
-    if (tag)
-      tagWhereOption = {
-        voucherTag: {
-          name: {
-            contains: tag,
-            mode: 'insensitive',
-          },
-        },
-      };
+    const categoryOrTagWhereOption: Prisma.VoucherWhereInput =
+      this.generateCategoryOrTagWhereQuery(category, tag);
+    const tagWhereOption: Prisma.VoucherWhereInput = {};
 
     const discountQuery = this.generateDiscountWhereQuery(discount);
     const statusQuery = this.generateStatusWhereQuery(status);
@@ -305,7 +308,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       AND: [
         statusQuery,
         this.generateSellDateWhereQuery(sellDate),
-        categoryWhereOption,
+        categoryOrTagWhereOption,
         tagWhereOption,
         discountQuery,
       ],
@@ -365,8 +368,16 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       },
     };
 
-    const categoryWhereQuery: Prisma.VoucherWhereInput =
-      this.generateCategoryWhereQuery(searchContent);
+    const categoryWhereQuery: Prisma.VoucherWhereInput = {
+      voucherTag: {
+        category: {
+          name: {
+            contains: searchContent,
+            mode: 'insensitive',
+          },
+        },
+      },
+    };
 
     const voucherList = await this.prismaService.voucher.findMany({
       ...paginationQueryOption,

@@ -19,10 +19,13 @@ import { UpdatePackageRewardVoucherDto } from '@resources/package/dto/update-pac
 import { UUIDService } from '@utils/services/uuid.service';
 import { ObjectHelper } from '@utils/services/object.helper';
 import {
+  PackageDiscountQueryEnum,
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { isUUID } from 'class-validator';
 
 export class PackageVoucherRelationalPrismaORMRepository
   implements PackageVoucherRepository
@@ -32,70 +35,71 @@ export class PackageVoucherRelationalPrismaORMRepository
     private uuidService: UUIDService,
   ) {}
 
-  private activeDiscountIncludeQuery: Prisma.PackageDiscountWhereInput = {
-    deletedAt: {
-      equals: null,
-    },
-    status: {
-      equals: DiscountStatus.ACTIVE,
-    },
-  };
-
-  private voucherCategoryInclude: Prisma.VoucherInclude = {
-    voucherTag: {
-      include: {
-        category: {
-          select: { id: true, name: true },
-        },
+  private currentlyDiscountIncludeQuery: Prisma.PackageVoucher$PackageDiscountArgs =
+    {
+      orderBy: {
+        createdAt: 'desc',
       },
-    },
-  };
+      take: 1,
+    };
 
-  private rewardVoucherIncludeQuery: Prisma.PackageRewardVoucherInclude = {
-    voucher: {
-      include: this.voucherCategoryInclude,
+  private voucherTagAndCategoryInclude: Prisma.VoucherTagInclude = {
+    category: {
+      select: { id: true, name: true },
     },
   };
 
   private detailIncludeQuery: Prisma.PackageVoucherInclude = {
-    voucher: {
-      include: this.voucherCategoryInclude,
+    voucherTag: {
+      include: this.voucherTagAndCategoryInclude,
     },
     PackageImg: true,
-    PackageRewardVoucher: {
-      include: this.rewardVoucherIncludeQuery,
-    },
-    PackageDiscount: {
-      where: this.activeDiscountIncludeQuery,
-    },
+    PackageRewardVoucher: true,
+    PackageDiscount: this.currentlyDiscountIncludeQuery,
   };
 
   private findManyJoinQuery: Prisma.PackageVoucherInclude = {
-    voucher: {
-      include: this.voucherCategoryInclude,
+    voucherTag: {
+      include: this.voucherTagAndCategoryInclude,
     },
     PackageImg: { where: { mainImg: true } },
-    PackageRewardVoucher: { include: this.rewardVoucherIncludeQuery },
-    PackageDiscount: { where: this.activeDiscountIncludeQuery },
+    PackageRewardVoucher: true,
+    PackageDiscount: this.currentlyDiscountIncludeQuery,
   };
 
-  private generateCategoryWhereQuery(
+  private generateCategoryOrTagWhereQuery(
     category: CategoryDomain['name'],
+    tag?: VoucherTagDomain['id'],
   ): Prisma.PackageVoucherWhereInput {
-    return category
-      ? {
-          voucher: {
-            voucherTag: {
-              category: {
-                name: {
-                  contains: category,
-                  mode: 'insensitive',
-                },
-              },
-            },
+    const baseQuery: Prisma.PackageVoucherWhereInput = {};
+
+    if (!category && !tag) return {};
+
+    if (tag) {
+      baseQuery.voucherTag = {
+        id: tag,
+      };
+      return baseQuery;
+    }
+
+    if (isUUID(category)) {
+      baseQuery.voucherTag = {
+        category: {
+          id: category,
+        },
+      };
+    } else {
+      baseQuery.voucherTag = {
+        category: {
+          name: {
+            contains: category,
+            mode: 'insensitive',
           },
-        }
-      : {};
+        },
+      };
+    }
+
+    return baseQuery;
   }
 
   private generateSellDateWhereQuery(
@@ -112,8 +116,6 @@ export class PackageVoucherRelationalPrismaORMRepository
             gt: currentDate,
           },
         };
-      case PackageSellDateQueryEnum.ALL:
-        return {};
       case PackageSellDateQueryEnum.EXPIRED:
         return {
           sellExpiredAt: {
@@ -139,6 +141,43 @@ export class PackageVoucherRelationalPrismaORMRepository
         return {
           status: {
             equals: VoucherStatus.INACTIVE,
+          },
+        };
+      default:
+        return {};
+    }
+  }
+
+  private generateDiscoutWhereQuery(
+    discount: PackageDiscountQueryEnum,
+  ): Prisma.PackageVoucherWhereInput {
+    switch (discount) {
+      case PackageDiscountQueryEnum.ACTIVE:
+        return {
+          PackageDiscount: {
+            some: {
+              status: DiscountStatus.ACTIVE,
+              deletedAt: {
+                equals: null,
+              },
+            },
+          },
+        };
+      case PackageDiscountQueryEnum.INACTIVE:
+        return {
+          PackageDiscount: {
+            some: {
+              status: DiscountStatus.INACTIVE,
+              deletedAt: {
+                equals: null,
+              },
+            },
+          },
+        };
+      case PackageDiscountQueryEnum.NONE:
+        return {
+          PackageDiscount: {
+            none: {},
           },
         };
       default:
@@ -185,8 +224,6 @@ export class PackageVoucherRelationalPrismaORMRepository
       },
     };
 
-    console.log('Package Discount in create repo', packageDiscount);
-
     if (!ObjectHelper.isObjectEmpty(packageDiscount))
       createPackageData.PackageDiscount = {
         create: {
@@ -211,25 +248,37 @@ export class PackageVoucherRelationalPrismaORMRepository
     category,
     status,
     sellDate,
+    tag,
+    discount,
   }: {
     cursor?: PackageVoucherDomain['id'];
     category?: CategoryDomain['name'];
     status?: PackageStatusQueryEnum;
     sellDate?: PackageSellDateQueryEnum;
+    tag?: VoucherTagDomain['id'];
+    discount?: PackageDiscountQueryEnum;
   }): Promise<PackageVoucherDomain[]> {
     // Grab the pagination query option
     const paginateQueryOption = generatePaginationQueryOption<
       PackageVoucherDomain['id']
     >({ cursor });
     const categoryWhereQuery: Prisma.PackageVoucherWhereInput =
-      this.generateCategoryWhereQuery(category);
+      this.generateCategoryOrTagWhereQuery(category, tag);
+
     // Set the today date for query.
     const sellDateQuery = this.generateSellDateWhereQuery(sellDate);
 
     const statusQuery = this.generateStatusWhereQuery(status);
 
+    const discountQuery = this.generateDiscoutWhereQuery(discount);
+
     const allWhereQuery: Prisma.PackageVoucherWhereInput = {
-      AND: [categoryWhereQuery, statusQuery, sellDateQuery],
+      AND: [
+        categoryWhereQuery,
+        sellDateQuery,
+        statusQuery,
+        discountQuery,
+      ].filter((item) => ObjectHelper.isObjectEmpty(item) === false),
     };
 
     const packageVoucherQueryList =

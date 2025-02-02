@@ -36,4 +36,5 @@ EXPOSE 8080
 
 # Define the entrypoint script
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
+CMD ["pnpm", "run", "start:dev"]
 

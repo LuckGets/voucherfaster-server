@@ -41,6 +41,7 @@ import { PackageVoucherService } from './package.service';
 import {
   GetPackageVoucherByIdResponse,
   GetPaginationPackageVoucherResponse,
+  PackageDiscountQueryEnum,
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from './dto/get-package.dto';
@@ -63,6 +64,7 @@ import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
@@ -121,6 +123,20 @@ export class PackageVoucherController {
     type: String,
   })
   @ApiQuery({
+    name: PackageVoucherPath.GetPackageDiscountQuery,
+    description: `Discount of the package voucher. If not provided, default will be ${PackageDiscountQueryEnum.ALL}.`,
+    enumName: 'PackageDiscountQueryEnum',
+    enum: [
+      PackageDiscountQueryEnum.ALL,
+      PackageDiscountQueryEnum.ACTIVE,
+      PackageDiscountQueryEnum.INACTIVE,
+      PackageDiscountQueryEnum.NONE,
+    ],
+    default: PackageDiscountQueryEnum.ALL,
+    type: String,
+    required: false,
+  })
+  @ApiQuery({
     name: PackageVoucherPath.GetPackageStatusQuery,
     description: `Status of the voucher. If not provided, default will be ${PackageStatusQueryEnum.ACTIVE}`,
     required: false,
@@ -135,7 +151,15 @@ export class PackageVoucherController {
   })
   @ApiQuery({
     name: PackageVoucherPath.GetPackageCategoryQuery,
-    description: 'Category name of the voucher to filter by.',
+    description: 'Category name of the package to filter by.',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: PackageVoucherPath.GetPackageTagQuery,
+    description:
+      'Tag ID of the package to filter by. If tag was already provided, no need for category to be provided.',
+    example: '0194c26c-0556-7063-a1d6-fe8a79405e9d',
     required: false,
     type: String,
   })
@@ -146,6 +170,10 @@ export class PackageVoucherController {
     cursor: PackageVoucherDomain['id'],
     @Query(PackageVoucherPath.GetPackageCategoryQuery)
     category: CategoryDomain['name'],
+    @Query(PackageVoucherPath.GetPackageTagQuery)
+    tag: VoucherTagDomain['id'],
+    @Query(PackageVoucherPath.GetPackageDiscountQuery)
+    discount: PackageDiscountQueryEnum,
     @Query(PackageVoucherPath.GetPackageStatusQuery)
     status: PackageStatusQueryEnum,
     @Query(PackageVoucherPath.GetPackageSellDateQuery)
@@ -157,6 +185,8 @@ export class PackageVoucherController {
         category,
         status,
         sellDate,
+        tag,
+        discount,
       });
 
     return GetPaginationPackageVoucherResponse.success(packageVoucherQueryList);
@@ -175,7 +205,7 @@ export class PackageVoucherController {
   }
 
   @ApiBody({ type: UpdatePackageVoucherDto })
-  @ApiParam({ name: PackageVoucherPath.PackageParamId })
+  @ApiParam({ name: PackageVoucherPath.PackageParamId, required: false })
   @ApiOkResponse({ type: () => UpdatePackageVoucherResponse })
   @UseGuards(AdminGuard)
   @Patch(PackageVoucherPath.UpdatePackage)
@@ -187,18 +217,21 @@ export class PackageVoucherController {
     return UpdatePackageVoucherResponse.success(updatedPackage);
   }
 
-  @ApiBearerAuth()
-  @ApiParam({ name: PackageVoucherPath.PackageParamId })
-  @ApiNoContentResponse({ type: () => DeletePackageVoucherByIdResponse })
-  @UseGuards(AdminGuard)
-  @Delete(PackageVoucherPath.DeletePackage)
-  async deletePackageVoucherById(
-    @Param(PackageVoucherPath.PackageParamId)
-    paramId: PackageVoucherDomain['id'],
-  ): Promise<DeletePackageVoucherByIdResponse> {
-    await this.packageVoucherService.deletePackageVoucherById(paramId);
-    return DeletePackageVoucherByIdResponse.success(paramId);
-  }
+  // @ApiBearerAuth()
+  // @ApiParam({ name: PackageVoucherPath.PackageParamId })
+  // @ApiOperation({
+  //   description: 'Setting the package voucher status as INACTIVE',
+  // })
+  // @ApiNoContentResponse({ type: () => DeletePackageVoucherByIdResponse })
+  // @UseGuards(AdminGuard)
+  // @Delete(PackageVoucherPath.DeletePackage)
+  // async deletePackageVoucherById(
+  //   @Param(PackageVoucherPath.PackageParamId)
+  //   paramId: PackageVoucherDomain['id'],
+  // ): Promise<DeletePackageVoucherByIdResponse> {
+  //   await this.packageVoucherService.deletePackageVoucherById(paramId);
+  //   return DeletePackageVoucherByIdResponse.success(paramId);
+  // }
 
   // -------------------------------------------------------------------- //
   // ------------------------- PACKAGE IMAGE PART ----------------------- //

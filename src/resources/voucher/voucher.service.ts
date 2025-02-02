@@ -179,6 +179,11 @@ export class VoucherService {
         );
     }
 
+    if (tag && !isUUID(tag))
+      throw ErrorApiResponse.conflictRequest(
+        `${tag} is not valid data type for tag.`,
+      );
+
     return this.voucherRepository.findMany({
       tag,
       category,

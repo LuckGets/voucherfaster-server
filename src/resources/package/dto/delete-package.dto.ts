@@ -3,7 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
-import { PackageVoucherDomain } from '../domain/package-voucher.domain';
+import {
+  PackageStatusEnum,
+  PackageVoucherDomain,
+} from '../domain/package-voucher.domain';
 
 export class DeletePackageVoucherByIdResponse extends CoreApiResponse {
   @ApiProperty({
@@ -28,13 +31,14 @@ export class DeletePackageVoucherByIdResponse extends CoreApiResponse {
   public data: null;
 
   public static success(
-    packageId: PackageVoucherDomain['id'],
+    data: PackageVoucherDomain,
     message?: string,
     links?: HATEOSLink,
     statusCode?: number,
   ): DeletePackageVoucherByIdResponse {
     const responseMessage =
-      message ?? `DELETE package voucher ID: ${packageId} successfully.`;
+      message ??
+      `Setting package voucher ID: ${data.id} to ${PackageStatusEnum.INACTIVE} successfully.`;
     const responseCode = statusCode ?? HttpStatus.NO_CONTENT;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);

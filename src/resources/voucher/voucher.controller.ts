@@ -114,7 +114,8 @@ export class VoucherController {
   // Pagination voucher
   @ApiQuery({
     name: VoucherPath.TagQuery,
-    description: 'Tag name of the voucher to filter by.',
+    description:
+      'Tag ID of the voucher to filter by. If tag query provided, no need to provide category.',
     required: false,
     type: String,
   })
@@ -127,7 +128,7 @@ export class VoucherController {
   @ApiQuery({
     name: QUERY_FIELD_NAME.CURSOR,
     description: 'Cursor ID for pagination.',
-    example: '9HrBC1jMQ3KlZw4CssPUeQ',
+    example: '01948da7-a4e9-710f-a31a-3a1fc1a810a7',
     required: false,
     type: String,
   })
@@ -177,7 +178,7 @@ export class VoucherController {
   })
   @Get()
   async getPaginationVoucher(
-    @Query(VoucherPath.TagQuery) tag: VoucherTagDomain['name'],
+    @Query(VoucherPath.TagQuery) tag: VoucherTagDomain['id'],
     @Query(VoucherPath.CategoryQuery) category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherDomain['id'],
     @Query(VoucherPath.StatusQuery) status: PaginationStatusQueryEnum,

@@ -66,10 +66,7 @@ export class VoucherMapper {
       const [activeVoucherDiscount] = VoucherDiscount;
       if (!activeVoucherDiscount.deletedAt)
         voucherDiscount = new VoucherDiscountDomain({
-          id: activeVoucherDiscount?.id,
           discountedPrice: activeVoucherDiscount?.discountedPrice.toNumber(),
-          createdAt: activeVoucherDiscount?.createdAt,
-          updatedAt: activeVoucherDiscount?.updatedAt,
           status: VoucherDiscountStatusEnum[activeVoucherDiscount?.status],
         });
     }

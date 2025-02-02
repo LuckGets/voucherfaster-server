@@ -63,13 +63,11 @@ npx prisma generate
 
 # Run Prisma migrations
 echo "Running Prisma migrations..."
-npx prisma migrate dev
+npx prisma migrate dev --name init
 
-
-# Run Prisma seeding
-echo "Seeding the database..."
+echo "Running seed..."
 npx prisma db seed
 
 # Start the Nest.js server
 echo "Starting Nest.js server..."
-exec pnpm run start:dev
+exec "$@" 

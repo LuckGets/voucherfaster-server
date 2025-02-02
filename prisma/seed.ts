@@ -27,14 +27,8 @@ import {
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
-config({ path: '.env.development', override: true });
 
 const prisma = new PrismaClient();
-
-console.log(
-  'Loaded Prisma version: ',
-  require('@prisma/client/package.json').version,
-);
 
 const seedingFunc = async (
   func: Function,
@@ -54,6 +48,25 @@ const seedingFunc = async (
 const seed = async (): Promise<void> => {
   try {
     console.log('-------- START SEEDING PROCESS --------');
+
+    const isSeedingAccountExist = await prisma.account.findFirst({
+      where: {
+        email: accounts[0].email,
+      },
+    });
+
+    const isPackageExist = await prisma.packageVoucher.findUnique({
+      where: {
+        id: packages[0].id,
+      },
+    });
+
+    if (isSeedingAccountExist && isPackageExist) {
+      console.log(
+        'The database have already populated with data. STOP seeding process....',
+      );
+      return;
+    }
     const password = bcrypt.hashSync('Qwerty', 10);
     // const ownerPasswordForRedeem = CryptoService.encrypt(password, process.env.PASSWORD_FOR_REDEEM_SECRET);
 
@@ -124,46 +137,10 @@ const seed = async (): Promise<void> => {
   }
 };
 
-const resetDb = () => {
-  const reset = spawnSync('npx', ['prisma', 'migrate', 'reset', '--force'], {
-    stdio: 'inherit',
-    shell: true,
-  });
-
-  if (reset.status !== 0) {
-    throw new Error('Prisma migrate reset failed');
-  }
-
-  // 3. Regenerate Prisma client explicitly
-  console.log('\nREGENERATING PRISMA CLIENT...');
-  const generate = spawnSync('npx', ['prisma', 'generate'], {
-    stdio: 'inherit',
-    shell: true,
-  });
-
-  if (generate.status !== 0) {
-    throw new Error('Prisma generate failed');
-  }
-
-  // Continue with seeding data...
-  console.log('\nSEEDING DATA...');
-  // Your seeding logic here
-};
-
 async function main() {
   try {
     console.log('--- START ---\n--- RESET DB ---\n--- PROCESS ---');
 
-    // // 1. Clean up existing connections
-    // console.log('Disconnecting from database...');
-    // await prisma.$disconnect();
-
-    // // 2. Reset database with clean client generation
-    // console.log('\nRESETTING DATABASE...');
-    // resetDb();
-
-    // // 4. Regenerate Prisma client explicitly
-    // console.log('\nREGENERATING PRISMA CLIENT...');
     execSync('prisma generate', { stdio: 'inherit' });
 
     // 5. Reconnect with fresh client
@@ -177,6 +154,7 @@ async function main() {
     await seed();
   } catch (err) {
     console.error(err);
+    throw new Error(err);
   } finally {
     await prisma.$disconnect();
   }

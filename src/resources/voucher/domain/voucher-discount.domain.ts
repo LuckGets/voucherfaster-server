@@ -33,10 +33,10 @@ export class VoucherDiscountDomain {
     updatedAt,
     status,
   }: {
-    id: VoucherDiscountDomain['id'];
+    id?: VoucherDiscountDomain['id'];
     discountedPrice: VoucherDiscountDomain['discountedPrice'];
-    createdAt: VoucherDiscountDomain['createdAt'];
-    updatedAt: VoucherDiscountDomain['updatedAt'];
+    createdAt?: VoucherDiscountDomain['createdAt'];
+    updatedAt?: VoucherDiscountDomain['updatedAt'];
     status: VoucherDiscountDomain['status'];
   }) {
     this.id = id;

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import {
   PackageImgCreateInput,
@@ -8,6 +9,7 @@ import {
 } from '@resources/package/domain/package-voucher.domain';
 import { CreatePackageVoucherDto } from '@resources/package/dto/create-package.dto';
 import {
+  PackageDiscountQueryEnum,
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
@@ -67,11 +69,15 @@ export abstract class PackageVoucherRepository {
     category,
     status,
     sellDate,
+    tag,
+    discount,
   }: {
     cursor?: PackageVoucherDomain['id'];
     category?: CategoryDomain['name'];
     status?: PackageStatusQueryEnum;
     sellDate?: PackageSellDateQueryEnum;
+    tag?: VoucherTagDomain['id'];
+    discount?: PackageDiscountQueryEnum;
   }): Promise<PackageVoucherDomain[]>;
 
   abstract findPackageVoucherById(

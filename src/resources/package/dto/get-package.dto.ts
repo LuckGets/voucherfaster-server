@@ -17,6 +17,13 @@ export enum PackageStatusQueryEnum {
   ALL = 'ALL',
 }
 
+export enum PackageDiscountQueryEnum {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  NONE = 'NONE',
+  ALL = 'ALL',
+}
+
 export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
@@ -35,42 +42,34 @@ export class GetPaginationPackageVoucherResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: `[{
-            "id": "019492d8-e723-759a-bdf7-ec6256a08a07",
-            "title": "เป็ดฮ่องกงแซ่บๆ 2 แถม 1",
-            "price": 1200,
-            "stockAmount": 1,
-            "quotaVoucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
-            "quotaAmount": 2,
-            "usableAt": "1/1/2025, 12:00:00 AM",
-            "usableExpiredAt": "2/1/2025, 12:00:00 AM",
-            "sellStartedAt": "1/1/2025, 12:00:00 AM",
-            "sellExpiredAt": "2/1/2025, 12:00:00 AM",
-            "createdAt": "1/23/2025, 6:08:03 PM",
-            "updatedAt": "1/23/2025, 7:34:45 PM",
-            "category": "Yok chinese restaurant",
-            "images": [
-                {
-                    "id": "019492d8-e723-759a-bdf7-fffadccccc23",
-                    "mainImg": true,
-                    "imgPath": "d22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg"
-                }
-            ],
-            "rewardVouchers": [
-                {
-                    "id": "0194932c-1902-76b8-84b1-73935e79f729",
-                    "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
-                    "amount": 1,
-                    "category": "Yok chinese restaurant"
-                },
-                {
-                    "id": "019492d8-e723-759a-bdf7-f7321580150e",
-                    "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
-                    "amount": 1,
-                    "category": "Yok chinese restaurant"
-                }
-            ]
-        }]`,
+    example: [
+      {
+        id: '0194c25f-ff9a-7299-9239-e4b7a4998640',
+        category: 'Yok chinese restaurant',
+        description:
+          'เนื้อหมาผัดเต้าหู้ กินกับซอสต้นตำรับจากกวางจง ถิ่นหม่าล่า',
+        images: [
+          {
+            id: '0194c260-09da-7436-9f19-521baf2682a9',
+            mainImg: true,
+            imgPath:
+              'd22pq9rbvhh9yl.cloudfront.net/package-img/1738427858836_cute-dog.jpg',
+          },
+        ],
+        price: 300,
+        tag: 'main courses',
+        quotaAmount: 2,
+        quotaVoucherId: '0194c0f3-9df9-7655-88df-04a8b7862d8a',
+        sellExpiredAt: '2025-03-31T17:00:00.000Z',
+        sellStartedAt: '2024-12-31T17:00:00.000Z',
+        stockAmount: 100,
+        title: 'จัดเต้าหุ้สอง แถม เบอร์เกอร์กับปลาทอด',
+        usableAt: '2024-12-31T17:00:00.000Z',
+        usableExpiredAt: '2025-01-31T17:00:00.000Z',
+        createdAt: '2025-02-01T16:37:41.475Z',
+        updatedAt: '2025-02-01T16:37:41.475Z',
+      },
+    ],
   })
   public data: PackageVoucherDomain[];
   public cursor: string;
@@ -126,56 +125,50 @@ export class GetPackageVoucherByIdResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: `{
-        "id": "019492d8-e723-759a-bdf7-ec6256a08a07",
-        "title": "เป็ดฮ่องกงแซ่บๆ 2 แถม 1",
-        "price": 1200,
-        "stockAmount": 1,
-        "quotaVoucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
-        "quotaAmount": 2,
-        "usableAt": "1/1/2025, 12:00:00 AM",
-        "usableExpiredAt": "2/1/2025, 12:00:00 AM",
-        "sellStartedAt": "1/1/2025, 12:00:00 AM",
-        "sellExpiredAt": "2/1/2025, 12:00:00 AM",
-        "createdAt": "1/23/2025, 6:08:03 PM",
-        "updatedAt": "1/23/2025, 7:34:45 PM",
-        "category": "Yok chinese restaurant",
-        "images": [
-            {
-                "id": "019492d8-e723-759a-bdf7-fffadccccc23",
-                "mainImg": true,
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg"
-            }
-        ],
-        "rewardVouchers": [
-            {
-                "id": "0194932c-1902-76b8-84b1-73935e79f729",
-                "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
-                "amount": 1,
-                "category": "Yok chinese restaurant"
-            },
-            {
-                "id": "019492d8-e723-759a-bdf7-f7321580150e",
-                "voucherId": "019492d8-e71a-7162-af8e-5b9f18f1f7ba",
-                "amount": 1,
-                "category": "Yok chinese restaurant"
-            }
-        ],
-        "termAndCond": {
-            "en": [
-                {
-                    "id": "019492d8-e723-759a-bdf8-0e46618a362d",
-                    "description": "This voucher can only be used on roasted duck dishes."
-                }
-            ],
-            "th": [
-                {
-                    "id": "019492d8-e723-759a-bdf8-07c69dc18f5f",
-                    "description": "คูปองนี้สามารถใช้ได้เฉพาะกับจานเป็ดย่างเท่านั้น"
-                }
-            ]
-        }
-    }`,
+    example: {
+      id: '0194c577-4593-75ce-81dc-c6aac1cb9c48',
+      category: 'Yok chinese restaurant',
+      description: 'เนื้อหมาผัดเต้าหู้ กินกับซอสต้นตำรับจากกวางจง ถิ่นหม่าล่า',
+      images: [
+        {
+          id: '0194c577-472e-7729-aaed-4efc601d3c48',
+          mainImg: true,
+          imgPath:
+            'd22pq9rbvhh9yl.cloudfront.net/package-img/1738479715716_cute-dog.jpg',
+        },
+      ],
+      price: 300,
+      discount: {
+        discountedPrice: 199,
+        status: 'ACTIVE',
+      },
+      tag: 'main courses',
+      quotaAmount: 2,
+      quotaVoucherId: '0194c0f3-9df9-7655-88df-04a8b7862d8a',
+      sellExpiredAt: '2025-03-31T17:00:00.000Z',
+      sellStartedAt: '2024-12-31T17:00:00.000Z',
+      stockAmount: 100,
+      title: 'จัดเต้าหุ้สอง แถม เบอร์เกอร์กับปลาทอด',
+      termAndCondition: 'แซ่บลำแซ่บลำ',
+      usableAt: '2024-12-31T17:00:00.000Z',
+      usableExpiredAt: '2025-01-31T17:00:00.000Z',
+      createdAt: '2025-02-02T07:01:56.158Z',
+      updatedAt: '2025-02-02T07:01:56.158Z',
+      rewardVouchers: [
+        {
+          id: '0194c577-4593-75ce-81dc-c9c2b960e126',
+          voucherId: '0194c0f3-9df9-7655-88de-de9336454b71',
+          amount: 1,
+          img: null,
+        },
+        {
+          id: '0194c577-4593-75ce-81dc-ce0cc81a281a',
+          voucherId: '0194c0f3-9df9-7655-88de-e2da06950b7d',
+          amount: 1,
+          img: null,
+        },
+      ],
+    },
   })
   public data: PackageVoucherDomain;
 

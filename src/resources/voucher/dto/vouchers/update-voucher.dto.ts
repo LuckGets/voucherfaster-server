@@ -94,7 +94,7 @@ export class UpdateVoucherDto {
   @IsEnumValue(VoucherStatusEnum)
   @IsOptional()
   status?: VoucherStatusEnum;
-  @ApiProperty({ type: () => Number, required: false })
+  @ApiProperty({ type: () => UpdateVoucherDiscountDto, required: false })
   @ValidateNested({ each: true })
   @Type(() => UpdateVoucherDiscountDto)
   @IsOptional()
@@ -136,46 +136,37 @@ export class UpdateVoucherResponse extends CoreApiResponse {
   public links: HATEOSLink;
   @ApiProperty({
     type: Object,
-    example: `{
-        "id": "01948e7f-845f-774d-ad8d-29e5f496eacd",
-        "stockAmount": 10000,
-        "description": "CRISPY BURGER",
-        "price": 30000,
-        "usableAt": "12/25/2025, 12:00:00 AM",
-        "usableExpiredAt": "12/26/2025, 12:00:00 AM",
-        "sellStartedAt": "8/26/2025, 12:00:00 AM",
-        "sellExpiredAt": "12/26/2025, 12:00:00 AM",
-        "title": "CRISPY BURGER",
-        "status": "ACTIVE",
-        "tag": "main courses",
-        "category": "Yok chinese restaurant",
-        "img": [
-            {
-                "id": "01948e7f-8460-717e-b372-509aebfcf5f3",
-                "imgPath": "d22pq9rbvhh9yl.cloudfront.net/voucher-img/1737557508730_rocks.jpg",
-                "mainImg": true
-            }
-        ],
-        "termAndCond": {
-            "th": [
-                {
-                    "id": "01948e7f-8460-717e-b372-4339444a35eb",
-                    "description": "เคี้ยวมันส์ๆ"
-                }
-            ],
-            "en": [
-                {
-                    "id": "01948e7f-8460-717e-b372-4752ec43a770",
-                    "description": "Enjoy eating"
-                },
-                {
-                    "id": "01948e7f-8460-717e-b372-487aeb43ca87",
-                    "description": "Have fun"
-                }
-            ]
+    example: {
+      id: '0194c0f3-9df9-7655-88df-04a8b7862d8a',
+      title: 'Mapo tofu',
+      status: 'ACTIVE',
+      stockAmount: 10000,
+      description: 'Spicy and hot tofu.',
+      price: 210,
+      usableAt: '2024-12-31T17:00:00.000Z',
+      usableExpiredAt: '2025-12-25T17:00:00.000Z',
+      termAndCondition:
+        '<h1>ใบอนุญาตไทย71 Premium Buffet Dinner 1+0 Free1:Coupon8/10</h1>\n    <p>Ref. 2FCHD No. 1/1</p>\n    <p>Order No. 2024082558649924</p>\n    <p><strong>Expiry Date. 30 Dec 24 - 23:59</strong></p>\n    <h2>ราคานี้รวมเครื่องดื่มประเภท น้ำอัดลม ชา กาแฟ รับประทานได้แบบไม่จำกัดเวลา ตั้งแต่เวลา 18:00 - 22:00 น.</h2>\n    <p>ห้องอาหารดีเอมเมอร์ลด์ ชั้น 1 โรงแรมดีเอมเมอร์ลด์ MRT สถานีห้วยขวาง ทางออก 3</p>\n    <p>หลังสั่งซื้อแล้ว ทางโรงแรมจะไม่รับเปลี่ยนหรือคืนสินค้าทุกกรณี</p>\n    <h3>เงื่อนไขการใช้บริการ E-Voucher ไทยเที่ยวไทย71</h3>\n    <ul>\n      <li>E-Voucher นี้สามารถใช้ได้ตั้งแต่วันที่ 26 สิงหาคม - 30 ธันวาคม 67 เท่านั้น!</li>\n      <li>E-Voucher ใช้ได้ที่ห้องอาหารดีเอมเมอร์ลด์ ชั้น 1 โรงแรมดีเอมเมอร์ลด์ (1 E-Voucher สำหรับ 1 ท่าน เท่านั้น!)</li>\n      <li>เมื่อลูกค้าได้รับ E-Voucher ผ่าน Line หรือ E-mail แล้ว สามารถจองล่วงหน้าอย่างน้อย 3 วัน เพื่อเข้าใช้บริการได้เลยค่ะ</li>\n    </ul>\n    <h3>วิธีใช้บริการ E-Voucher</h3>\n    <ul>\n      <li>เมื่อมาใช้บริการ ลูกค้าจะต้องแสดง E-Voucher ผ่าน Line หรือ E-mail เท่านั้น ณ ที่ห้องอาหารเพื่อเข้ารับบริการ</li>\n      <li>ไม่สามารถแคปหน้าจอหรือบอกเพียงรหัสได้</li>\n      <li>E-Voucher ใช้ได้เพียง 1 ครั้ง ไม่สามารถใช้ซ้ำได้</li>\n      <li>E-Voucher ไม่สามารถใช้ร่วมกับโปรโมชั่น และ/หรือส่วนลดอื่น ๆ ได้</li>\n      <li>เมื่อมีการสั่งซื้อสำเร็จแล้วจะไม่สามารถยกเลิกหรือคืนเงินได้ ทุกกรณี</li>\n      <li>โรงแรมฯ ไม่รับผิดชอบต่อการสูญหายหรือการขโมยบัตรรับประทานอาหาร และไม่สามารถเปลี่ยนทดแทนได้หากสูญหาย/ถูกขโมย/หมดอายุ</li>\n      <li>โรงแรมฯ ขอสงวนสิทธิ์ในการเปลี่ยนแปลงเงื่อนไขโดยไม่ต้องแจ้งให้ทราบล่วงหน้า</li>\n    </ul>',
+      sellStartedAt: '2024-12-25T17:00:00.000Z',
+      sellExpiredAt: '2025-12-25T17:00:00.000Z',
+      img: [
+        {
+          id: '0194c0f3-9df9-7655-88df-338274fb08c7',
+          imgPath:
+            'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/กะเพาะปลาน้ำแดง.jpg',
+          mainImg: true,
         },
-        "promotion": []
-    }`,
+      ],
+      discount: {
+        id: '0194c573-e95e-7249-8a92-3333ad3ad7e4',
+        discountedPrice: 200,
+        createdAt: '2025-02-02T06:58:15.524Z',
+        updatedAt: '2025-02-02T06:58:15.524Z',
+        status: 'ACTIVE',
+      },
+      category: 'Yok chinese restaurant',
+      tag: 'main courses',
+    },
   })
   public data: VoucherDomain;
 

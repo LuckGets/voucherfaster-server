@@ -34,12 +34,14 @@ import { ProductDomainHelper } from 'src/common/product.helper';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import {
+  PackageDiscountQueryEnum,
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from './dto/get-package.dto';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductTypeEnum } from 'src/common/types/product.type';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 
 @Injectable()
 export class PackageVoucherService {
@@ -274,18 +276,27 @@ export class PackageVoucherService {
     cursor,
     status,
     sellDate,
+    tag,
+    discount,
   }: {
     cursor?: PackageVoucherDomain['id'];
     category?: CategoryDomain['name'];
     status?: PackageStatusQueryEnum;
     sellDate?: PackageSellDateQueryEnum;
+    tag?: VoucherTagDomain['id'];
+    discount?: PackageDiscountQueryEnum;
   }): Promise<PackageVoucherDomain[]> {
     const statusToQuery = this.checkStatusQuery(status);
     const sellDateQuery = this.checkSellDateQuery(sellDate);
-
+    const discoutQuery = this.checkDiscountQuery(discount);
     if (cursor && !isUUID(cursor))
       throw ErrorApiResponse.badRequest(
         `Cursor: ${cursor} is not valid data type for searching.`,
+      );
+
+    if (tag && !isUUID(tag))
+      throw ErrorApiResponse.badRequest(
+        `Tag: ${tag} is not valid data type for searching.`,
       );
 
     return this.packageVoucherRepository.findManyPackageVoucher({
@@ -293,6 +304,8 @@ export class PackageVoucherService {
       category,
       status: statusToQuery,
       sellDate: sellDateQuery,
+      tag,
+      discount: discoutQuery,
     });
   }
 
@@ -311,6 +324,16 @@ export class PackageVoucherService {
       PackageSellDateQueryEnum,
       sellDate,
       PackageSellDateQueryEnum.NOW,
+    );
+  }
+
+  private checkDiscountQuery(
+    discount: PackageDiscountQueryEnum,
+  ): PackageDiscountQueryEnum {
+    return EnumCheckerHelper.getEnumValueOrThrow(
+      PackageDiscountQueryEnum,
+      discount,
+      PackageDiscountQueryEnum.ALL,
     );
   }
 
