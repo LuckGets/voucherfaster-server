@@ -10,6 +10,17 @@ export enum PackageStatusEnum {
   INACTIVE = 'INACTIVE',
 }
 
+export class PackageQuotaVoucherDomain {
+  @ApiProperty({ type: String })
+  id: string;
+  @ApiProperty({ type: String })
+  voucherId: string;
+  @ApiProperty({ type: Number })
+  amount: number;
+  @ApiProperty({ type: String })
+  packageId?: string;
+}
+
 export class PackageVoucherDomain {
   @ApiProperty({ type: String })
   id: string;
@@ -19,10 +30,8 @@ export class PackageVoucherDomain {
   tag: VoucherTagDomain['name'];
   @ApiProperty({ type: () => String })
   description: string;
-  @ApiProperty({ type: String })
-  quotaVoucherId: string;
-  @ApiProperty({ type: Number })
-  quotaAmount: number;
+  @ApiProperty({ type: () => [PackageQuotaVoucherDomain] })
+  quotaVouchers: PackageQuotaVoucherDomain[];
   @ApiProperty({ type: Number })
   stockAmount: number;
   @ApiProperty({ type: Number })
@@ -61,8 +70,7 @@ export class PackageVoucherDomain {
     price,
     discount,
     status,
-    quotaAmount,
-    quotaVoucherId,
+    quotaVouchers,
     sellExpiredAt,
     sellStartedAt,
     stockAmount,
@@ -83,8 +91,7 @@ export class PackageVoucherDomain {
     discount: PackageVoucherDomain['discount'];
     tag: PackageVoucherDomain['tag'];
     status: PackageVoucherDomain['status'];
-    quotaAmount: PackageVoucherDomain['quotaAmount'];
-    quotaVoucherId: PackageVoucherDomain['quotaVoucherId'];
+    quotaVouchers: PackageQuotaVoucherDomain[];
     sellExpiredAt: PackageVoucherDomain['sellExpiredAt'];
     sellStartedAt: PackageVoucherDomain['sellStartedAt'];
     stockAmount: PackageVoucherDomain['stockAmount'];
@@ -104,8 +111,7 @@ export class PackageVoucherDomain {
     this.discount = discount;
     this.status = status;
     this.tag = tag;
-    this.quotaAmount = quotaAmount;
-    this.quotaVoucherId = quotaVoucherId;
+    this.quotaVouchers = quotaVouchers;
     this.sellExpiredAt = sellExpiredAt;
     this.sellStartedAt = sellStartedAt;
     this.stockAmount = stockAmount;
@@ -126,8 +132,7 @@ export class PackageVoucherDomain {
       'images',
       'price',
       'status',
-      'quotaAmount',
-      'quotaVoucherId',
+      'quotaVouchers',
       'sellExpiredAt',
       'sellStartedAt',
       'stockAmount',

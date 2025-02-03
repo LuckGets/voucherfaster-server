@@ -11,6 +11,7 @@ import { config } from 'dotenv';
 import { execSync, spawnSync } from 'child_process';
 import {
   packageImgs,
+  packageQuotaVouchers,
   packageRewardVouchers,
   packages,
 } from './seeds-data/package.seed';
@@ -102,6 +103,11 @@ const seed = async (): Promise<void> => {
         prisma.voucherDiscount.createMany,
         voucherDiscounts,
         'voucher-promotion',
+      ),
+      seedingFunc(
+        prisma.packageQuotaVoucher.createMany,
+        packageQuotaVouchers,
+        'package-quota',
       ),
       seedingFunc(
         prisma.packageRewardVoucher.createMany,

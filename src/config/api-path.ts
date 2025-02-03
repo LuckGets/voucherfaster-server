@@ -61,23 +61,17 @@ export const CategoryPath = {
   CategoryQuery: 'category',
 } as const;
 
-// const VoucherDiscountPathName = 'discount';
-
-// export const VoucherDiscountPath = {
-//   Name: `${VoucherDiscountPathName}`,
-//   Base: `/${VoucherDiscountPathName}`,
-//   DeleteDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
-//   CreateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}`,
-//   UpdateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
-// } as const;
+export const PACKAGE_CONST = {
+  NAME: 'packages',
+  PARAM_ID: 'packageId',
+} as const;
 
 export const PackageVoucherPath = {
-  Name: 'packages',
-  Base: '/packages',
-  GetPackageById: ':packageId',
-  UpdatePackage: ':packageId',
-  PackageParamId: 'packageId',
-  DeletePackage: ':packageId',
+  Base: `/${PACKAGE_CONST.NAME}`,
+  GetPackageById: `:${PACKAGE_CONST.PARAM_ID}`,
+  UpdatePackage: `:${PACKAGE_CONST.PARAM_ID}`,
+  PackageParamId: `:${PACKAGE_CONST.PARAM_ID}`,
+  DeletePackage: `:${PACKAGE_CONST.PARAM_ID}`,
   ImageIdParam: 'imageId',
   CreatePackageImage: '/images',
   UpdatePackageImage: '/images/:imageId',
@@ -87,6 +81,7 @@ export const PackageVoucherPath = {
   GetPackageSellDateQuery: 'sd',
   GetPackageStatusQuery: 's',
   GetPackageDiscountQuery: 'd',
+  AddNewQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quota`,
 } as const;
 
 export const UsableDaysPath = {

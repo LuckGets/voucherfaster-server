@@ -3,6 +3,7 @@ import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Transform, Type } from 'class-transformer';
 import {
   IsDate,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -28,7 +29,7 @@ import {
   PackageDiscountStatusEnum,
 } from '../domain/package-discount.domain';
 
-export class AddPackageRewardVoucherDto {
+export class AddVoucherToPackageDto {
   @ApiProperty({
     type: String,
     description: 'The property for any new updated reward voucher for package.',
@@ -39,23 +40,25 @@ export class AddPackageRewardVoucherDto {
   amount: number;
 }
 
-export class UpdateRewardVoucherDto {
+export class UpdateVoucherInPackageDto {
   @IsUUID(7)
-  rewardId: VoucherDomain['id'];
+  @IsOptional()
+  voucherId?: VoucherDomain['id'];
   @IsPositive()
-  amount: number;
+  @IsOptional()
+  amount?: number;
 }
 
 @AtLeastOneProperty(UpdatePackageRewardVoucherDto.updatAbleField())
 export class UpdatePackageRewardVoucherDto {
-  @ApiProperty({ type: () => [AddPackageRewardVoucherDto] })
+  @ApiProperty({ type: () => [AddVoucherToPackageDto] })
   @Transform(({ value }) =>
-    plainArrayTransformer(value, AddPackageRewardVoucherDto),
+    plainArrayTransformer(value, AddVoucherToPackageDto),
   )
   @ValidateNested({ each: true })
-  @Type(() => AddPackageRewardVoucherDto)
+  @Type(() => AddVoucherToPackageDto)
   @IsOptional()
-  addRewardVouchers?: AddPackageRewardVoucherDto[];
+  addRewardVouchers?: AddVoucherToPackageDto[];
   @ApiProperty({
     type: [String],
     description:
@@ -64,11 +67,11 @@ export class UpdatePackageRewardVoucherDto {
   @IsArrayOfUUID()
   @IsOptional()
   removedRewardIds?: VoucherDomain['id'][];
-  @ApiProperty({ type: () => [UpdateRewardVoucherDto] })
+  @ApiProperty({ type: () => [UpdateVoucherInPackageDto] })
   @ValidateNested({ each: true })
-  @Type(() => UpdateRewardVoucherDto)
+  @Type(() => UpdateVoucherInPackageDto)
   @IsOptional()
-  update?: UpdateRewardVoucherDto[];
+  update?: UpdateVoucherInPackageDto[];
 
   public static updatAbleField(): Array<keyof UpdatePackageRewardVoucherDto> {
     return ['addRewardVouchers', 'removedRewardIds', 'update'];
@@ -98,7 +101,6 @@ export class UpdatePackageDiscountDto {
     return ['discountedPrice', 'status'];
   }
 }
-
 @AtLeastOneProperty(UpdatePackageVoucherDto.updatAbleField())
 export class UpdatePackageVoucherDto {
   @ApiProperty({ type: String })
@@ -108,30 +110,16 @@ export class UpdatePackageVoucherDto {
   @IsString()
   @IsOptional()
   title?: string;
-  @ApiProperty({ type: String })
-  @IsUUID(7)
-  @IsOptional()
-  quotaVoucherId?: string;
   @ApiProperty({ type: Number })
   @Transform(({ value }) => Number(value))
   @IsPositive()
   @IsOptional()
   stockAmount?: number;
   @ApiProperty({ type: Number })
-  @IsNumber()
-  @Transform(({ value }) => Number(value))
-  @IsOptional()
-  quotaAmount?: number;
-  @ApiProperty({ type: Number })
   @IsPositive()
   @Transform(({ value }) => Number(value))
   @IsOptional()
   packagePrice?: number;
-  @ApiProperty({ type: () => [UpdatePackageRewardVoucherDto] })
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => UpdatePackageRewardVoucherDto)
-  rewardVouchers?: UpdatePackageRewardVoucherDto;
   @ApiProperty({ type: Date })
   @IsFutureDate()
   @Transform(({ value }) => new Date(value))
@@ -164,12 +152,9 @@ export class UpdatePackageVoucherDto {
   public static updatAbleField(): Array<keyof UpdatePackageVoucherDto> {
     return [
       'title',
-      'quotaVoucherId',
       'stockAmount',
-      'quotaAmount',
       'discount',
       'packagePrice',
-      'rewardVouchers',
       'usableAt',
       'usableExpiredAt',
       'sellStartedAt',

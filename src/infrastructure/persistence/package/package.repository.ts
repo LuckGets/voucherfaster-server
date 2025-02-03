@@ -13,6 +13,7 @@ import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
+import { AddNewPackageQuotaVoucherDto } from '@resources/package/dto/quota/add-quota.dto';
 import {
   UpdatePackageDiscountDto,
   UpdatePackageVoucherDto,
@@ -104,4 +105,12 @@ export abstract class PackageVoucherRepository {
   abstract deletePackageVoucherById(
     packageId: PackageVoucherDomain['id'],
   ): Promise<void>;
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE QUOTA PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  abstract addNewQuotaVoucher(
+    payload: AddNewPackageQuotaVoucherDto,
+  ): Promise<PackageVoucherDomain>;
 }

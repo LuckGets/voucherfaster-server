@@ -27,6 +27,15 @@ export const PACKAGE_FILE_FIELD = {
   PACKAGE_IMG: 'packageImg',
 } as const;
 
+export class CreateQuotaVoucherDto {
+  @ApiProperty({ type: String })
+  @IsUUID(7)
+  voucherId: VoucherDomain['id'];
+  @ApiProperty({ type: Number })
+  @IsPositive()
+  amount: number;
+}
+
 export class CreateRewardVoucherDto {
   @ApiProperty({ type: String })
   @IsUUID(7)
@@ -39,13 +48,15 @@ export class CreateRewardVoucherDto {
 export class CreatePackageVoucherDto {
   @IsUUID(7)
   tagId: VoucherTagDomain['id'];
-  @IsUUID(7)
-  @ApiProperty({ type: () => String, description: 'ID of the quota voucher' })
-  quotaVoucherId: VoucherDomain['id'];
-  @ApiProperty({ type: Number })
-  @IsPositive()
-  @Transform(({ value }) => Number(value))
-  quotaAmount: number;
+  @ApiProperty({
+    type: () => [CreateQuotaVoucherDto],
+    description: 'ID of the quota voucher',
+  })
+  @IsArray()
+  @Transform(({ value }) => plainArrayTransformer(value, CreateQuotaVoucherDto))
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuotaVoucherDto)
+  quotaVouchers: CreateQuotaVoucherDto[];
   @ApiProperty({ type: Number })
   @IsPositive()
   @Transform(({ value }) => Number(value))
@@ -62,7 +73,7 @@ export class CreatePackageVoucherDto {
     plainArrayTransformer(value, CreateRewardVoucherDto),
   )
   @ValidateNested({ each: true })
-  @Type(() => Object)
+  @Type(() => CreateRewardVoucherDto)
   rewardVouchers: CreateRewardVoucherDto[];
   @ApiProperty({ type: String })
   @IsString()

@@ -25,10 +25,7 @@ import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
 import { isUUID } from 'class-validator';
 import { NullAble } from '@utils/types/common.type';
 
-import {
-  UpdatePackageRewardVoucherDto,
-  UpdatePackageVoucherDto,
-} from './dto/update-package.dto';
+import { UpdatePackageVoucherDto } from './dto/update-package.dto';
 import { PackageImgRepository } from 'src/infrastructure/persistence/package/package-img.repository';
 import { ProductDomainHelper } from 'src/common/product.helper';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
@@ -42,6 +39,8 @@ import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductTypeEnum } from 'src/common/types/product.type';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { VoucherTagService } from '@resources/category/tag/voucher-tag.service';
+import { AddNewPackageQuotaVoucherDto } from './dto/quota/add-quota.dto';
 
 @Injectable()
 export class PackageVoucherService {
@@ -50,6 +49,7 @@ export class PackageVoucherService {
     private packageVoucherRepository: PackageVoucherRepository,
     private packageImgRepository: PackageImgRepository,
     private voucherService: VoucherService,
+    private voucherTagService: VoucherTagService,
     private uuidService: UUIDService,
     private mediaService: MediaService,
     private prductDomainHelper: ProductDomainHelper,
@@ -63,6 +63,13 @@ export class PackageVoucherService {
     data: CreatePackageVoucherDto;
     packageImg: Express.Multer.File[];
   }): Promise<PackageVoucherDomain> {
+    const isTagExist = await this.voucherTagService.findById(data.tagId);
+
+    if (!isTagExist)
+      throw ErrorApiResponse.badRequest(
+        `Tag ID: ${data.tagId} could not be found.`,
+      );
+
     const filesAndFieldsMap = this.parseFileAndFields(packageImg);
 
     const mainImgFile = filesAndFieldsMap.get('main') || [];
@@ -85,7 +92,7 @@ export class PackageVoucherService {
         filesAndFieldsMap,
         mainImgAndPackageBuffer,
         packageId,
-        quotaVoucherId: data.quotaVoucherId,
+        quotaVouchers: data.quotaVouchers,
         rewardVouchers,
       });
 
@@ -212,13 +219,13 @@ export class PackageVoucherService {
   }
 
   private prepareRewardVouchers({
-    quotaVoucherId,
+    quotaVouchers,
     rewardVouchers,
     filesAndFieldsMap,
     mainImgAndPackageBuffer,
     packageId,
   }: {
-    quotaVoucherId: string;
+    quotaVouchers: CreatePackageVoucherDto['quotaVouchers'];
     rewardVouchers: CreatePackageVoucherDto['rewardVouchers'];
     filesAndFieldsMap: Map<string | 'main' | 'package', Express.Multer.File[]>;
     mainImgAndPackageBuffer: Express.Multer.File[];
@@ -231,12 +238,12 @@ export class PackageVoucherService {
   } {
     const allImgBuffer = [...mainImgAndPackageBuffer];
     const imgIndexAndTypeMap = new Map<VoucherDomain['id'], number>();
-    const rewardVoucherIdSet = new Set<VoucherDomain['id']>();
+    const voucherIdSet = new Set<VoucherDomain['id']>();
     const rewardVoucherData: PackageRewardVoucherCreateInput[] = [];
     // Extract reward voucher ID from package voucher data
-    const idList = [quotaVoucherId];
-    for (const item of rewardVouchers) {
-      if (rewardVoucherIdSet.has(item.voucherId))
+    const idList = [];
+    for (const item of [...quotaVouchers, ...rewardVouchers]) {
+      if (voucherIdSet.has(item.voucherId))
         throw ErrorApiResponse.badRequest(
           `Reward voucher ID: ${item.voucherId} was duplicated. If desired to add more amount of the same voucher, please add the number in the amount of the desired voucher ID field.`,
         );
@@ -246,20 +253,20 @@ export class PackageVoucherService {
         imgIndexAndTypeMap.set(item.voucherId, allImgBuffer.length - 1);
       }
 
-      rewardVoucherIdSet.add(item.voucherId);
+      voucherIdSet.add(item.voucherId);
       rewardVoucherData.push({
         id: String(this.uuidService.make()),
         amount: item.amount,
         packageId,
         rewardVoucherId: item.voucherId,
       });
-      if (item.voucherId !== quotaVoucherId) idList.push(item.voucherId);
+      idList.push(item.voucherId);
     }
     const filesFieldName = Array.from(filesAndFieldsMap.keys());
 
     for (const field of filesFieldName) {
       if (field === 'main' || field === 'package') continue;
-      if (!rewardVoucherIdSet.has(field))
+      if (!voucherIdSet.has(field))
         throw ErrorApiResponse.badRequest(
           `The file for voucher ID: ${field} could not be found on reward vouchers list.`,
         );
@@ -367,17 +374,6 @@ export class PackageVoucherService {
         `Package ID: ${data.id} could not be found.`,
       );
 
-    if (data.quotaVoucherId) {
-      const isVoucherExists = await this.voucherService.getVoucherById(
-        data.quotaVoucherId,
-      );
-
-      if (ObjectHelper.isObjectEmpty(isVoucherExists))
-        throw ErrorApiResponse.notFoundRequest(
-          `Voucher ID: ${data.quotaVoucherId} could not be found.`,
-        );
-    }
-
     // Check the update date data if provided
     this.prductDomainHelper.checkUsableAndSellTime(
       data,
@@ -391,13 +387,6 @@ export class PackageVoucherService {
       isPackageExist,
       ProductTypeEnum.PACKAGE,
     );
-
-    if (!ObjectHelper.isObjectEmpty(data.rewardVouchers)) {
-      await this.checkRewardVoucherBeforeUpdate(
-        data.rewardVouchers,
-        isPackageExist.rewardVouchers,
-      );
-    }
 
     const { discount, ...packageInfo } = data;
 
@@ -433,120 +422,6 @@ export class PackageVoucherService {
     );
   }
 
-  private async checkRewardVoucherBeforeUpdate(
-    data: UpdatePackageRewardVoucherDto,
-    existRewardVouchers: PackageVoucherDomain['rewardVouchers'],
-  ) {
-    const { addRewardVouchers, removedRewardIds, update } = data;
-
-    const rewardVoucherIdMap = new Map<
-      PackageRewardVoucherDomain['id'],
-      number
-    >();
-    existRewardVouchers.forEach((item) => {
-      rewardVoucherIdMap.set(item.id, item.amount);
-    });
-
-    if (addRewardVouchers && addRewardVouchers.length === 0)
-      throw ErrorApiResponse.badRequest(
-        `Field addRewardVouchers does not have any provide value.`,
-      );
-
-    if (update && update.length === 0)
-      throw ErrorApiResponse.badRequest(
-        `Field update does not have any provide value.`,
-      );
-
-    if (removedRewardIds && removedRewardIds.length === 0)
-      throw ErrorApiResponse.badRequest(
-        `Field removedVoucherIds does not have any provide value.`,
-      );
-
-    // ADDING NEW REWARD VOUCER PATH
-    if (addRewardVouchers && addRewardVouchers.length > 0) {
-      const voucherMap = new Map<VoucherDomain['id'], boolean>();
-      const allRewardVoucherIdList = [];
-      addRewardVouchers.forEach((item) => {
-        if (voucherMap.has(item.voucherId))
-          throw ErrorApiResponse.badRequest(
-            `Reward voucher ID: ${item.voucherId} in adding request is duplicated.`,
-          );
-
-        if (rewardVoucherIdMap.has(item.voucherId))
-          throw ErrorApiResponse.badRequest(
-            `Reward voucher ID: ${item.voucherId} is already part of the package. Please check if the reward voucher ID is correct or if request desire to update, please update instead.`,
-          );
-
-        voucherMap.set(item.voucherId, true);
-        allRewardVoucherIdList.push(item.voucherId);
-      });
-      const isAllVoucherExist = await this.voucherService.getVoucherByIds(
-        allRewardVoucherIdList,
-      );
-
-      if (isAllVoucherExist.length !== allRewardVoucherIdList.length) {
-        const notFoundId = isAllVoucherExist.filter((itemId) =>
-          allRewardVoucherIdList.filter((ele) => ele.id !== itemId),
-        );
-        throw ErrorApiResponse.conflictRequest(
-          `Some reward voucher ID: ${notFoundId.join(', ')} could not be found.`,
-        );
-      }
-    }
-
-    if (update && update.length > 0) {
-      const updateIdMap = new Map<VoucherDomain['id'], boolean>();
-      update.forEach((item) => {
-        const existAmount = rewardVoucherIdMap.get(item.rewardId);
-        if (!existAmount)
-          throw ErrorApiResponse.conflictRequest(
-            `Reward voucher ID: ${item.rewardId} is not part of the package. Please check if the reward voucher ID is correct or it could not be found.`,
-          );
-
-        if (updateIdMap.has(item.rewardId))
-          throw ErrorApiResponse.badRequest(
-            `Reward voucher ID: ${item.rewardId} in update request is duplicated.`,
-          );
-
-        if (item.amount === existAmount)
-          throw ErrorApiResponse.badRequest(
-            `Update amount is the same as the existing amount in reward ID: ${item.rewardId}. `,
-          );
-
-        if (item.amount <= 0)
-          throw ErrorApiResponse.conflictRequest(
-            `The new update amount will cause the reward voucher amount to be 0. If desired request is to delete. Please make the delete request instead.`,
-          );
-        updateIdMap.set(item.rewardId, true);
-      });
-    }
-
-    // REMOVE REWARD VOUCHERS
-    if (removedRewardIds && removedRewardIds.length > 0) {
-      if (removedRewardIds.length >= existRewardVouchers.length) {
-        throw ErrorApiResponse.conflictRequest(
-          `Package voucher must have at least one reward voucher. Desired delete amount: ${removedRewardIds.length}, Current reward voucher amount: ${existRewardVouchers.length}`,
-        );
-      }
-      const removeVoucherIdMap = new Map<VoucherDomain['id'], boolean>();
-      removedRewardIds.forEach((item) => {
-        if (!rewardVoucherIdMap.has(item))
-          throw ErrorApiResponse.conflictRequest(
-            `Reward voucher ID: ${item} is not part of the package. Please check if the reward voucher ID is correct or it could not be found.`,
-          );
-
-        if (removeVoucherIdMap.has(item))
-          throw ErrorApiResponse.conflictRequest(
-            `Reward voucher ID: ${item} in remove request is duplicated.`,
-          );
-
-        removeVoucherIdMap.set(item, true);
-      });
-    }
-
-    return;
-  }
-
   async deletePackageVoucherById(
     packageId: PackageVoucherDomain['id'],
   ): Promise<void> {
@@ -569,6 +444,35 @@ export class PackageVoucherService {
       );
 
     return this.packageVoucherRepository.deletePackageVoucherById(packageId);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE QUOTA PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  public async addNewQuotaVoucher(
+    body: AddNewPackageQuotaVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    const isPackageExist =
+      await this.packageVoucherRepository.findPackageVoucherById(
+        body.packageId,
+      );
+
+    if (!isPackageExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Package ID: ${body.packageId} could not be found.`,
+      );
+
+    const isNewVoucherExist = await this.voucherService.getVoucherById(
+      body.voucherId,
+    );
+
+    if (!isNewVoucherExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${body.voucherId} could not be found.`,
+      );
+
+    return this.packageVoucherRepository.addNewQuotaVoucher(body);
   }
 
   // -------------------------------------------------------------------- //

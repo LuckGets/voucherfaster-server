@@ -65,6 +65,10 @@ import { ObjectHelper } from '@utils/services/object.helper';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import {
+  AddNewPackageQuotaVoucherDto,
+  AddNewPackageQuotaVoucherResponse,
+} from './dto/quota/add-quota.dto';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
@@ -215,6 +219,25 @@ export class PackageVoucherController {
     const updatedPackage =
       await this.packageVoucherService.updatePackageVoucher(body);
     return UpdatePackageVoucherResponse.success(updatedPackage);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE QUOTA PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  @ApiBody({ type: AddNewPackageQuotaVoucherDto })
+  @UseGuards(AdminGuard)
+  @Post(PackageVoucherPath.AddNewQuotaVoucher)
+  async addNewPackageQuotaVoucher(
+    body: AddNewPackageQuotaVoucherDto,
+  ): Promise<AddNewPackageQuotaVoucherResponse> {
+    const packageWithAddedNewQuota =
+      await this.packageVoucherService.addNewQuotaVoucher(body);
+
+    return AddNewPackageQuotaVoucherResponse.success(
+      packageWithAddedNewQuota,
+      body.voucherId,
+    );
   }
 
   // -------------------------------------------------------------------- //
