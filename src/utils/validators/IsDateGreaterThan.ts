@@ -17,6 +17,7 @@ export class IsDateGreaterThanValidator
 
     // Ensure both values are instances of Date
     if (value instanceof Date && propertyValue instanceof Date) {
+      console.log(value, propertyValue);
       return value >= propertyValue; // Check if the decorated date is greater than the compared one
     }
 

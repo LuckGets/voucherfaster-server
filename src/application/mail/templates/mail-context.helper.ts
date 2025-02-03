@@ -52,6 +52,7 @@ export class HandleBarContextHelper {
       requiredFields,
       `${itemName} in prepare-context for sending email.`,
     );
+
     let reward: boolean = false;
     let rewardImg: string;
     if (!ObjectHelper.isObjectEmpty(rewardVoucher)) {

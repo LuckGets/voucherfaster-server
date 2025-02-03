@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   PackageImgDomain,
+  PackageRewardVoucherDomain,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
 import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
@@ -27,7 +28,10 @@ export class OrderItemDetails {
     | VoucherDiscountDomain['discountedPrice']
     | PackageDiscountDomain['discountedPrice'];
   category: CategoryDomain['name'];
-  img: VoucherImgDomain['imgPath'] | PackageImgDomain['imgPath'];
+  img:
+    | VoucherImgDomain['imgPath']
+    | PackageImgDomain['imgPath']
+    | PackageRewardVoucherDomain['img'];
   discountId?: VoucherDiscountDomain['id'] | PackageDiscountDomain['id'];
   package?: OrderItemDetailPackageField;
 

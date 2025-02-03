@@ -66,9 +66,10 @@ export class PackageVoucherMapper {
         throw new Error(
           `Package voucher should have only one currently active discount but package ID: ${packageVoucherEntity.id} has more than one discount.`,
         );
-      const { discountedPrice, status } = PackageDiscount[0];
+      const { discountedPrice, status, id } = PackageDiscount[0];
       const discountStatus = PackageDiscountStatusEnum[status];
       packageDiscount = new PackageDiscountDomain({
+        id,
         discountedPrice: discountedPrice.toNumber(),
         status: discountStatus,
       });

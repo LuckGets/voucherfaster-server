@@ -104,16 +104,22 @@ export const OrderPath = {
   ProcessPayment: ':orderId/payment',
 } as const;
 
+export const ORDER_ITEM_CONST = {
+  NAME: 'order-items',
+  PARAM_ID: 'itemId',
+  SEARCH: 'search',
+};
+
 export const OrderItemPath = {
-  Name: 'order-items',
+  Name: `${ORDER_ITEM_CONST.NAME}`,
   Base: '/order-items',
-  GetById: '/:itemId',
-  GetBySearchContent: '/search/:search',
-  OrderItemIdParm: 'itemId',
-  SortQuery: 'sort',
-  CategoryQuery: 'category',
-  StatusQuery: 'status',
-  TypeQuery: 'type',
+  GetById: `/:${ORDER_ITEM_CONST.PARAM_ID}`,
+  GetBySearchContent: `/search/:${ORDER_ITEM_CONST.SEARCH}`,
+  UpdateOrderItem: `/:${ORDER_ITEM_CONST.PARAM_ID}`,
+  SortQuery: 's',
+  CategoryQuery: 'c',
+  StatusQuery: 's',
+  TypeQuery: 't',
 };
 
 export const RedeemItemPath = {

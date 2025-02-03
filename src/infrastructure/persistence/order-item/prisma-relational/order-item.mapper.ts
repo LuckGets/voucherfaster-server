@@ -138,10 +138,15 @@ export class OrderItemVoucherMapper {
     const categoryName = orderItemVoucher.voucher.voucherTag.category.name;
     const packageDetail = null;
 
-    const discountId = orderItemVoucher.VoucherDiscount?.id ?? null;
-    const price =
-      orderItemVoucher.VoucherDiscount?.discountedPrice.toNumber() ??
-      orderItemVoucher.voucher.price.toNumber();
+    const discountId = orderItemVoucher.voucherDiscountId ?? null;
+
+    let price: number = orderItemVoucher.voucher.price.toNumber();
+
+    console.log('discount obj:', orderItemVoucher.VoucherDiscount);
+
+    if (!ObjectHelper.isObjectEmpty(orderItemVoucher.VoucherDiscount)) {
+      price = orderItemVoucher.VoucherDiscount.discountedPrice.toNumber();
+    }
 
     return new OrderItemDetails({
       voucherId: orderItemVoucher.voucher.id,
@@ -166,7 +171,8 @@ export class OrderItemPackageMapper {
   public static toDomain(
     orderItemPackage: OrderItemAndDetails['OrderItemPackage'],
   ): OrderItemDetails {
-    const requiredFields = OrderItemDetails.getPackageRequiredFields();
+    const { rewardVoucher } = orderItemPackage;
+    const { price, PackageImg } = orderItemPackage.package;
 
     // Validate if the package data is present
     if (ObjectHelper.isObjectEmpty(orderItemPackage.package)) {
@@ -174,7 +180,9 @@ export class OrderItemPackageMapper {
         `Voucher detail for order-item ID: ${orderItemPackage.id} is empty.`,
       );
     }
-    const { rewardVoucher } = orderItemPackage;
+
+    let packageImg = PackageImg.filter((item) => item.mainImg === true)[0]
+      .imgPath;
 
     // Map the id and package details
     const packageField: OrderItemDetailPackageField = {
@@ -192,12 +200,24 @@ export class OrderItemPackageMapper {
       const rewardVoucherList = PackageRewardVoucher.filter((item) => {
         return item.rewardVoucherId === orderItemPackage.voucherId;
       });
+
       if (rewardVoucherList.length > 1) {
         throw new Error(
           `Multiple same reward vouchers ID: ${orderItemPackage.voucherId} found for order-item ID: ${orderItemPackage.id}`,
         );
       }
+
       const rewardVoucherInfo = rewardVoucherList[0];
+
+      if (rewardVoucherInfo.img) {
+        // Use the reward voucher image if present
+        packageImg = rewardVoucherInfo.img;
+      } else {
+        packageImg = rewardVoucherInfo.voucher.VoucherImg.filter(
+          (item) => item.mainImg === true,
+        )[0].imgPath;
+      }
+
       const { title, voucherTag } = rewardVoucherInfo.voucher;
       voucherTitle = title;
       categoryName = voucherTag.category.name;
@@ -207,13 +227,14 @@ export class OrderItemPackageMapper {
       categoryName = voucherTag.category.name;
     }
 
-    const { price, usableExpiredAt, PackageImg, title } =
-      orderItemPackage.package;
-
     // Map price and usage expiration time
-    const packagePrice =
-      orderItemPackage.PackageDiscount?.discountedPrice.toNumber() ??
-      price.toNumber();
+
+    let packagePrice: number = price.toNumber();
+
+    if (!ObjectHelper.isObjectEmpty(orderItemPackage?.PackageDiscount)) {
+      packagePrice =
+        orderItemPackage.PackageDiscount.discountedPrice.toNumber();
+    }
 
     // Validate and map the image path
     if (ObjectHelper.isObjectEmpty(PackageImg)) {
@@ -222,16 +243,13 @@ export class OrderItemPackageMapper {
       );
     }
 
-    const packageImg = PackageImg?.filter((item) => item.mainImg === true)[0]
-      .imgPath;
-
     return new OrderItemDetails({
       category: categoryName,
       img: packageImg,
       price: packagePrice,
       title: voucherTitle,
       voucherId: orderItemPackage.voucherId,
-      discountId: orderItemPackage.PackageDiscount?.id ?? null,
+      discountId: orderItemPackage.packageDiscountId ?? null,
       packageDetail: packageField,
     });
   }

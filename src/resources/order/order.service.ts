@@ -354,7 +354,7 @@ export class OrderService {
         };
 
         const orderItemDetail: CreateOrderItemPackageInfo = {
-          id: String(this.uuidService.make()),
+          id: null,
           orderItemId: null,
           packageId: itemInfo.id,
           voucherId,
@@ -362,17 +362,16 @@ export class OrderService {
         };
 
         if (isDiscountApplied) {
+          if (!discount.id)
+            throw ErrorApiResponse.internalServerError(
+              'Discount ID not found while creating order.',
+            );
           orderItemDetail.discountId = discount.id;
         }
 
         const orderItemsPackageRewardArr: CreateOrderItemPackageInfo[] =
-          Array.from({ length: totalItemAmount }, (_, index) => {
-            const newItem = { ...orderItemDetail };
-            const orderItemId = String(this.uuidService.make());
-            newItem.id = orderItemId;
-            orderItemsPackageRewardArr[index].orderItemId = orderItemId;
-            allOrderItemsId.push(newItem.id);
-            return newItem;
+          Array.from({ length: totalItemAmount }, () => {
+            return { ...orderItemDetail, id: String(this.uuidService.make()) };
           });
 
         const rewardsVoucherArr: CreateOrderItemInfo[] = Array.from(
@@ -410,12 +409,7 @@ export class OrderService {
 
       const orderItemsPackageQuotaArr: CreateOrderItemPackageInfo[] =
         Array.from({ length: totalItemAmount }, (_, index) => {
-          const newItem = { ...quotaVoucherDetail };
-          const orderItemId = String(this.uuidService.make());
-          newItem.id = orderItemId;
-          orderItemsPackageQuotaArr[index].orderItemId = orderItemId;
-          allOrderItemsId.push(newItem.id);
-          return newItem;
+          return { ...quotaVoucherDetail, id: String(this.uuidService.make()) };
         });
 
       const quotaVoucher: CreateOrderItemInfo = {

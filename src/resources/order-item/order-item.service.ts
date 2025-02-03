@@ -7,12 +7,15 @@ import {
   OrderItemTypeEnum,
 } from '@resources/order-item/domain/order-item.domain';
 import { OrderItemRepository } from 'src/infrastructure/persistence/order-item/order-item.repository';
-import { UpdateOrderItemDto } from '../redeem/dto/update.dto';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ISortOption, SORT_DIRECTION } from 'src/common/types/pagination.type';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import {
+  UpdateOrderItemDto,
+  UpdateOrderItemQrcode,
+} from './dto/update-order-item';
 
 @Injectable()
 export class OrderItemService {
@@ -120,26 +123,34 @@ export class OrderItemService {
     data: UpdateOrderItemDto,
   ): Promise<OrderItemDomain> {
     // Validate the request
-    if (!data || Object.keys(data).length === 0)
+    if (!data || Object.keys(data).length === 1)
       throw ErrorApiResponse.badRequest(
         'Please provide the required information for this request.',
       );
 
+    const findOrderItemPromise = [this.orderItemRepository.findById(data.id)];
+
+    if (data.code)
+      findOrderItemPromise.push(this.orderItemRepository.findByCode(data.code));
+
     // Check if the order item exists
-    const isOrderItemExist = await this.orderItemRepository.findById(data.id);
+    const [isOrderItemExist, isCodeExist] =
+      await Promise.all(findOrderItemPromise);
 
     if (!isOrderItemExist)
       throw ErrorApiResponse.notFoundRequest(
         `Order ID: ${data.id} could not be found.`,
       );
 
+    if (isCodeExist)
+      throw ErrorApiResponse.badRequest(`Code ${data.code} already exist`);
     // Update the order item
     return this.orderItemRepository.update(data);
   }
 
   public async updateManyQRCodeAfterCreated(
-    data: UpdateOrderItemDto[],
+    data: UpdateOrderItemQrcode[],
   ): Promise<OrderItemDomain[]> {
-    return this.orderItemRepository.transactionForUpdateMany(data);
+    return this.orderItemRepository.transactionForUpdateManyQrCode(data);
   }
 }

@@ -130,6 +130,20 @@ export class PackageVoucherService {
       id: packageId,
       ...restData,
     };
+    // attached package reward voucher image.
+
+    if (allPackageImgLinks.length > mainImgAndPackageLength) {
+      rewardVoucherData.forEach((data) => {
+        const imgIndex = imgIndexAndTypeMap.get(data.rewardVoucherId);
+        if (imgIndex) {
+          data.img = allPackageImgLinks[imgIndex];
+        }
+      });
+      allPackageImgLinks.splice(
+        mainImgAndPackageLength - 1,
+        allPackageImgLinks.length - mainImgAndPackageLength,
+      );
+    }
 
     const packageImgCreateData: PackageImgCreateInput[] =
       allPackageImgLinks.map((item, index) => {
@@ -140,16 +154,6 @@ export class PackageVoucherService {
           mainImg: index === 0,
         };
       });
-
-    // create package reward voucher image.
-    if (allPackageImgLinks.length > mainImgAndPackageLength) {
-      rewardVoucherData.forEach((data) => {
-        const imgIndex = imgIndexAndTypeMap.get(data.rewardVoucherId);
-        if (imgIndex) {
-          data.img = allPackageImgLinks[imgIndex];
-        }
-      });
-    }
 
     let discountedData: PackageVoucherDiscountNestedCreateInput;
 

@@ -7,7 +7,7 @@ import {
   UpdateStockAmountInfo,
 } from '../order.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { DiscountStatus, Prisma } from '@prisma/client';
+import { DiscountStatus, Prisma, TransactionStatus } from '@prisma/client';
 import { OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -17,14 +17,11 @@ import {
 } from '@resources/transaction/domain/transaction.domain';
 import { TimeAdderHelper } from '@utils/services/time-adder.helper';
 import { OrderDomain } from '@resources/order/domain/order.domain';
+import { create } from 'domain';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultOrderItemLimitPaginationForFindMany: number = 1;
-
-  private voucherDiscountIncludeQuery: Prisma.VoucherInclude = {
-    VoucherDiscount: true,
-  };
 
   private voucherCategoryIncludeQuery: Prisma.VoucherInclude = {
     voucherTag: {
@@ -50,11 +47,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {
       include: {
-        ...this.voucherDiscountIncludeQuery,
         ...this.voucherImgIncludeQuery,
         ...this.voucherCategoryIncludeQuery,
       },
     },
+    VoucherDiscount: true,
   };
 
   private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
@@ -70,7 +67,6 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             mainImg: true,
           },
         },
-        PackageDiscount: true,
         voucherTag: {
           include: {
             category: {
@@ -88,8 +84,12 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             },
           },
         },
+        voucher: {
+          include: this.voucherCategoryIncludeQuery,
+        },
       },
     },
+    PackageDiscount: true,
   };
 
   private accountIncludeQuery: Prisma.AccountDefaultArgs = {
@@ -199,23 +199,38 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             orderItemsVoucherInfo.length > 0
               ? tx.orderItemVoucher.createMany({ data: orderItemsVoucherInfo })
               : null,
-            orderItemsVoucherInfo.length > 0
+            orderItemsPackageInfo.length > 0
               ? tx.orderItemPackage.createMany({
-                  data: orderItemsPackageInfo.map((item) => ({
-                    ...item,
-                    rewardVoucher: item.reward,
-                  })),
+                  data: orderItemsPackageInfo.map((item) => {
+                    const packageItem: Prisma.OrderItemPackageCreateManyInput =
+                      {
+                        id: item.id,
+                        orderItemId: item.orderItemId,
+                        packageId: item.packageId,
+                        voucherId: item.voucherId,
+                        rewardVoucher: item.reward,
+                        packageDiscountId: item.discountId ?? null,
+                      };
+                    return packageItem;
+                  }),
                 })
               : null,
           ];
+
+          if (
+            createOrderItemProductPromise.length === 0 ||
+            createOrderItemProductPromise.every((item) => !item)
+          )
+            throw ErrorApiResponse.conflictRequest(
+              'There is no detail for order item product to be created.',
+            );
+
           const currentDate = new Date(Date.now());
           const transactionExpiredAt = TimeAdderHelper.addTime(
             currentDate,
             transactionExpireTime.number,
             transactionExpireTime.unit,
           );
-
-          console.log(allOrderItemsInfo);
 
           const createOrderPromise = tx.order.create({
             data: {
@@ -388,7 +403,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             return tx.transaction.update({
               where: { id: transactionId },
               data: {
-                status: 'FAILED',
+                status: TransactionStatus.FAILED,
                 deletedAt: currentDate,
               },
             });

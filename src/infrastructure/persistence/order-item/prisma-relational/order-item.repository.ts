@@ -7,10 +7,8 @@ import {
 } from '@resources/order-item/domain/order-item.domain';
 import { NullAble } from '@utils/types/common.type';
 import { OrderItemRepository } from '../order-item.repository';
-import { UpdateOrderItemDto } from '@resources/redeem/dto/update.dto';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
-// const { getRedeemAbleOrderItem } = require('@prisma/client/sql');
 import { getRedeemAbleOrderItemRawQuery } from '../../../../utils/prisma/getRedeemAbleOrderItemQuery';
 import { OrderItemAndDetails, OrderItemMapper } from './order-item.mapper';
 import { Inject } from '@nestjs/common';
@@ -18,6 +16,10 @@ import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { ISortOption } from 'src/common/types/pagination.type';
 import { TransactionStatusEnum } from '@resources/transaction/domain/transaction.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import {
+  UpdateOrderItemDto,
+  UpdateOrderItemQrcode,
+} from '@resources/order-item/dto/update-order-item';
 
 export class OrderItemRelationPrismaORMRepository
   implements OrderItemRepository
@@ -327,6 +329,17 @@ export class OrderItemRelationPrismaORMRepository
     });
   }
 
+  async findByCode(code: OrderItemDomain['code']): Promise<OrderItemDomain> {
+    const orderItem = await this.prismaService.orderItem.findFirst({
+      where: { code },
+      include: this.includeQuery,
+    });
+
+    return OrderItemMapper.toDomain(orderItem as OrderItemAndDetails, {
+      allInfo: true,
+    });
+  }
+
   async findManyExistingCode(
     codeList: OrderItemDomain['code'][],
   ): Promise<OrderItemDomain['code'][]> {
@@ -389,8 +402,8 @@ export class OrderItemRelationPrismaORMRepository
     );
   }
 
-  async transactionForUpdateMany(
-    data: UpdateOrderItemDto[],
+  async transactionForUpdateManyQrCode(
+    data: UpdateOrderItemQrcode[],
   ): Promise<OrderItemDomain[]> {
     const allUpdatedOrderItem = await this.prismaService.$transaction(
       (txUnit) => {

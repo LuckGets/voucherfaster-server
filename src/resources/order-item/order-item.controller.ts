@@ -1,5 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
-import { OrderItemPath } from 'src/config/api-path';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ORDER_ITEM_CONST, OrderItemPath } from 'src/config/api-path';
 import { OrderItemService } from './order-item.service';
 import { ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
@@ -15,6 +23,8 @@ import {
 import { isUUID } from 'class-validator';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { AdminGuard } from 'src/common/guards/admin.guard';
+import { UpdateOrderItemDto } from './dto/update-order-item';
 
 @Controller({ path: OrderItemPath.Base, version: '1' })
 export class OrderItemController {
@@ -102,7 +112,7 @@ export class OrderItemController {
   })
   @Get(OrderItemPath.GetById)
   async getById(
-    @Param(OrderItemPath.OrderItemIdParm) itemId: OrderItemDomain['id'],
+    @Param(ORDER_ITEM_CONST.PARAM_ID) itemId: OrderItemDomain['id'],
   ): Promise<GetByOrderItemIdResponse> {
     if (!itemId || !isUUID(itemId))
       throw ErrorApiResponse.badRequest(
@@ -113,4 +123,8 @@ export class OrderItemController {
 
     return GetByOrderItemIdResponse.success(orderItem);
   }
+
+  @UseGuards(AdminGuard)
+  @Patch(OrderItemPath.UpdateOrderItem)
+  async updateOrderItemById(@Body() body: UpdateOrderItemDto) {}
 }
