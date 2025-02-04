@@ -18,6 +18,7 @@ import {
 import { TimeAdderHelper } from '@utils/services/time-adder.helper';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { create } from 'domain';
+import { ObjectHelper } from '@utils/services/object.helper';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -54,43 +55,55 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     VoucherDiscount: true,
   };
 
-  private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
-    package: {
-      include: {
-        PackageImg: {
-          where: {
-            mainImg: true,
+  private orderItemPackageQuotaIncludeQuery: Prisma.OrderItemPackageQuotaInclude =
+    {
+      PackageDiscount: true,
+      packageQuotaVoucher: {
+        include: {
+          voucher: {
+            include: this.voucherCategoryIncludeQuery,
           },
-          select: {
-            id: true,
-            imgPath: true,
-            mainImg: true,
-          },
-        },
-        voucherTag: {
-          include: {
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        PackageRewardVoucher: {
-          include: {
-            voucher: {
-              include: this.voucherCategoryIncludeQuery,
-            },
-          },
-        },
-        voucher: {
-          include: this.voucherCategoryIncludeQuery,
         },
       },
-    },
-    PackageDiscount: true,
-  };
+      package: {
+        include: {
+          PackageImg: {
+            select: {
+              id: true,
+              mainImg: true,
+              imgPath: true,
+            },
+            where: {
+              mainImg: true,
+            },
+          },
+        },
+      },
+    };
+
+  private orderItemPackageRewardIncludeQuery: Prisma.OrderItemPackageRewardInclude =
+    {
+      packageRewardVoucher: {
+        include: {
+          voucher: { include: this.voucherCategoryIncludeQuery },
+        },
+      },
+      package: {
+        include: {
+          PackageImg: {
+            select: {
+              id: true,
+              mainImg: true,
+              imgPath: true,
+            },
+            where: {
+              mainImg: true,
+            },
+          },
+        },
+      },
+      PackageDiscount: true,
+    };
 
   private accountIncludeQuery: Prisma.AccountDefaultArgs = {
     select: {
@@ -110,8 +123,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         OrderItemVoucher: {
           include: this.orderItemVoucherIncludeQuery,
         },
-        OrderItemPackage: {
-          include: this.orderItemPackageIncludeQuery,
+        OrderItemPackageQuota: {
+          include: this.orderItemPackageQuotaIncludeQuery,
+        },
+        OrderItemPackageReward: {
+          include: this.orderItemPackageRewardIncludeQuery,
         },
       },
     },
@@ -124,8 +140,11 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
         OrderItemVoucher: {
           include: this.orderItemVoucherIncludeQuery,
         },
-        OrderItemPackage: {
-          include: this.orderItemPackageIncludeQuery,
+        OrderItemPackageQuota: {
+          include: this.orderItemPackageQuotaIncludeQuery,
+        },
+        OrderItemPackageReward: {
+          include: this.orderItemPackageRewardIncludeQuery,
         },
       },
     },
@@ -195,27 +214,27 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
               updateStockAmountInfo,
             );
 
-          const createOrderItemProductPromise = [
-            orderItemsVoucherInfo.length > 0
-              ? tx.orderItemVoucher.createMany({ data: orderItemsVoucherInfo })
-              : null,
-            orderItemsPackageInfo.length > 0
-              ? tx.orderItemPackage.createMany({
-                  data: orderItemsPackageInfo.map((item) => {
-                    const packageItem: Prisma.OrderItemPackageCreateManyInput =
-                      {
-                        id: item.id,
-                        orderItemId: item.orderItemId,
-                        packageId: item.packageId,
-                        voucherId: item.voucherId,
-                        rewardVoucher: item.reward,
-                        packageDiscountId: item.discountId ?? null,
-                      };
-                    return packageItem;
-                  }),
-                })
-              : null,
-          ];
+          const createOrderItemProductPromise = [];
+
+          if (orderItemsVoucherInfo.length > 0)
+            createOrderItemProductPromise.push(
+              tx.orderItemVoucher.createMany({
+                data: orderItemsVoucherInfo,
+              }),
+            );
+
+          if (
+            !ObjectHelper.isObjectEmpty(orderItemsPackageInfo) &&
+            orderItemsPackageInfo.quotas.length > 0 &&
+            orderItemsPackageInfo.rewards.length > 0
+          ) {
+            createOrderItemProductPromise.push(
+              this.generateCreateManyOrderItemPackage(
+                orderItemsPackageInfo,
+                tx,
+              ),
+            );
+          }
 
           if (
             createOrderItemProductPromise.length === 0 ||
@@ -281,6 +300,26 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       console.error(err);
       throw ErrorApiResponse.internalServerError(err.message);
     }
+  }
+
+  private generateCreateManyOrderItemPackage(
+    orderItemPackageInfo: CreateOrderAndTransactionInput['orderItemsPackageInfo'],
+    txUnit: Prisma.TransactionClient,
+  ): Promise<unknown>[] {
+    const { quotas, rewards } = orderItemPackageInfo;
+    if (quotas.length === 0 && rewards.length === 0) {
+      return null;
+    }
+
+    const createManyQuota = txUnit.orderItemPackageQuota.createMany({
+      data: quotas,
+    });
+
+    const createManyReward = txUnit.orderItemPackageReward.createMany({
+      data: rewards,
+    });
+
+    return [createManyQuota, createManyReward];
   }
 
   private generateUpdateStockAmountTransactionPromise(

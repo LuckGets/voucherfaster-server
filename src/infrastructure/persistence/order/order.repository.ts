@@ -1,6 +1,10 @@
 import { AccountDomain } from '@resources/account/domain/account.domain';
 import { OrderDomain } from '@resources/order/domain/order.domain';
-import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
+import {
+  PackageQuotaVoucherDomain,
+  PackageRewardVoucherDomain,
+  PackageVoucherDomain,
+} from '@resources/package/domain/package-voucher.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
@@ -15,15 +19,22 @@ export type CreateOrderItemVoucherInfo = {
   discountId?: VoucherDiscountDomain['id'];
 };
 
-export type CreateOrderItemPackageInfo = {
+export type CreateOrderItemPackageQuotaInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
-  voucherId: VoucherDomain['id'];
   packageId: PackageVoucherDomain['id'];
-  reward: boolean;
+  quotaVoucherId: PackageQuotaVoucherDomain['id'];
+  rewardVoucherId?: PackageRewardVoucherDomain['id'];
   discountId?: PackageDiscountDomain['id'];
 };
 
+export type CreateOrderItemPackageRewardInfo = {
+  id: string;
+  orderItemId: OrderItemDomain['id'];
+  packageId: PackageVoucherDomain['id'];
+  rewardVoucherId: PackageRewardVoucherDomain['id'];
+  discountId?: PackageDiscountDomain['id'];
+};
 export type UpdateStockAmountInfo = {
   vouchers: UpdateStockAmountEachInfo[];
   packages: UpdateStockAmountEachInfo[];
@@ -49,7 +60,10 @@ export type CreateOrderAndTransactionInput = {
   transaction: Pick<TransactionDomain, 'status' | 'id'>;
   allOrderItemsInfo: CreateOrderItemInfo[];
   orderItemsVoucherInfo: CreateOrderItemVoucherInfo[];
-  orderItemsPackageInfo: CreateOrderItemPackageInfo[];
+  orderItemsPackageInfo: {
+    quotas: CreateOrderItemPackageQuotaInfo[];
+    rewards: CreateOrderItemPackageRewardInfo[];
+  };
 };
 
 export abstract class OrderRepository {

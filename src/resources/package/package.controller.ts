@@ -12,7 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { PackageVoucherPath } from 'src/config/api-path';
+import { PACKAGE_CONST, PackageVoucherPath } from 'src/config/api-path';
 import {
   CreatePackageVoucherDto,
   createPackageVoucherDtoSchemaDocument,
@@ -45,7 +45,11 @@ import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from './dto/get-package.dto';
-import { PackageVoucherDomain } from './domain/package-voucher.domain';
+import {
+  PackageQuotaVoucherDomain,
+  PackageRewardVoucherDomain,
+  PackageVoucherDomain,
+} from './domain/package-voucher.domain';
 import { DeletePackageVoucherByIdResponse } from './dto/delete-package.dto';
 import {
   UpdatePackageVoucherDto,
@@ -69,6 +73,19 @@ import {
   AddNewPackageQuotaVoucherDto,
   AddNewPackageQuotaVoucherResponse,
 } from './dto/quota/add-quota.dto';
+import {
+  UpdateQuotaVoucherDto,
+  UpdateQuotaVoucherResponse,
+} from './dto/quota/update-quota.dto';
+import { DeleteQuotaVoucherResponse } from './dto/quota/delete-quota.dto';
+import {
+  AddNewPackageRewardVoucherDto,
+  AddNewPackageRewardVoucherResponse,
+} from './dto/reward/add-reward.dto';
+import {
+  UpdatePackageRewardVoucherResponse,
+  UpdateRewardVoucherDto,
+} from './dto/reward/update-reward.dto';
 
 @Controller({ version: '1', path: PackageVoucherPath.Base })
 export class PackageVoucherController {
@@ -208,6 +225,7 @@ export class PackageVoucherController {
     return GetPackageVoucherByIdResponse.success(packageVoucher);
   }
 
+  @ApiBearerAuth()
   @ApiBody({ type: UpdatePackageVoucherDto })
   @ApiParam({ name: PackageVoucherPath.PackageParamId, required: false })
   @ApiOkResponse({ type: () => UpdatePackageVoucherResponse })
@@ -225,7 +243,9 @@ export class PackageVoucherController {
   // ------------------------- PACKAGE QUOTA PART ----------------------- //
   // -------------------------------------------------------------------- //
 
+  @ApiBearerAuth()
   @ApiBody({ type: AddNewPackageQuotaVoucherDto })
+  @ApiCreatedResponse({ type: () => AddNewPackageQuotaVoucherResponse })
   @UseGuards(AdminGuard)
   @Post(PackageVoucherPath.AddNewQuotaVoucher)
   async addNewPackageQuotaVoucher(
@@ -238,6 +258,77 @@ export class PackageVoucherController {
       packageWithAddedNewQuota,
       body.voucherId,
     );
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: () => UpdateQuotaVoucherResponse })
+  @ApiBody({ type: () => UpdateQuotaVoucherDto })
+  @UseGuards(AdminGuard)
+  @Patch(PackageVoucherPath.UpdateQuotaVoucher)
+  async updatePackageQuotaVoucher(
+    @Body() body: UpdateQuotaVoucherDto,
+  ): Promise<UpdateQuotaVoucherResponse> {
+    const updatedPackage =
+      await this.packageVoucherService.updateQuotaVoucher(body);
+    return UpdateQuotaVoucherResponse.success(updatedPackage);
+  }
+
+  @ApiBearerAuth()
+  @ApiParam({ name: PACKAGE_CONST.QUOTA_PARAM_ID, required: true })
+  @UseGuards(AdminGuard)
+  @Delete(PackageVoucherPath.DeleteQuotaVoucher)
+  async deletePackageQuotaVoucher(
+    @Param(PACKAGE_CONST.QUOTA_PARAM_ID)
+    quotaId: PackageQuotaVoucherDomain['id'],
+  ): Promise<DeleteQuotaVoucherResponse> {
+    await this.packageVoucherService.deleteQuotaVoucher(quotaId);
+    return DeleteQuotaVoucherResponse.success(quotaId);
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE REWARD PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  @ApiBearerAuth()
+  @ApiCreatedResponse({ type: () => AddNewPackageRewardVoucherResponse })
+  @ApiBody({ type: () => AddNewPackageRewardVoucherDto })
+  @UseGuards(AdminGuard)
+  @Post(PackageVoucherPath.AddNewRewardVoucher)
+  async addNewPackageRewardVoucher(
+    @Body() body: AddNewPackageRewardVoucherDto,
+  ): Promise<AddNewPackageRewardVoucherResponse> {
+    const packageWithAddedNewReward =
+      await this.packageVoucherService.addNewRewardVoucher(body);
+    return AddNewPackageRewardVoucherResponse.success(
+      packageWithAddedNewReward,
+      body.voucherId,
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: () => UpdatePackageRewardVoucherResponse })
+  @ApiBody({ type: () => UpdateRewardVoucherDto })
+  @UseGuards(AdminGuard)
+  @Patch(PackageVoucherPath.UpdateRewardVoucher)
+  async updatePackageRewardVoucher(
+    body: UpdateRewardVoucherDto,
+  ): Promise<UpdatePackageRewardVoucherResponse> {
+    const updatedPackage =
+      await this.packageVoucherService.updateRewardVoucher(body);
+
+    return UpdatePackageRewardVoucherResponse.success(updatedPackage);
+  }
+
+  @ApiBearerAuth()
+  @ApiParam({ name: PACKAGE_CONST.REWARD_PARAM_ID, required: true })
+  @UseGuards(AdminGuard)
+  @Delete(PackageVoucherPath.DeleteRewardVoucher)
+  async deletePackageRewardVoucher(
+    @Param(PACKAGE_CONST.REWARD_PARAM_ID)
+    rewardId: PackageRewardVoucherDomain['id'],
+  ): Promise<DeleteQuotaVoucherResponse> {
+    await this.packageVoucherService.deleteRewardVoucher(rewardId);
+    return DeleteQuotaVoucherResponse.success(rewardId);
   }
 
   // -------------------------------------------------------------------- //

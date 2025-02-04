@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   PackageImgDomain,
+  PackageQuotaVoucherDomain,
   PackageRewardVoucherDomain,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
@@ -12,12 +13,38 @@ import {
 import { OrderDomain } from '../../order/domain/order.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import { NullAble } from '@utils/types/common.type';
+import { ObjectHelper } from '@utils/services/object.helper';
 
-export type OrderItemDetailPackageField = {
+export class OrderItemPackageDetail {
   packageId: PackageVoucherDomain['id'];
-  name: PackageVoucherDomain['title'];
-  reward: boolean;
-};
+  title: PackageVoucherDomain['title'];
+  quotaVoucher: NullAble<PackageQuotaVoucherDomain>;
+  rewardVoucher: NullAble<PackageRewardVoucherDomain>;
+
+  constructor({
+    packageId,
+    title,
+    quotaVoucher,
+    rewardVoucher,
+  }: {
+    packageId: OrderItemPackageDetail['packageId'];
+    title: OrderItemPackageDetail['title'];
+    quotaVoucher?: OrderItemPackageDetail['quotaVoucher'];
+    rewardVoucher?: OrderItemPackageDetail['rewardVoucher'];
+  }) {
+    this.title = title;
+    this.packageId = packageId;
+    if (quotaVoucher) {
+      this.quotaVoucher = quotaVoucher;
+    } else if (rewardVoucher) {
+      this.rewardVoucher = rewardVoucher;
+    } else
+      throw new Error(
+        'Quota voucher or reward voucher information is required to construct order item detail.',
+      );
+  }
+}
 
 export class OrderItemDetails {
   voucherId: VoucherDomain['id'];
@@ -33,7 +60,7 @@ export class OrderItemDetails {
     | PackageImgDomain['imgPath']
     | PackageRewardVoucherDomain['img'];
   discountId?: VoucherDiscountDomain['id'] | PackageDiscountDomain['id'];
-  package?: OrderItemDetailPackageField;
+  package?: OrderItemPackageDetail;
 
   constructor({
     voucherId,
@@ -58,7 +85,8 @@ export class OrderItemDetails {
     this.category = category;
     this.img = img;
     this.discountId = discountId;
-    this.package = packageDetail;
+    if (!ObjectHelper.isObjectEmpty(packageDetail))
+      this.package = packageDetail;
   }
 
   public static getVoucherRequiredFields(): Array<keyof OrderItemDetails> {
@@ -142,7 +170,7 @@ export class OrderItemDomain {
     this.id = id;
     this.qrcodeImagePath = qrcodeImagePath;
     this.code = code;
-    this.order = order;
+    if (order) this.order = order;
     this.usableAt = usableAt;
     this.usableExpiredAt = usableExpiredAt;
     this.redeemedAt = redeemedAt;

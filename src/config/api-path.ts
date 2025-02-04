@@ -64,6 +64,8 @@ export const CategoryPath = {
 export const PACKAGE_CONST = {
   NAME: 'packages',
   PARAM_ID: 'packageId',
+  QUOTA_PARAM_ID: 'quotaId',
+  REWARD_PARAM_ID: 'rewardId',
 } as const;
 
 export const PackageVoucherPath = {
@@ -81,7 +83,12 @@ export const PackageVoucherPath = {
   GetPackageSellDateQuery: 'sd',
   GetPackageStatusQuery: 's',
   GetPackageDiscountQuery: 'd',
-  AddNewQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quota`,
+  AddNewQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quotas`,
+  UpdateQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quotas`,
+  DeleteQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quotas/:${PACKAGE_CONST.QUOTA_PARAM_ID}`,
+  AddNewRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards`,
+  UpdateRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards`,
+  DeleteRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards/:${PACKAGE_CONST.REWARD_PARAM_ID}`,
 } as const;
 
 export const UsableDaysPath = {

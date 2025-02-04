@@ -12,6 +12,7 @@ import {
 import {
   PackageImgCreateInput,
   PackageImgDomain,
+  PackageQuotaVoucherDomain,
   PackageRewardVoucherCreateInput,
   PackageRewardVoucherDomain,
   PackageStatusEnum,
@@ -41,6 +42,10 @@ import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { VoucherTagService } from '@resources/category/tag/voucher-tag.service';
 import { AddNewPackageQuotaVoucherDto } from './dto/quota/add-quota.dto';
+import { UpdateQuotaVoucherDto } from './dto/quota/update-quota.dto';
+import { AddNewPackageRewardVoucherDto } from './dto/reward/add-reward.dto';
+import { UpdateRewardVoucherDto } from './dto/reward/update-reward.dto';
+import e from 'express';
 
 @Injectable()
 export class PackageVoucherService {
@@ -472,7 +477,160 @@ export class PackageVoucherService {
         `Voucher ID: ${body.voucherId} could not be found.`,
       );
 
+    const isNewVoucherAlreadyQuota = isPackageExist.quotaVouchers.find(
+      (quotaVoucher) => quotaVoucher.voucherId === body.voucherId,
+    );
+
+    if (!ObjectHelper.isObjectEmpty(isNewVoucherAlreadyQuota))
+      throw ErrorApiResponse.conflictRequest(
+        `Voucher ID: ${body.voucherId} is already in the quota list. If desired to add the amount, please request to update endpoint.`,
+      );
+
     return this.packageVoucherRepository.addNewQuotaVoucher(body);
+  }
+
+  public async updateQuotaVoucher(
+    body: UpdateQuotaVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    await this.checkUpdateDataForPackageQuotaOrReward(body);
+
+    return this.packageVoucherRepository.updateQuotaVoucher(body);
+  }
+
+  public async deleteQuotaVoucher(
+    quotaId: PackageQuotaVoucherDomain['id'],
+  ): Promise<void> {
+    await this.checkQuotaOrRewardBeforeDelete(quotaId, 'Quota');
+
+    return this.packageVoucherRepository.deleteQuotaVoucher(quotaId);
+  }
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE REWARD PART ---------------------- //
+  // -------------------------------------------------------------------- //
+
+  // ----- Package quota and reward utils service ---- //
+  public async checkUpdateDataForPackageQuotaOrReward(
+    updateData: UpdateQuotaVoucherDto | UpdateRewardVoucherDto,
+  ): Promise<void> {
+    let typeOfVoucherToUpdate: 'Quota' | 'Reward';
+    let vouchers: PackageQuotaVoucherDomain | PackageRewardVoucherDomain;
+    let idToUpdate: string;
+
+    if (updateData instanceof UpdateQuotaVoucherDto) {
+      idToUpdate = updateData.quotaId;
+      vouchers = await this.packageVoucherRepository.findQuotaById(
+        updateData.quotaId,
+      );
+    } else if (updateData instanceof UpdateRewardVoucherDto) {
+      idToUpdate = updateData.rewardId;
+      vouchers = await this.packageVoucherRepository.findRewardById(
+        updateData.rewardId,
+      );
+    }
+
+    if (!vouchers || vouchers.deletedAt)
+      throw ErrorApiResponse.notFoundRequest(
+        `${typeOfVoucherToUpdate} ID: ${idToUpdate} could not be found or has been deleted.`,
+      );
+
+    if (updateData.updateVoucherId) {
+      const isNewVoucherExist = await this.voucherService.getVoucherById(
+        updateData.updateVoucherId,
+      );
+
+      if (!isNewVoucherExist)
+        throw ErrorApiResponse.notFoundRequest(
+          `Voucher ID: ${updateData.updateVoucherId} could not be found.`,
+        );
+
+      if (vouchers.voucherId === updateData.updateVoucherId)
+        throw ErrorApiResponse.badRequest(
+          `Update ${typeOfVoucherToUpdate} voucher : ${updateData.updateVoucherId} is the same as existing ${typeOfVoucherToUpdate} voucher : ${vouchers.id}.`,
+        );
+    }
+
+    if (updateData.updateAmount) {
+      if (vouchers.amount === updateData.updateAmount)
+        throw ErrorApiResponse.badRequest(
+          `Update ${typeOfVoucherToUpdate} amount : ${updateData.updateAmount} is the same as existing ${typeOfVoucherToUpdate} amount : ${vouchers.amount}.`,
+        );
+    }
+    return;
+  }
+
+  public async checkQuotaOrRewardBeforeDelete(
+    id: PackageQuotaVoucherDomain['id'] | PackageRewardVoucherDomain['id'],
+    typeOfVoucher: 'Quota' | 'Reward',
+  ): Promise<void> {
+    let vouchers: PackageQuotaVoucherDomain | PackageRewardVoucherDomain;
+    if (!id || !isUUID(id, 7))
+      throw ErrorApiResponse.badRequest(
+        `${id} is not the valid type of data for this request.`,
+      );
+
+    switch (typeOfVoucher) {
+      case 'Quota':
+        vouchers = await this.packageVoucherRepository.findQuotaById(id);
+        break;
+      case 'Reward':
+        vouchers = await this.packageVoucherRepository.findRewardById(id);
+        break;
+    }
+
+    if (!vouchers || vouchers.deletedAt)
+      throw ErrorApiResponse.notFoundRequest(
+        `${typeOfVoucher} ID: ${id} could not be found or has been deleted.`,
+      );
+  }
+  // ----- Package quota and reward utils service ---- //
+
+  public async addNewRewardVoucher(
+    body: AddNewPackageRewardVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    const isPackageExist =
+      await this.packageVoucherRepository.findPackageVoucherById(
+        body.packageId,
+      );
+
+    if (!isPackageExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Package ID: ${body.packageId} could not be found.`,
+      );
+
+    const isNewVoucherExist = await this.voucherService.getVoucherById(
+      body.voucherId,
+    );
+
+    if (!isNewVoucherExist)
+      throw ErrorApiResponse.notFoundRequest(
+        `Voucher ID: ${body.voucherId} could not be found.`,
+      );
+
+    const isNewVoucherAlreadyReward = isPackageExist.rewardVouchers.find(
+      (rewardVoucher) => rewardVoucher.voucherId === body.voucherId,
+    );
+
+    if (!ObjectHelper.isObjectEmpty(isNewVoucherAlreadyReward))
+      throw ErrorApiResponse.conflictRequest(
+        `Voucher ID: ${body.voucherId} is already in the reward list. If desired to add the amount, please request to update endpoint.`,
+      );
+
+    return this.packageVoucherRepository.addNewRewardVoucher(body);
+  }
+
+  public async updateRewardVoucher(
+    body: UpdateRewardVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    await this.checkUpdateDataForPackageQuotaOrReward(body);
+
+    return this.packageVoucherRepository.updateRewardVoucher(body);
+  }
+
+  public async deleteRewardVoucher(
+    id: PackageRewardVoucherDomain['id'],
+  ): Promise<void> {
+    await this.checkQuotaOrRewardBeforeDelete(id, 'Reward');
+    return this.packageVoucherRepository.deleteRewardVoucher(id);
   }
 
   // -------------------------------------------------------------------- //

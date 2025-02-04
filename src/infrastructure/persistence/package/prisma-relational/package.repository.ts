@@ -8,7 +8,9 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import {
   PackageImgCreateInput,
+  PackageQuotaVoucherDomain,
   PackageRewardVoucherCreateInput,
+  PackageRewardVoucherDomain,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
 import { DiscountStatus, Prisma, VoucherStatus } from '@prisma/client';
@@ -27,6 +29,11 @@ import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { isUUID } from 'class-validator';
 import { AddNewPackageQuotaVoucherDto } from '@resources/package/dto/quota/add-quota.dto';
 import { PackageQuotaVoucherMapper } from './mapper/package-quota.mapper';
+import { UpdateQuotaVoucherDto } from '@resources/package/dto/quota/update-quota.dto';
+import { AddNewPackageRewardVoucherDto } from '@resources/package/dto/reward/add-reward.dto';
+import { PackageRewardMapper } from './mapper/package-reward.mapper';
+import { UpdateRewardVoucherDto } from '@resources/package/dto/reward/update-reward.dto';
+import { NIL } from 'uuid';
 
 export class PackageVoucherRelationalPrismaORMRepository
   implements PackageVoucherRepository
@@ -50,13 +57,34 @@ export class PackageVoucherRelationalPrismaORMRepository
     },
   };
 
+  private packageQuotaIncludeQuery: Prisma.PackageVoucherInclude = {
+    PackageQuotaVoucher: {
+      where: {
+        deletedAt: {
+          equals: null,
+        },
+      },
+    },
+  };
+
+  private packageRewardIncludeQuery: Prisma.PackageVoucherInclude = {
+    PackageRewardVoucher: {
+      where: {
+        deletedAt: {
+          equals: null,
+        },
+      },
+    },
+  };
+
   private detailIncludeQuery: Prisma.PackageVoucherInclude = {
     voucherTag: {
       include: this.voucherTagAndCategoryInclude,
     },
     PackageQuotaVoucher: true,
     PackageImg: true,
-    PackageRewardVoucher: true,
+    ...this.packageQuotaIncludeQuery,
+    ...this.packageRewardIncludeQuery,
     PackageDiscount: this.currentlyDiscountIncludeQuery,
   };
 
@@ -64,9 +92,9 @@ export class PackageVoucherRelationalPrismaORMRepository
     voucherTag: {
       include: this.voucherTagAndCategoryInclude,
     },
-    PackageQuotaVoucher: true,
+    ...this.packageQuotaIncludeQuery,
+    ...this.packageRewardIncludeQuery,
     PackageImg: { where: { mainImg: true } },
-    PackageRewardVoucher: true,
     PackageDiscount: this.currentlyDiscountIncludeQuery,
   };
 
@@ -434,11 +462,12 @@ export class PackageVoucherRelationalPrismaORMRepository
   // ------------------------- PACKAGE QUOTA PART ----------------------- //
   // -------------------------------------------------------------------- //
 
-  private includePackageForQuotaQuery: Prisma.PackageQuotaVoucherInclude = {
-    package: {
-      include: this.detailIncludeQuery,
-    },
-  };
+  private includePackageForQuotaAndRewardQuery: Prisma.PackageQuotaVoucherInclude =
+    {
+      package: {
+        include: this.detailIncludeQuery,
+      },
+    };
 
   async addNewQuotaVoucher(
     payload: AddNewPackageQuotaVoucherDto,
@@ -450,9 +479,113 @@ export class PackageVoucherRelationalPrismaORMRepository
           voucher: { connect: { id: payload.voucherId } },
           package: { connect: { id: payload.packageId } },
         },
-        include: this.includePackageForQuotaQuery,
+        include: this.includePackageForQuotaAndRewardQuery,
       },
     );
-    return PackageQuotaVoucherMapper.toDomain(newQuotaVoucher);
+    return PackageQuotaVoucherMapper.toPackageDomain(newQuotaVoucher);
   }
+
+  async findQuotaById(
+    id: PackageQuotaVoucherDomain['id'],
+  ): Promise<PackageQuotaVoucherDomain> {
+    const quota = await this.prismaService.packageQuotaVoucher.findUnique({
+      where: { id },
+    });
+    return PackageQuotaVoucherMapper.toDomain(quota);
+  }
+
+  async updateQuotaVoucher(
+    payload: UpdateQuotaVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    const { quotaId, updateAmount, updateVoucherId } = payload;
+
+    const updateData: Prisma.PackageQuotaVoucherUpdateInput = {};
+    if (updateVoucherId) {
+      updateData.voucher = { connect: { id: updateVoucherId } };
+    }
+
+    if (updateAmount) updateData.amount = updateAmount;
+
+    const updatedQuota = await this.prismaService.packageQuotaVoucher.update({
+      where: { id: quotaId },
+      data: updateData,
+      include: this.includePackageForQuotaAndRewardQuery,
+    });
+
+    return PackageQuotaVoucherMapper.toPackageDomain(updatedQuota);
+  }
+
+  async deleteQuotaVoucher(
+    quotaId: PackageQuotaVoucherDomain['id'],
+  ): Promise<void> {
+    await this.prismaService.packageQuotaVoucher.update({
+      where: { id: quotaId },
+      data: {
+        deletedAt: new Date(Date.now()),
+      },
+    });
+  }
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE REWARD PART ---------------------- //
+  // -------------------------------------------------------------------- //
+
+  async addNewRewardVoucher(
+    payload: AddNewPackageRewardVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    const newRewardVoucher =
+      await this.prismaService.packageRewardVoucher.create({
+        data: {
+          amount: payload.amount,
+          voucher: { connect: { id: payload.voucherId } },
+          package: { connect: { id: payload.packageId } },
+        },
+        include: this.includePackageForQuotaAndRewardQuery,
+      });
+
+    return PackageRewardMapper.toPackageDomain(newRewardVoucher);
+  }
+
+  async findRewardById(
+    id: PackageRewardVoucherDomain['id'],
+  ): Promise<NullAble<PackageRewardVoucherDomain>> {
+    const reward = await this.prismaService.packageRewardVoucher.findUnique({
+      where: { id },
+    });
+
+    return PackageRewardMapper.toDomain(reward);
+  }
+
+  async updateRewardVoucher(
+    payload: UpdateRewardVoucherDto,
+  ): Promise<PackageVoucherDomain> {
+    const { rewardId, updateAmount, updateVoucherId } = payload;
+    const updateData: Prisma.PackageRewardVoucherUpdateInput = {};
+
+    if (updateVoucherId) {
+      updateData.voucher = { connect: { id: updateVoucherId } };
+    }
+
+    if (updateAmount) updateData.amount = updateAmount;
+
+    const updatedReward = await this.prismaService.packageRewardVoucher.update({
+      where: { id: rewardId },
+      data: updateData,
+      include: this.includePackageForQuotaAndRewardQuery,
+    });
+
+    return PackageRewardMapper.toPackageDomain(updatedReward);
+  }
+
+  async deleteRewardVoucher(
+    id: PackageRewardVoucherDomain['id'],
+  ): Promise<void> {
+    await this.prismaService.packageRewardVoucher.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(Date.now()),
+      },
+    });
+  }
+  return;
 }

@@ -4,6 +4,7 @@ import { Expose } from 'class-transformer';
 import { PackageDiscountDomain } from './package-discount.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { isUUID } from 'class-validator';
 
 export enum PackageStatusEnum {
   ACTIVE = 'ACTIVE',
@@ -19,6 +20,35 @@ export class PackageQuotaVoucherDomain {
   amount: number;
   @ApiProperty({ type: String })
   packageId?: string;
+
+  @ApiProperty({ type: Date, nullable: true })
+  updatedAt?: Date;
+  deletedAt?: Date;
+
+  constructor({
+    id,
+    amount,
+    voucherId,
+    packageId,
+    updatedAt,
+    deletedAt,
+  }: {
+    id: PackageQuotaVoucherDomain['id'];
+    voucherId: PackageQuotaVoucherDomain['voucherId'];
+    amount: PackageQuotaVoucherDomain['amount'];
+    packageId?: PackageQuotaVoucherDomain['packageId'];
+    updatedAt?: PackageQuotaVoucherDomain['updatedAt'];
+    deletedAt?: PackageQuotaVoucherDomain['deletedAt'];
+  }) {
+    this.id = id;
+    this.amount = amount;
+    this.voucherId = voucherId;
+    if (packageId && isUUID(packageId)) this.packageId = packageId;
+
+    if (updatedAt) this.updatedAt = updatedAt;
+
+    if (deletedAt) this.deletedAt = deletedAt;
+  }
 }
 
 export class PackageVoucherDomain {
@@ -179,6 +209,37 @@ export class PackageRewardVoucherDomain {
   packageId?: string;
   @ApiProperty({ type: String, nullable: true })
   img?: string;
+
+  @ApiProperty({ type: Date, nullable: true })
+  updatedAt?: Date;
+
+  deletedAt?: Date;
+
+  constructor({
+    id,
+    amount,
+    voucherId,
+    deletedAt,
+    img,
+    packageId,
+    updatedAt,
+  }: {
+    id: PackageRewardVoucherDomain['id'];
+    voucherId: PackageRewardVoucherDomain['voucherId'];
+    amount: PackageRewardVoucherDomain['amount'];
+    packageId?: PackageRewardVoucherDomain['packageId'];
+    img?: PackageRewardVoucherDomain['img'];
+    updatedAt?: PackageRewardVoucherDomain['updatedAt'];
+    deletedAt?: PackageRewardVoucherDomain['deletedAt'];
+  }) {
+    this.id = id;
+    this.voucherId = voucherId;
+    this.amount = amount;
+    if (packageId) this.packageId = packageId;
+    this.img = img;
+    if (updatedAt) this.updatedAt = updatedAt;
+    if (deletedAt) this.deletedAt = deletedAt;
+  }
 }
 
 export type PackageRewardVoucherCreateInput = {

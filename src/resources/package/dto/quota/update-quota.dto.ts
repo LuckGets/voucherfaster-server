@@ -4,24 +4,32 @@ import {
   PackageQuotaVoucherDomain,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
-import { IsPositive, IsUUID } from 'class-validator';
+import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
+import { IsNumber, IsOptional, IsUUID } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 
-export class AddNewPackageQuotaVoucherDto {
+@AtLeastOneProperty(UpdateQuotaVoucherDto.updatAbleFields())
+export class UpdateQuotaVoucherDto {
   @ApiProperty({ type: String })
   @IsUUID(7)
-  packageId: PackageVoucherDomain['id'];
-  @ApiProperty({ type: String })
+  quotaId: PackageQuotaVoucherDomain['id'];
+  @ApiProperty({ type: String, required: false })
   @IsUUID(7)
-  voucherId: PackageQuotaVoucherDomain['voucherId'];
-  @ApiProperty({ type: Number })
-  @IsPositive()
-  amount: PackageQuotaVoucherDomain['amount'];
+  @IsOptional()
+  updateVoucherId?: PackageQuotaVoucherDomain['voucherId'];
+  @ApiProperty({ type: Number, required: false })
+  @IsNumber()
+  @IsOptional()
+  updateAmount?: PackageQuotaVoucherDomain['amount'];
+
+  public static updatAbleFields(): Array<keyof UpdateQuotaVoucherDto> {
+    return ['updateVoucherId', 'updateAmount'];
+  }
 }
 
-export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
+export class UpdateQuotaVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -29,7 +37,8 @@ export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
   public HTTPStatusCode: number;
   @ApiProperty({
     type: Number,
-    example: 'Package ID: 123 have been updated successfully.',
+    example:
+      'Quota voucher for package ID: 123 have been updated successfully.',
   })
   public message: string;
   @ApiProperty({
@@ -105,9 +114,9 @@ export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
   public data: PackageVoucherDomain;
 
   constructor(
-    code: AddNewPackageQuotaVoucherResponse['HTTPStatusCode'],
-    message: AddNewPackageQuotaVoucherResponse['message'],
-    links: AddNewPackageQuotaVoucherResponse['links'],
+    code: UpdateQuotaVoucherResponse['HTTPStatusCode'],
+    message: UpdateQuotaVoucherResponse['message'],
+    links: UpdateQuotaVoucherResponse['links'],
     data: PackageVoucherDomain,
   ) {
     super(code, message, links);
@@ -116,15 +125,17 @@ export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
 
   public static success(
     data: PackageVoucherDomain,
-    addedVoucherId: AddNewPackageQuotaVoucherDto['voucherId'],
+    message?: string,
     links?: HATEOSLink,
     statusCode?: number,
-  ): AddNewPackageQuotaVoucherResponse {
-    const responseMessage = `Voucher ID: ${addedVoucherId} have been added as quota voucher for package ID:${data.id} successfully.`;
-    const responseCode = statusCode ?? HttpStatus.CREATED;
+  ): UpdateQuotaVoucherResponse {
+    const responseMessage =
+      message ??
+      `Quota voucher for package ID: ${data.id} have been updated successfully.`;
+    const responseCode = statusCode ?? HttpStatus.OK;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    return new AddNewPackageQuotaVoucherResponse(
+    return new UpdateQuotaVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,

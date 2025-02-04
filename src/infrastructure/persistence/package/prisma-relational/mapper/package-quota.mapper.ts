@@ -1,5 +1,8 @@
 import { PackageQuotaVoucher } from '@prisma/client';
-import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
+import {
+  PackageQuotaVoucherDomain,
+  PackageVoucherDomain,
+} from '@resources/package/domain/package-voucher.domain';
 import {
   AllPackageVoucherEntityInformation,
   PackageVoucherMapper,
@@ -12,6 +15,21 @@ type PackageQuotaVoucherInformation = PackageQuotaVoucher & {
 
 export class PackageQuotaVoucherMapper {
   public static toDomain(
+    packageQuotaVoucher: PackageQuotaVoucher,
+  ): PackageQuotaVoucherDomain {
+    if (ObjectHelper.isObjectEmpty(packageQuotaVoucher)) return null;
+
+    return new PackageQuotaVoucherDomain({
+      id: packageQuotaVoucher.id,
+      amount: packageQuotaVoucher.amount,
+      voucherId: packageQuotaVoucher.quotaVoucherId,
+      packageId: packageQuotaVoucher.packageId,
+      updatedAt: packageQuotaVoucher.updatedAt,
+      deletedAt: packageQuotaVoucher.deletedAt,
+    });
+  }
+
+  public static toPackageDomain(
     quotaVoucherEntity: PackageQuotaVoucherInformation,
   ): PackageVoucherDomain {
     if (ObjectHelper.isObjectEmpty(quotaVoucherEntity)) return null;

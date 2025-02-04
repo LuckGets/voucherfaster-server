@@ -1,27 +1,28 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  PackageQuotaVoucherDomain,
+  PackageRewardVoucherDomain,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
+import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsPositive, IsUUID } from 'class-validator';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 
-export class AddNewPackageQuotaVoucherDto {
+export class AddNewPackageRewardVoucherDto {
   @ApiProperty({ type: String })
   @IsUUID(7)
   packageId: PackageVoucherDomain['id'];
   @ApiProperty({ type: String })
   @IsUUID(7)
-  voucherId: PackageQuotaVoucherDomain['voucherId'];
+  voucherId: PackageRewardVoucherDomain['voucherId'];
   @ApiProperty({ type: Number })
   @IsPositive()
-  amount: PackageQuotaVoucherDomain['amount'];
+  amount: PackageRewardVoucherDomain['amount'];
 }
 
-export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
+export class AddNewPackageRewardVoucherResponse extends CoreApiResponse {
   @ApiProperty({
     type: Number,
     example: HttpStatus.OK,
@@ -105,9 +106,9 @@ export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
   public data: PackageVoucherDomain;
 
   constructor(
-    code: AddNewPackageQuotaVoucherResponse['HTTPStatusCode'],
-    message: AddNewPackageQuotaVoucherResponse['message'],
-    links: AddNewPackageQuotaVoucherResponse['links'],
+    code: AddNewPackageRewardVoucherResponse['HTTPStatusCode'],
+    message: AddNewPackageRewardVoucherResponse['message'],
+    links: AddNewPackageRewardVoucherResponse['links'],
     data: PackageVoucherDomain,
   ) {
     super(code, message, links);
@@ -116,15 +117,15 @@ export class AddNewPackageQuotaVoucherResponse extends CoreApiResponse {
 
   public static success(
     data: PackageVoucherDomain,
-    addedVoucherId: AddNewPackageQuotaVoucherDto['voucherId'],
+    addedVoucherId: VoucherDomain['id'],
     links?: HATEOSLink,
     statusCode?: number,
-  ): AddNewPackageQuotaVoucherResponse {
-    const responseMessage = `Voucher ID: ${addedVoucherId} have been added as quota voucher for package ID:${data.id} successfully.`;
+  ): AddNewPackageRewardVoucherResponse {
+    const responseMessage = `Voucher ID: ${addedVoucherId} have been added as reward voucher to package ID: ${data.id} successfully.`;
     const responseCode = statusCode ?? HttpStatus.CREATED;
     const responseLink = links;
     // generateVoucherReponseHATEOASLink(data.id);
-    return new AddNewPackageQuotaVoucherResponse(
+    return new AddNewPackageRewardVoucherResponse(
       responseCode,
       responseMessage,
       responseLink,
