@@ -283,8 +283,8 @@ model OrderItemPackageQuota {
   package     PackageVoucher @relation(fields: [packageId], references: [id])
   packageId   String         @map("package_id") @db.Uuid
 
-  quotaVoucherId      String              @map("quota_voucher_id") @db.Uuid
-  packageQuotaVoucher PackageQuotaVoucher @relation(fields: [quotaVoucherId], references: [id])
+  packageQuotaVoucherId String              @map("package_quota_voucher_id") @db.Uuid
+  packageQuotaVoucher   PackageQuotaVoucher @relation(fields: [packageQuotaVoucherId], references: [id])
 
   // Discount colum
   packageDiscountId String?          @map("package_discount_id") @db.Uuid
@@ -302,8 +302,8 @@ model OrderItemPackageReward {
   package     PackageVoucher @relation(fields: [packageId], references: [id])
   packageId   String         @map("package_id") @db.Uuid
 
-  rewardVoucherId      String               @map("reward_voucher_id") @db.Uuid
-  packageRewardVoucher PackageRewardVoucher @relation(fields: [rewardVoucherId], references: [id])
+  packageRewardVoucherId String               @map("package_reward_voucher_id") @db.Uuid
+  packageRewardVoucher   PackageRewardVoucher @relation(fields: [packageRewardVoucherId], references: [id])
 
   // Discount colum
   packageDiscountId String?          @map("package_discount_id") @db.Uuid

@@ -683,13 +683,14 @@ export class OrderService {
 
   public async getOrderById(
     id: OrderDomain['id'],
+    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
   ): Promise<NullAble<OrderDomain>> {
     if (!id || !isUUID(id))
       throw ErrorApiResponse.badRequest(
         'Provided parameter for order id is invaid.',
       );
 
-    const order = await this.orderRepository.findById(id);
+    const order = await this.orderRepository.findById(id, { cursor, take });
     if (!order)
       throw ErrorApiResponse.notFoundRequest(
         `Order ID: ${id} could not be found.`,
@@ -776,7 +777,7 @@ export class OrderService {
         new OrderSuccessEvent(orderAndTransaction.account.email, allOrderItems),
       );
 
-      return this.orderRepository.findById(orderAndTransaction.id);
+      return this.orderRepository.findById(orderAndTransaction.id, {});
     } catch (err) {
       console.error(err);
       throw ErrorApiResponse.conflictRequest(err.message);
@@ -786,7 +787,7 @@ export class OrderService {
   private async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
   ): Promise<OrderDomain> {
-    const order = await this.orderRepository.findById(orderId);
+    const order = await this.orderRepository.findById(orderId, { take: 0 });
 
     if (!order)
       throw ErrorApiResponse.notFoundRequest(

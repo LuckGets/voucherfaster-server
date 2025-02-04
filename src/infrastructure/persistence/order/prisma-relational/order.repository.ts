@@ -7,7 +7,12 @@ import {
   UpdateStockAmountInfo,
 } from '../order.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { DiscountStatus, Prisma, TransactionStatus } from '@prisma/client';
+import {
+  DiscountStatus,
+  OrderItem,
+  Prisma,
+  TransactionStatus,
+} from '@prisma/client';
 import { OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -19,10 +24,20 @@ import { TimeAdderHelper } from '@utils/services/time-adder.helper';
 import { OrderDomain } from '@resources/order/domain/order.domain';
 import { create } from 'domain';
 import { ObjectHelper } from '@utils/services/object.helper';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultOrderItemLimitPaginationForFindMany: number = 1;
+
+  private defaultOrderItemLimitPaginationForOneOrder: number = 10;
+
+  private packageDiscountIncludeQuery: Prisma.PackageDiscountSelect = {
+    id: true,
+    discountedPrice: true,
+    status: true,
+    deletedAt: true,
+  };
 
   private voucherCategoryIncludeQuery: Prisma.VoucherInclude = {
     voucherTag: {
@@ -57,7 +72,9 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
 
   private orderItemPackageQuotaIncludeQuery: Prisma.OrderItemPackageQuotaInclude =
     {
-      PackageDiscount: true,
+      PackageDiscount: {
+        select: this.packageDiscountIncludeQuery,
+      },
       packageQuotaVoucher: {
         include: {
           voucher: {
@@ -83,9 +100,17 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
 
   private orderItemPackageRewardIncludeQuery: Prisma.OrderItemPackageRewardInclude =
     {
+      PackageDiscount: {
+        select: this.packageDiscountIncludeQuery,
+      },
       packageRewardVoucher: {
         include: {
-          voucher: { include: this.voucherCategoryIncludeQuery },
+          voucher: {
+            include: {
+              ...this.voucherImgIncludeQuery,
+              ...this.voucherCategoryIncludeQuery,
+            },
+          },
         },
       },
       package: {
@@ -102,7 +127,6 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
           },
         },
       },
-      PackageDiscount: true,
     };
 
   private accountIncludeQuery: Prisma.AccountDefaultArgs = {
@@ -134,27 +158,40 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     account: this.accountIncludeQuery,
   };
 
-  private allDetailIncludeQuery: Prisma.OrderInclude = {
-    OrderItem: {
-      include: {
-        OrderItemVoucher: {
-          include: this.orderItemVoucherIncludeQuery,
-        },
-        OrderItemPackageQuota: {
-          include: this.orderItemPackageQuotaIncludeQuery,
-        },
-        OrderItemPackageReward: {
-          include: this.orderItemPackageRewardIncludeQuery,
+  private allDetailIncludeQuery({
+    take,
+    cursor,
+  }: {
+    take?: number;
+    cursor?: OrderItemDomain['id'];
+  }): Prisma.OrderInclude {
+    const baseQuery: Prisma.OrderInclude = {
+      OrderItem: {
+        cursor: cursor ? { id: cursor } : null,
+        take: take ?? this.defaultOrderItemLimitPaginationForOneOrder,
+        include: {
+          OrderItemVoucher: {
+            include: this.orderItemVoucherIncludeQuery,
+          },
+          OrderItemPackageQuota: {
+            include: this.orderItemPackageQuotaIncludeQuery,
+          },
+          OrderItemPackageReward: {
+            include: this.orderItemPackageRewardIncludeQuery,
+          },
+          RedeemOrderItem: true,
         },
       },
-    },
-    Transaction: {
-      include: {
-        transactionSystem: true,
+      Transaction: {
+        include: {
+          transactionSystem: true,
+        },
       },
-    },
-    account: this.accountIncludeQuery,
-  };
+      account: this.accountIncludeQuery,
+    };
+
+    return baseQuery;
+  }
 
   private nonDeleteWhereQuery: Prisma.OrderWhereInput = {
     deletedAt: {
@@ -282,7 +319,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             where: {
               id: orderAndTransaction.id,
             },
-            include: this.allDetailIncludeQuery,
+            include: this.allDetailIncludeQuery({}),
           });
         },
       );
@@ -385,10 +422,13 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
 
   // --------------------- CREATE PART ENDED --------------------------//
 
-  async findById(id: string): Promise<NullAble<OrderDomain>> {
+  async findById(
+    id: string,
+    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
+  ): Promise<NullAble<OrderDomain>> {
     const order = await this.prismaService.order.findUnique({
       where: { id },
-      include: this.allDetailIncludeQuery,
+      include: this.allDetailIncludeQuery({ cursor, take }),
     });
     if (!order) return null;
 

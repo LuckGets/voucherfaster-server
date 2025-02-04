@@ -19,8 +19,8 @@ import { ObjectHelper } from '@utils/services/object.helper';
 export class OrderItemPackageDetail {
   packageId: PackageVoucherDomain['id'];
   title: PackageVoucherDomain['title'];
-  quotaVoucher: NullAble<PackageQuotaVoucherDomain>;
-  rewardVoucher: NullAble<PackageRewardVoucherDomain>;
+  quotaVoucher: NullAble<Pick<PackageQuotaVoucherDomain, 'id' | 'deletedAt'>>;
+  rewardVoucher: NullAble<Pick<PackageRewardVoucherDomain, 'id' | 'deletedAt'>>;
 
   constructor({
     packageId,

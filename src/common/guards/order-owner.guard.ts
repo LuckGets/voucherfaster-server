@@ -25,7 +25,7 @@ export class OrderOwnerGuard implements CanActivate {
       )
         return false;
       const orderId = params[OrderPath.OrderIdParam];
-      const order = await this.orderService.getOrderById(orderId);
+      const order = await this.orderService.getOrderById(orderId, { take: 0 });
       if (!order)
         throw ErrorApiResponse.notFoundRequest(
           `This order ID could not be found on this server.`,

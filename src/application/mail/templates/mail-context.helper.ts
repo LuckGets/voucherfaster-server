@@ -55,7 +55,10 @@ export class HandleBarContextHelper {
 
     let reward: boolean = false;
     let rewardImg: string;
-    if (!ObjectHelper.isObjectEmpty(rewardVoucher)) {
+    if (
+      !ObjectHelper.isObjectEmpty(rewardVoucher) &&
+      !ObjectHelper.isObjectEmpty(rewardVoucher?.package)
+    ) {
       reward = rewardVoucher?.package?.reward;
       rewardImg = rewardVoucher.img;
     }

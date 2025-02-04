@@ -71,7 +71,10 @@ export abstract class OrderRepository {
     payload: CreateOrderAndTransactionInput,
   ): Promise<OrderDomain>;
 
-  abstract findById(id: string): Promise<NullAble<OrderDomain>>;
+  abstract findById(
+    id: string,
+    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
+  ): Promise<NullAble<OrderDomain>>;
 
   abstract findMany({
     cursor,

@@ -39,6 +39,8 @@ import {
   ProcessPaymentDto,
 } from './dto/transactions/process-payment.dto';
 import { OrderOwnerGuard } from 'src/common/guards/order-owner.guard';
+import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {
@@ -67,13 +69,32 @@ export class OrderController {
     description: 'Order ID',
     example: '0194462e-a077-7616-b2d8-f8f14121ec54',
   })
+  @ApiQuery({
+    name: QUERY_FIELD_NAME.CURSOR,
+    required: false,
+    description:
+      'Cursor ID for order-item, which default will send only first 10 items.',
+    type: String,
+  })
+  @ApiQuery({
+    name: QUERY_FIELD_NAME.LIMIT,
+    required: false,
+    description:
+      'Provided this query if desired to limit the number of order-item, default will be 10',
+    type: String,
+  })
   @ApiOkResponse({ type: () => GetOrderByIdReponse })
   @UseGuards(AccessTokenAuthGuard, OrderOwnerGuard)
   @Get(OrderPath.GetOrderById)
   async getOrderById(
     @Param(OrderPath.OrderIdParam) orderId: OrderDomain['id'],
+    @Query(QUERY_FIELD_NAME.CURSOR) cursor: OrderItemDomain['id'],
+    @Query(QUERY_FIELD_NAME.LIMIT) take: number,
   ): Promise<GetOrderByIdReponse> {
-    const order = await this.orderService.getOrderById(orderId);
+    const order = await this.orderService.getOrderById(orderId, {
+      cursor,
+      take,
+    });
     return GetOrderByIdReponse.success(order);
   }
 

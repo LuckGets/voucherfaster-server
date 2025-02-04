@@ -7,8 +7,7 @@ import {
   voucherImg,
   vouchers,
 } from './seeds-data/voucher.seed';
-import { config } from 'dotenv';
-import { execSync, spawnSync } from 'child_process';
+import { execSync } from 'child_process';
 import {
   packageImgs,
   packageQuotaVouchers,
@@ -17,8 +16,9 @@ import {
 } from './seeds-data/package.seed';
 import { ownerImg, ownerInfo } from './seeds-data/owner.seed';
 import {
+  orderItemPackageRewards,
   orderItems,
-  orderItemsPackage,
+  orderItemsPackageQuotas,
   orderItemsVouher,
   orders,
 } from './seeds-data/order.seed';
@@ -127,9 +127,14 @@ const seed = async (): Promise<void> => {
         'order-items-voucher',
       ),
       seedingFunc(
-        prisma.orderItemPackage.createMany,
-        orderItemsPackage,
+        prisma.orderItemPackageQuota.createMany,
+        orderItemsPackageQuotas,
         'order-items-package',
+      ),
+      seedingFunc(
+        prisma.orderItemPackageReward.createMany,
+        orderItemPackageRewards,
+        'order-items-rewards',
       ),
       seedingFunc(
         prisma.transactionExpireTime.create,

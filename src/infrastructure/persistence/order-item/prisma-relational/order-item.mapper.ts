@@ -1,10 +1,12 @@
 import {
   Category,
   OrderItem,
-  OrderItemPackage,
+  OrderItemPackageQuota,
+  OrderItemPackageReward,
   OrderItemVoucher,
   PackageDiscount,
   PackageImg,
+  PackageQuotaVoucher,
   PackageRewardVoucher,
   PackageVoucher,
   RedeemedOrderItem,
@@ -14,9 +16,9 @@ import {
   VoucherTag,
 } from '@prisma/client';
 import {
-  OrderItemDetailPackageField,
   OrderItemDetails,
   OrderItemDomain,
+  OrderItemPackageDetail,
 } from '@resources/order-item/domain/order-item.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import {
@@ -33,20 +35,32 @@ type VoucherDetailAndImg = Voucher & {
   voucherTag: NestedVoucherTagAndCategory;
 };
 
+type PackageDetail = Partial<PackageVoucher> & {
+  PackageImg: Partial<PackageImg>[];
+};
+
+type PackageDiscountInfo = Partial<PackageDiscount>;
+
 export type OrderItemAndDetails = OrderItem & {
   OrderItemVoucher?: OrderItemVoucher & {
     voucher?: VoucherDetailAndImg;
     VoucherDiscount?: Partial<VoucherDiscount>;
   };
-  OrderItemPackage?: OrderItemPackage & {
-    package?: PackageVoucher & {
-      voucher?: VoucherDetailAndImg;
-      PackageImg?: Partial<PackageImg>[];
-      PackageRewardVoucher?: (Partial<PackageRewardVoucher> & {
-        voucher?: VoucherDetailAndImg;
-      })[];
+  OrderItemPackageQuota?: Partial<OrderItemPackageQuota> & {
+    packageQuotaVoucher: Partial<PackageQuotaVoucher> & {
+      voucher?: Voucher & {
+        voucherTag: NestedVoucherTagAndCategory;
+      };
     };
-    PackageDiscount?: Partial<PackageDiscount>;
+    package: PackageDetail;
+    PackageDiscount?: PackageDiscountInfo;
+  };
+  OrderItemPackageReward?: Partial<OrderItemPackageReward> & {
+    packageRewardVoucher: Partial<PackageRewardVoucher> & {
+      voucher?: VoucherDetailAndImg;
+    };
+    package: PackageDetail;
+    PackageDiscount?: PackageDiscountInfo;
   };
   order?: Omit<AllOrderInformation, 'OrderItem'>;
   RedeemOrderItem?: Partial<RedeemedOrderItem>;
@@ -69,8 +83,13 @@ export class OrderItemMapper {
     if (!orderItemEntity || Object.keys(orderItemEntity).length === 0)
       return null;
 
-    const { OrderItemVoucher, OrderItemPackage, order, ...orderItem } =
-      orderItemEntity;
+    const {
+      OrderItemVoucher,
+      OrderItemPackageQuota,
+      OrderItemPackageReward,
+      order,
+      ...orderItem
+    } = orderItemEntity;
 
     const { RedeemOrderItem } = orderItem;
 
@@ -90,9 +109,12 @@ export class OrderItemMapper {
     if (OrderItemVoucher) {
       // Map to OrderItemVoucher
       detail = OrderItemVoucherMapper.toDomain(OrderItemVoucher);
-    } else if (OrderItemPackage) {
-      // Map to OrderItemPackageDomain
-      detail = OrderItemPackageMapper.toDomain(OrderItemPackage);
+    } else if (OrderItemPackageQuota) {
+      // Map to OrderItemPackageQuotaDomain
+      detail = OrderItemPackageMapper.toQuotaDomain(OrderItemPackageQuota);
+    } else if (OrderItemPackageReward) {
+      // Map to OrderItemPackageRewardDomain
+      detail = OrderItemPackageMapper.toRewardDomain(OrderItemPackageReward);
     }
 
     let orderDetail: OrderItemDomain['order'] = null;
@@ -168,88 +190,127 @@ export class OrderItemPackageMapper {
    * @returns {OrderItemDetails} The domain object representing the order item package.
    * @throws Will throw an error if required fields are empty.
    */
-  public static toDomain(
-    orderItemPackage: OrderItemAndDetails['OrderItemPackage'],
+  public static toQuotaDomain(
+    orderItemPackageQuota: OrderItemAndDetails['OrderItemPackageQuota'],
   ): OrderItemDetails {
-    const { rewardVoucher } = orderItemPackage;
-    const { price, PackageImg } = orderItemPackage.package;
-
-    // Validate if the package data is present
-    if (ObjectHelper.isObjectEmpty(orderItemPackage.package)) {
-      throw new Error(
-        `Voucher detail for order-item ID: ${orderItemPackage.id} is empty.`,
-      );
+    if (ObjectHelper.isObjectEmpty(orderItemPackageQuota)) {
+      throw new Error(`Voucher detail for order-item is empty.`);
     }
 
-    let packageImg = PackageImg.filter((item) => item.mainImg === true)[0]
+    const {
+      packageId,
+      packageQuotaVoucherId,
+      packageQuotaVoucher,
+      packageDiscountId,
+      PackageDiscount,
+    } = orderItemPackageQuota;
+
+    const { PackageImg, title } = orderItemPackageQuota.package;
+
+    const { voucher, deletedAt } = packageQuotaVoucher;
+    if (ObjectHelper.isObjectEmpty(voucher))
+      throw new Error(
+        `Detail about voucher for package ID : ${packageId} is missing.`,
+      );
+
+    const quotaVoucher: OrderItemPackageDetail['quotaVoucher'] = {
+      id: packageQuotaVoucherId,
+      deletedAt: deletedAt,
+    }; // Validate if the package data is present
+
+    const packageImg = PackageImg.filter((item) => item.mainImg === true)[0]
       .imgPath;
 
     // Map the id and package details
-    const packageField: OrderItemDetailPackageField = {
-      packageId: orderItemPackage.packageId,
-      name: orderItemPackage.package?.title,
-      reward: rewardVoucher,
-    };
-
-    let voucherTitle = null;
-    let categoryName = null;
+    const packageField: OrderItemPackageDetail = new OrderItemPackageDetail({
+      packageId: packageId,
+      title,
+      quotaVoucher,
+    });
 
     // Determine title and category based on reward voucher presence
-    if (rewardVoucher) {
-      const { PackageRewardVoucher } = orderItemPackage.package;
-      const rewardVoucherList = PackageRewardVoucher.filter((item) => {
-        return item.rewardVoucherId === orderItemPackage.voucherId;
-      });
-
-      if (rewardVoucherList.length > 1) {
-        throw new Error(
-          `Multiple same reward vouchers ID: ${orderItemPackage.voucherId} found for order-item ID: ${orderItemPackage.id}`,
-        );
-      }
-
-      const rewardVoucherInfo = rewardVoucherList[0];
-
-      if (rewardVoucherInfo.img) {
-        // Use the reward voucher image if present
-        packageImg = rewardVoucherInfo.img;
-      } else {
-        packageImg = rewardVoucherInfo.voucher.VoucherImg.filter(
-          (item) => item.mainImg === true,
-        )[0].imgPath;
-      }
-
-      const { title, voucherTag } = rewardVoucherInfo.voucher;
-      voucherTitle = title;
-      categoryName = voucherTag.category.name;
-    } else {
-      const { title, voucherTag } = orderItemPackage.package.voucher;
-      voucherTitle = title;
-      categoryName = voucherTag.category.name;
-    }
 
     // Map price and usage expiration time
 
-    let packagePrice: number = price.toNumber();
+    let packagePrice: number = orderItemPackageQuota.package.price.toNumber();
 
-    if (!ObjectHelper.isObjectEmpty(orderItemPackage?.PackageDiscount)) {
-      packagePrice =
-        orderItemPackage.PackageDiscount.discountedPrice.toNumber();
-    }
-
-    // Validate and map the image path
-    if (ObjectHelper.isObjectEmpty(PackageImg)) {
-      throw new Error(
-        `PackageImg in package ID: ${orderItemPackage.packageId} is empty`,
-      );
+    if (packageDiscountId) {
+      if (ObjectHelper.isObjectEmpty(PackageDiscount)) {
+        throw new Error(
+          `There is discount ID for package ID : ${packageId} but there is no detail.`,
+        );
+      }
+      packagePrice = PackageDiscount.discountedPrice.toNumber();
     }
 
     return new OrderItemDetails({
-      category: categoryName,
+      category: voucher.voucherTag?.category?.name,
       img: packageImg,
       price: packagePrice,
-      title: voucherTitle,
-      voucherId: orderItemPackage.voucherId,
-      discountId: orderItemPackage.packageDiscountId ?? null,
+      title: voucher?.title,
+      voucherId: voucher.id,
+      discountId: packageDiscountId ?? null,
+      packageDetail: packageField,
+    });
+  }
+
+  public static toRewardDomain(
+    orderItemPackageReward: OrderItemAndDetails['OrderItemPackageReward'],
+  ): OrderItemDetails {
+    if (ObjectHelper.isObjectEmpty(orderItemPackageReward)) {
+      throw new Error(`Voucher detail for order-item is empty.`);
+    }
+
+    const {
+      packageId,
+      packageRewardVoucherId,
+      packageRewardVoucher,
+      packageDiscountId,
+      PackageDiscount,
+    } = orderItemPackageReward;
+
+    const { PackageImg, title } = orderItemPackageReward.package;
+
+    const { voucher, deletedAt, img } = packageRewardVoucher;
+
+    const rewardVoucher: OrderItemPackageDetail['rewardVoucher'] = {
+      id: packageRewardVoucherId,
+      deletedAt: deletedAt,
+    };
+    // Validate if the package data is present
+
+    const packageImg =
+      img ?? PackageImg.filter((item) => item.mainImg === true)[0].imgPath;
+
+    // Map the id and package details
+    const packageField: OrderItemPackageDetail = new OrderItemPackageDetail({
+      packageId: packageId,
+      title,
+      rewardVoucher,
+    });
+
+    // Determine title and category based on reward voucher presence
+
+    // Map price and usage expiration time
+
+    let packagePrice: number = orderItemPackageReward.package.price.toNumber();
+
+    if (packageDiscountId) {
+      if (ObjectHelper.isObjectEmpty(PackageDiscount)) {
+        throw new Error(
+          `There is discount ID for package ID : ${packageId} but there is no detail.`,
+        );
+      }
+      packagePrice = PackageDiscount.discountedPrice.toNumber();
+    }
+
+    return new OrderItemDetails({
+      category: voucher.voucherTag?.category?.name,
+      img: packageImg,
+      price: packagePrice,
+      title: voucher?.title,
+      voucherId: voucher.id,
+      discountId: packageDiscountId ?? null,
       packageDetail: packageField,
     });
   }

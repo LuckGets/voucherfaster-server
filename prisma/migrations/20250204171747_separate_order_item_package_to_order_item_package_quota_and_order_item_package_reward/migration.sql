@@ -24,7 +24,7 @@ CREATE TABLE "order_item_package_quota" (
     "id" UUID NOT NULL,
     "order_item_id" UUID NOT NULL,
     "package_id" UUID NOT NULL,
-    "quota_voucher_id" UUID NOT NULL,
+    "package_quota_voucher_id" UUID NOT NULL,
     "package_discount_id" UUID,
     "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
@@ -36,7 +36,7 @@ CREATE TABLE "order_item_package_reward" (
     "id" UUID NOT NULL,
     "order_item_id" UUID NOT NULL,
     "package_id" UUID NOT NULL,
-    "reward_voucher_id" UUID NOT NULL,
+    "package_reward_voucher_id" UUID NOT NULL,
     "package_discount_id" UUID,
     "updated_at" TIMESTAMPTZ(3) NOT NULL,
 
@@ -56,7 +56,7 @@ ALTER TABLE "order_item_package_quota" ADD CONSTRAINT "order_item_package_quota_
 ALTER TABLE "order_item_package_quota" ADD CONSTRAINT "order_item_package_quota_package_id_fkey" FOREIGN KEY ("package_id") REFERENCES "package_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "order_item_package_quota" ADD CONSTRAINT "order_item_package_quota_quota_voucher_id_fkey" FOREIGN KEY ("quota_voucher_id") REFERENCES "package_quota_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "order_item_package_quota" ADD CONSTRAINT "order_item_package_quota_package_quota_voucher_id_fkey" FOREIGN KEY ("package_quota_voucher_id") REFERENCES "package_quota_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "order_item_package_quota" ADD CONSTRAINT "order_item_package_quota_package_discount_id_fkey" FOREIGN KEY ("package_discount_id") REFERENCES "package_discount"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -68,7 +68,7 @@ ALTER TABLE "order_item_package_reward" ADD CONSTRAINT "order_item_package_rewar
 ALTER TABLE "order_item_package_reward" ADD CONSTRAINT "order_item_package_reward_package_id_fkey" FOREIGN KEY ("package_id") REFERENCES "package_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "order_item_package_reward" ADD CONSTRAINT "order_item_package_reward_reward_voucher_id_fkey" FOREIGN KEY ("reward_voucher_id") REFERENCES "package_reward_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "order_item_package_reward" ADD CONSTRAINT "order_item_package_reward_package_reward_voucher_id_fkey" FOREIGN KEY ("package_reward_voucher_id") REFERENCES "package_reward_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "order_item_package_reward" ADD CONSTRAINT "order_item_package_reward_package_discount_id_fkey" FOREIGN KEY ("package_discount_id") REFERENCES "package_discount"("id") ON DELETE SET NULL ON UPDATE CASCADE;
