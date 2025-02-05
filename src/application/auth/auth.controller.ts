@@ -25,8 +25,8 @@ import {
   RegisterHATEOASLinks,
   RegisterResponseDto,
 } from './dto/register-response.dto';
-import { Response } from 'express';
-import { Cookies, CookiesKey, cookieOption } from 'src/common/cookie';
+import { CookieOptions, Response } from 'express';
+import { Cookies, CookiesKey } from 'src/common/cookie';
 import { RefreshTokenAuthGuard } from './auth.guard';
 import {
   refreshReponseHATEOASLink,
@@ -37,7 +37,14 @@ import { LogoutResponseDto } from './dto/logout-response.dto';
 @ApiTags(AuthPath.Name)
 @Controller({ path: AuthPath.Base, version: '1' })
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  private cookieOption: CookieOptions;
+  constructor(private authService: AuthService) {
+    this.cookieOption = {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: false,
+    };
+  }
 
   @ApiCreatedResponse({
     type: () => RegisterResponseDto,
@@ -72,8 +79,8 @@ export class AuthController {
     // finding the existing account session
     const { accessToken, refreshToken, sessionId } =
       await this.authService.getTokenAndUpsertSession(account);
-    res.cookie('sessionId', sessionId, cookieOption);
-    res.cookie('refreshToken', refreshToken, cookieOption);
+    res.cookie(CookiesKey.sessionId, sessionId, this.cookieOption);
+    res.cookie(CookiesKey.refreshToken, refreshToken, this.cookieOption);
     return LoginResponseDto.success({ accessToken });
   }
 
@@ -92,8 +99,8 @@ export class AuthController {
     const { newAccessToken, newRefreshToken, sessionId } =
       await this.authService.refreshToken(refreshToken, session);
     // Attach the cookie in response
-    res.cookie(CookiesKey.sessionId, sessionId, cookieOption);
-    res.cookie(CookiesKey.sessionId, newRefreshToken, cookieOption);
+    res.cookie(CookiesKey.sessionId, sessionId, this.cookieOption);
+    res.cookie(CookiesKey.refreshToken, newRefreshToken, this.cookieOption);
     return RefreshResponseDto.success(refreshReponseHATEOASLink, {
       accessToken: newAccessToken,
     });
