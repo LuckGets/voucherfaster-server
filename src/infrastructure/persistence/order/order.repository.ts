@@ -23,8 +23,7 @@ export type CreateOrderItemPackageQuotaInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
   packageId: PackageVoucherDomain['id'];
-  quotaVoucherId: PackageQuotaVoucherDomain['id'];
-  rewardVoucherId?: PackageRewardVoucherDomain['id'];
+  packageQuotaVoucherId: PackageQuotaVoucherDomain['id'];
   discountId?: PackageDiscountDomain['id'];
 };
 
@@ -32,7 +31,7 @@ export type CreateOrderItemPackageRewardInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
   packageId: PackageVoucherDomain['id'];
-  rewardVoucherId: PackageRewardVoucherDomain['id'];
+  packageRewardVoucherId: PackageRewardVoucherDomain['id'];
   discountId?: PackageDiscountDomain['id'];
 };
 export type UpdateStockAmountInfo = {

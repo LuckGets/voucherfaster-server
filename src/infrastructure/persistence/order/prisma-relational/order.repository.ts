@@ -25,6 +25,8 @@ import { OrderDomain } from '@resources/order/domain/order.domain';
 import { create } from 'domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
+import { OrderItemRelationPrismaORMRepository } from '../../order-item/prisma-relational/order-item.repository';
+import { OrderItemRelationalPrismaORMStatic } from '../../order-item/prisma-relational/static-class/order-item-static.repository';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -60,74 +62,16 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     },
   };
 
-  private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
-    voucher: {
-      include: {
-        ...this.voucherImgIncludeQuery,
-        ...this.voucherCategoryIncludeQuery,
-      },
-    },
-    VoucherDiscount: true,
-  };
-
-  private orderItemPackageQuotaIncludeQuery: Prisma.OrderItemPackageQuotaInclude =
-    {
-      PackageDiscount: {
-        select: this.packageDiscountIncludeQuery,
-      },
-      packageQuotaVoucher: {
-        include: {
-          voucher: {
-            include: this.voucherCategoryIncludeQuery,
-          },
-        },
-      },
-      package: {
-        include: {
-          PackageImg: {
-            select: {
-              id: true,
-              mainImg: true,
-              imgPath: true,
-            },
-            where: {
-              mainImg: true,
-            },
-          },
-        },
-      },
+  private copyOrderItemIncludeQuery() {
+    const copiedQuery = {
+      ...OrderItemRelationalPrismaORMStatic.orderItemIncludeQuery,
     };
+    delete copiedQuery.order;
+    return copiedQuery;
+  }
 
-  private orderItemPackageRewardIncludeQuery: Prisma.OrderItemPackageRewardInclude =
-    {
-      PackageDiscount: {
-        select: this.packageDiscountIncludeQuery,
-      },
-      packageRewardVoucher: {
-        include: {
-          voucher: {
-            include: {
-              ...this.voucherImgIncludeQuery,
-              ...this.voucherCategoryIncludeQuery,
-            },
-          },
-        },
-      },
-      package: {
-        include: {
-          PackageImg: {
-            select: {
-              id: true,
-              mainImg: true,
-              imgPath: true,
-            },
-            where: {
-              mainImg: true,
-            },
-          },
-        },
-      },
-    };
+  private orderItemIncludeQuery: Prisma.OrderItemInclude =
+    this.copyOrderItemIncludeQuery();
 
   private accountIncludeQuery: Prisma.AccountDefaultArgs = {
     select: {
@@ -143,17 +87,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private findManyIncludeQuery: Prisma.OrderInclude = {
     OrderItem: {
       take: this.defaultOrderItemLimitPaginationForFindMany,
-      include: {
-        OrderItemVoucher: {
-          include: this.orderItemVoucherIncludeQuery,
-        },
-        OrderItemPackageQuota: {
-          include: this.orderItemPackageQuotaIncludeQuery,
-        },
-        OrderItemPackageReward: {
-          include: this.orderItemPackageRewardIncludeQuery,
-        },
-      },
+      include: this.orderItemIncludeQuery,
     },
     account: this.accountIncludeQuery,
   };
@@ -169,18 +103,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       OrderItem: {
         cursor: cursor ? { id: cursor } : null,
         take: take ?? this.defaultOrderItemLimitPaginationForOneOrder,
-        include: {
-          OrderItemVoucher: {
-            include: this.orderItemVoucherIncludeQuery,
-          },
-          OrderItemPackageQuota: {
-            include: this.orderItemPackageQuotaIncludeQuery,
-          },
-          OrderItemPackageReward: {
-            include: this.orderItemPackageRewardIncludeQuery,
-          },
-          RedeemOrderItem: true,
-        },
+        include: this.orderItemIncludeQuery,
       },
       Transaction: {
         include: {

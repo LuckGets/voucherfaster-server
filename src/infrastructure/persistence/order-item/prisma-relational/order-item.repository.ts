@@ -20,100 +20,15 @@ import {
   UpdateOrderItemDto,
   UpdateOrderItemQrcode,
 } from '@resources/order-item/dto/update-order-item';
+import { OrderItemRelationalPrismaORMStatic } from './static-class/order-item-static.repository';
 
 export class OrderItemRelationPrismaORMRepository
   implements OrderItemRepository
 {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
-  private voucherIncludeQuery: Prisma.VoucherInclude = {
-    VoucherImg: {
-      where: {
-        mainImg: true,
-      },
-    },
-    voucherTag: {
-      include: {
-        category: true,
-      },
-    },
-  };
-
-  private orderIncludeQuery: Prisma.OrderInclude = {
-    Transaction: {
-      include: {
-        transactionSystem: {
-          select: {
-            id: true,
-            system: true,
-          },
-        },
-      },
-    },
-    account: {
-      select: {
-        id: true,
-        role: true,
-        email: true,
-        fullname: true,
-        phone: true,
-        verifiedAt: true,
-      },
-    },
-  };
-
-  private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
-    voucher: {
-      include: this.voucherIncludeQuery,
-    },
-    VoucherDiscount: true,
-  };
-
-  private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
-    package: {
-      include: {
-        PackageRewardVoucher: {
-          include: {
-            voucher: {
-              include: this.voucherIncludeQuery,
-            },
-          },
-        },
-        PackageImg: {
-          where: {
-            mainImg: true,
-          },
-        },
-        voucher: {
-          include: this.voucherIncludeQuery,
-        },
-      },
-    },
-    PackageDiscount: true,
-  };
-
-  private includeQuery: Prisma.OrderItemInclude = {
-    OrderItemPackage: {
-      include: this.orderItemPackageIncludeQuery,
-    },
-    OrderItemVoucher: {
-      include: this.orderItemVoucherIncludeQuery,
-    },
-    order: {
-      include: this.orderIncludeQuery,
-    },
-    RedeemOrderItem: {
-      where: {
-        deletedAt: {
-          equals: null,
-        },
-      },
-      select: {
-        id: true,
-        updatedAt: true,
-      },
-    },
-  };
+  private orderItemIncludeQuery: Prisma.OrderItemInclude =
+    OrderItemRelationalPrismaORMStatic.orderItemIncludeQuery;
 
   private sucessOrderWhereQuery: Prisma.OrderItemWhereInput = {
     order: {
@@ -144,7 +59,12 @@ export class OrderItemRelationPrismaORMRepository
           case ORDER_ITEM_SORT_MAP_TO_DB[OrderItemSortEnum.EXPIRED_AT]:
             acc = {
               ...acc,
-              OrderItemPackage: {
+              OrderItemPackageQuota: {
+                package: {
+                  usableExpiredAt: direction,
+                },
+              },
+              OrderItemPackageReward: {
                 package: {
                   usableExpiredAt: direction,
                 },
@@ -225,8 +145,9 @@ export class OrderItemRelationPrismaORMRepository
     return {
       OR: [
         {
-          OrderItemPackage: {
-            voucherId: { in: allVoucherIds },
+          OrderItemPackageQuota: {
+            packageQuotaVoucherId: {},
+            // packageId: { in: allVoucherIds },
           },
         },
         {
@@ -253,7 +174,14 @@ export class OrderItemRelationPrismaORMRepository
       case OrderItemRedeemStatusEnum.EXPIRED:
         return {
           ...this.sucessOrderWhereQuery,
-          OrderItemPackage: {
+          OrderItemPackageQuota: {
+            package: {
+              usableExpiredAt: {
+                lte: currentDate,
+              },
+            },
+          },
+          OrderItemPackageReward: {
             package: {
               usableExpiredAt: {
                 lte: currentDate,
@@ -274,7 +202,6 @@ export class OrderItemRelationPrismaORMRepository
         }[] = await this.prismaService.$queryRawUnsafe(
           getRedeemAbleOrderItemRawQuery,
         );
-        console.log('testQuery', allRedeemAbleOrderItem);
         return {
           AND: [
             {
@@ -306,9 +233,18 @@ export class OrderItemRelationPrismaORMRepository
         };
       case OrderItemTypeEnum.PACKAGE:
         return {
-          OrderItemPackage: {
-            isNot: null,
-          },
+          OR: [
+            {
+              OrderItemPackageQuota: {
+                isNot: null,
+              },
+            },
+            {
+              OrderItemPackageQuota: {
+                isNot: null,
+              },
+            },
+          ],
         };
       default:
         return {};
@@ -322,7 +258,7 @@ export class OrderItemRelationPrismaORMRepository
       where: {
         id,
       },
-      include: this.includeQuery,
+      include: this.orderItemIncludeQuery,
     });
     return OrderItemMapper.toDomain(orderItem as OrderItemAndDetails, {
       allInfo: true,
@@ -332,7 +268,7 @@ export class OrderItemRelationPrismaORMRepository
   async findByCode(code: OrderItemDomain['code']): Promise<OrderItemDomain> {
     const orderItem = await this.prismaService.orderItem.findFirst({
       where: { code },
-      include: this.includeQuery,
+      include: this.orderItemIncludeQuery,
     });
 
     return OrderItemMapper.toDomain(orderItem as OrderItemAndDetails, {
@@ -394,7 +330,7 @@ export class OrderItemRelationPrismaORMRepository
       where: {
         AND: allWhereQuery,
       },
-      include: this.includeQuery,
+      include: this.orderItemIncludeQuery,
     });
 
     return orderItemsList.map((item) =>
@@ -416,7 +352,7 @@ export class OrderItemRelationPrismaORMRepository
               data: {
                 qrcodeImagePath: item.qrcodeImagePath,
               },
-              include: this.includeQuery,
+              include: this.orderItemIncludeQuery,
             });
           }),
         );
@@ -433,7 +369,7 @@ export class OrderItemRelationPrismaORMRepository
         id: data.id,
       },
       data,
-      include: this.includeQuery,
+      include: this.orderItemIncludeQuery,
     });
     return OrderItemMapper.toDomain(updatedOrderItem as OrderItemAndDetails, {
       allInfo: true,

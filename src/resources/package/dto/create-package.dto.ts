@@ -4,6 +4,8 @@ import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterOrEqual } from '@utils/validators/IsDateGreaterThan';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayContains,
+  ArrayNotEmpty,
   IsArray,
   IsDate,
   IsNotEmpty,
@@ -29,9 +31,11 @@ export const PACKAGE_FILE_FIELD = {
 
 export class CreateQuotaVoucherDto {
   @ApiProperty({ type: String })
+  @IsNotEmpty()
   @IsUUID(7)
   voucherId: VoucherDomain['id'];
   @ApiProperty({ type: Number })
+  @IsNotEmpty()
   @IsPositive()
   amount: number;
 }
@@ -53,6 +57,7 @@ export class CreatePackageVoucherDto {
     description: 'ID of the quota voucher',
   })
   @IsArray()
+  @ArrayNotEmpty()
   @Transform(({ value }) => plainArrayTransformer(value, CreateQuotaVoucherDto))
   @ValidateNested({ each: true })
   @Type(() => CreateQuotaVoucherDto)
@@ -72,6 +77,7 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) =>
     plainArrayTransformer(value, CreateRewardVoucherDto),
   )
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => CreateRewardVoucherDto)
   rewardVouchers: CreateRewardVoucherDto[];

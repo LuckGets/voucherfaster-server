@@ -47,19 +47,19 @@ export type OrderItemAndDetails = OrderItem & {
     VoucherDiscount?: Partial<VoucherDiscount>;
   };
   OrderItemPackageQuota?: Partial<OrderItemPackageQuota> & {
-    packageQuotaVoucher: Partial<PackageQuotaVoucher> & {
+    packageQuotaVoucher?: Partial<PackageQuotaVoucher> & {
       voucher?: Voucher & {
         voucherTag: NestedVoucherTagAndCategory;
       };
     };
-    package: PackageDetail;
+    package?: PackageDetail;
     PackageDiscount?: PackageDiscountInfo;
   };
   OrderItemPackageReward?: Partial<OrderItemPackageReward> & {
-    packageRewardVoucher: Partial<PackageRewardVoucher> & {
+    packageRewardVoucher?: Partial<PackageRewardVoucher> & {
       voucher?: VoucherDetailAndImg;
     };
-    package: PackageDetail;
+    package?: PackageDetail;
     PackageDiscount?: PackageDiscountInfo;
   };
   order?: Omit<AllOrderInformation, 'OrderItem'>;
@@ -280,7 +280,8 @@ export class OrderItemPackageMapper {
     // Validate if the package data is present
 
     const packageImg =
-      img ?? PackageImg.filter((item) => item.mainImg === true)[0].imgPath;
+      img ??
+      voucher.VoucherImg.filter((item) => item.mainImg === true)[0].imgPath;
 
     // Map the id and package details
     const packageField: OrderItemPackageDetail = new OrderItemPackageDetail({

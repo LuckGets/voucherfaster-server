@@ -123,14 +123,6 @@ export class MailService {
     const title = MAIL_ORDER_ITEM_CONSTANT.generateTitle(ownerName, data.code);
     let rewardVoucher: NullAble<OrderItemPackageDetail['rewardVoucher']>;
 
-    if (
-      !ObjectHelper.isObjectEmpty(data.detail?.package) &&
-      !ObjectHelper.isObjectEmpty(data.detail?.package?.rewardVoucher)
-    )
-      rewardVoucher = data.detail?.package?.rewardVoucher;
-    const isRewardVoucher = data.detail?.package?.rewardVoucher
-      ? data.detail
-      : null;
     const context = HandleBarContextHelper.orderItem({
       ownerName,
       itemName: data.detail?.title,
@@ -143,7 +135,7 @@ export class MailService {
       countNumber: data.countNumber,
       total: data.total,
       category: data.detail?.category,
-      rewardVoucher: isRewardVoucher,
+      package: data.detail?.package,
     });
 
     console.log(`Sending Order item voucher to email: ${mailData.to}...`);

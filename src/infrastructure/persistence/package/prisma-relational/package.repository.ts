@@ -38,10 +38,7 @@ import { NIL } from 'uuid';
 export class PackageVoucherRelationalPrismaORMRepository
   implements PackageVoucherRepository
 {
-  constructor(
-    @Inject(PrismaService) private prismaService: PrismaService,
-    private uuidService: UUIDService,
-  ) {}
+  constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
 
   private currentlyDiscountIncludeQuery: Prisma.PackageVoucher$PackageDiscountArgs =
     {
@@ -462,12 +459,17 @@ export class PackageVoucherRelationalPrismaORMRepository
   // ------------------------- PACKAGE QUOTA PART ----------------------- //
   // -------------------------------------------------------------------- //
 
-  private includePackageForQuotaAndRewardQuery: Prisma.PackageQuotaVoucherInclude =
-    {
-      package: {
-        include: this.detailIncludeQuery,
-      },
-    };
+  private includePackageForQuotaQuery: Prisma.PackageQuotaVoucherInclude = {
+    package: {
+      include: this.detailIncludeQuery,
+    },
+  };
+
+  private includePackageForRewardQuery: Prisma.PackageRewardVoucherInclude = {
+    package: {
+      include: this.detailIncludeQuery,
+    },
+  };
 
   async addNewQuotaVoucher(
     payload: AddNewPackageQuotaVoucherDto,
@@ -479,7 +481,7 @@ export class PackageVoucherRelationalPrismaORMRepository
           voucher: { connect: { id: payload.voucherId } },
           package: { connect: { id: payload.packageId } },
         },
-        include: this.includePackageForQuotaAndRewardQuery,
+        include: this.includePackageForQuotaQuery,
       },
     );
     return PackageQuotaVoucherMapper.toPackageDomain(newQuotaVoucher);
@@ -509,7 +511,7 @@ export class PackageVoucherRelationalPrismaORMRepository
     const updatedQuota = await this.prismaService.packageQuotaVoucher.update({
       where: { id: quotaId },
       data: updateData,
-      include: this.includePackageForQuotaAndRewardQuery,
+      include: this.includePackageForQuotaQuery,
     });
 
     return PackageQuotaVoucherMapper.toPackageDomain(updatedQuota);
@@ -540,7 +542,7 @@ export class PackageVoucherRelationalPrismaORMRepository
           voucher: { connect: { id: payload.voucherId } },
           package: { connect: { id: payload.packageId } },
         },
-        include: this.includePackageForQuotaAndRewardQuery,
+        include: this.includePackageForRewardQuery,
       });
 
     return PackageRewardMapper.toPackageDomain(newRewardVoucher);
@@ -571,7 +573,7 @@ export class PackageVoucherRelationalPrismaORMRepository
     const updatedReward = await this.prismaService.packageRewardVoucher.update({
       where: { id: rewardId },
       data: updateData,
-      include: this.includePackageForQuotaAndRewardQuery,
+      include: this.includePackageForRewardQuery,
     });
 
     return PackageRewardMapper.toPackageDomain(updatedReward);

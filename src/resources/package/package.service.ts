@@ -243,14 +243,19 @@ export class PackageVoucherService {
   } {
     const allImgBuffer = [...mainImgAndPackageBuffer];
     const imgIndexAndTypeMap = new Map<VoucherDomain['id'], number>();
-    const voucherIdSet = new Set<VoucherDomain['id']>();
+    const voucherIdMap = new Map<VoucherDomain['id'], 'quota' | 'reward'>();
     const rewardVoucherData: PackageRewardVoucherCreateInput[] = [];
     // Extract reward voucher ID from package voucher data
     const idList = [];
-    for (const item of [...quotaVouchers, ...rewardVouchers]) {
-      if (voucherIdSet.has(item.voucherId))
+    const allVouchers = [...quotaVouchers, ...rewardVouchers];
+    const quotaVouchersLength = quotaVouchers.length;
+    for (let i = 0; i < allVouchers.length; i++) {
+      const voucherType = i < quotaVouchersLength ? 'quota' : 'reward';
+      const item = allVouchers[i];
+      const isVoucherExistInMap = voucherIdMap.get(item.voucherId);
+      if (isVoucherExistInMap && isVoucherExistInMap === voucherType)
         throw ErrorApiResponse.badRequest(
-          `Reward voucher ID: ${item.voucherId} was duplicated. If desired to add more amount of the same voucher, please add the number in the amount of the desired voucher ID field.`,
+          `${voucherType} voucher ID: ${item.voucherId} was duplicated. If desired to add more amount of the same voucher, please add the number in the amount of the desired voucher ID field.`,
         );
 
       if (filesAndFieldsMap.has(item.voucherId)) {
@@ -258,22 +263,26 @@ export class PackageVoucherService {
         imgIndexAndTypeMap.set(item.voucherId, allImgBuffer.length - 1);
       }
 
-      voucherIdSet.add(item.voucherId);
-      rewardVoucherData.push({
-        id: String(this.uuidService.make()),
-        amount: item.amount,
-        packageId,
-        rewardVoucherId: item.voucherId,
-      });
-      idList.push(item.voucherId);
+      voucherIdMap.set(item.voucherId, voucherType);
+
+      if (voucherType === 'reward') {
+        rewardVoucherData.push({
+          id: String(this.uuidService.make()),
+          amount: item.amount,
+          packageId,
+          rewardVoucherId: item.voucherId,
+        });
+      }
+
+      if (!isVoucherExistInMap) idList.push(item.voucherId);
     }
     const filesFieldName = Array.from(filesAndFieldsMap.keys());
 
     for (const field of filesFieldName) {
       if (field === 'main' || field === 'package') continue;
-      if (!voucherIdSet.has(field))
+      if (!voucherIdMap.has(field))
         throw ErrorApiResponse.badRequest(
-          `The file for voucher ID: ${field} could not be found on reward vouchers list.`,
+          `The file-assigned voucher ID: ${field} could not be found on to-be create reward vouchers list.`,
         );
     }
 
