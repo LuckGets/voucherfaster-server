@@ -302,8 +302,6 @@ export class AuthService {
       });
     }
 
-    console.log('SESSIONN AFTER LOGIN', session);
-
     return { accessToken, refreshToken, sessionId: String(session.id) };
   }
 }
