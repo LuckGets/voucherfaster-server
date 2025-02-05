@@ -58,15 +58,19 @@ while ! pg_isready -h "$host" -p "$port" -U "$user" >/dev/null 2>&1; do
   RETRY_COUNT=$((RETRY_COUNT + 1))
 done
 
+npm rebuild bcrypt
+
 echo "PostgreSQL is up - continuing..."
 npx prisma generate
 
 # Run Prisma migrations
 echo "Running Prisma migrations..."
-npx prisma migrate dev --name init
+npx prisma migrate deploy 
 
 echo "Running seed..."
 npx prisma db seed
+
+npm rebuild bcrypt
 
 # Start the Nest.js server
 echo "Starting Nest.js server..."

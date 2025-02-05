@@ -21,6 +21,7 @@ RUN npm install -g pnpm
 # Copy dependency definitions
 COPY package*.json ./
 
+
 # Install project dependencies
 RUN pnpm install
 
