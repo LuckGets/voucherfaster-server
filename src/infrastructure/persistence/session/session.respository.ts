@@ -8,6 +8,11 @@ export abstract class SessionRepository {
     data: Pick<SessionDomain, 'id' | 'account' | 'token'>,
   ): Promise<SessionDomain>;
   abstract findById(id: SessionDomain['id']): Promise<NullAble<SessionDomain>>;
+
+  abstract findByToken(
+    token: SessionDomain['token'],
+  ): Promise<NullAble<SessionDomain>>;
+
   abstract update(
     id: SessionDomain['id'],
     token: SessionDomain['token'],

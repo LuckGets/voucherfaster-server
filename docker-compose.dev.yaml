@@ -34,8 +34,6 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db_dev:5432/voucherfaster?schema=public
     depends_on:
       - db_dev
-    env_file:
-      - ./.env.development
 
 volumes:
   postgres_data:

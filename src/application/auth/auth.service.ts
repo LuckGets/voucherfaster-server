@@ -158,19 +158,6 @@ export class AuthService {
     }
 
     if (!account) {
-      /**
-       * Uncomment in case I can resolve the response from people API for phoneNumbers
-       */
-      // const googleUserPhoneResp = await fetch(
-      //   `https://people.googleapis.com/v1/people/me?personFields=phoneNumbers`,
-      //   {
-      //     method: 'GET',
-      //     headers: { Authorization: `Bearer ${req.user.accessToken}` },
-      //   },
-      // )
-      //   .then((res) => res.json())
-      //   .catch((err) => console.log('error', err));
-      // console.log(googleUserPhoneResp);
       const createAccountObject: CreateAccountDto = {
         email: socialData.email,
         fullname: socialData.fullname,
@@ -181,12 +168,10 @@ export class AuthService {
       account = await this.accountService.create(
         plainToInstance(CreateAccountDto, createAccountObject),
       );
-      console.log('Account after create', account);
       const payload: VerifyTokenPayloadType = { sub: account.id };
       const token: string = await this.jwtService.signAsync(payload, {
         secret: this.verifyEmailSecret,
       });
-      console.log('Account email before sending mail', account.email);
       await this.mailService.verifyEmail({
         to: account.email,
         data: { token },
@@ -218,7 +203,8 @@ export class AuthService {
   }> {
     const exisitingSession: NullAble<SessionDomain> =
       await this.sessionService.findById(sessionId);
-    if (exisitingSession.token !== refreshToken) {
+
+    if (!exisitingSession || exisitingSession.token !== refreshToken) {
       throw ErrorApiResponse.unauthorizedRequest();
     }
     const refreshTokenPayload: RefreshTokenPayloadType = this.jwtService.verify(
@@ -245,14 +231,14 @@ export class AuthService {
         {
           sub: exisitingSession.account as string,
         },
-        'access',
+        'refresh',
       ),
     ]);
 
     const updateSession = await this.sessionService.update(
       exisitingSession.id,
       {
-        token: refreshToken,
+        token: newRefreshToken,
       },
     );
     return {

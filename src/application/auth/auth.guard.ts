@@ -8,7 +8,6 @@ export class RefreshTokenAuthGuard implements CanActivate {
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
     const { sessionId, refreshToken } = request.cookies;
-    console.log(!!sessionId && !!refreshToken);
     return !!sessionId && !!refreshToken;
   }
 }

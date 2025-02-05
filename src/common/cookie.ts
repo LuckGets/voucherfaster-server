@@ -1,10 +1,4 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { CookieOptions } from 'express';
-
-export const cookieOption: CookieOptions = {
-  httpOnly: true,
-  sameSite: 'none',
-};
 
 export const Cookies = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {

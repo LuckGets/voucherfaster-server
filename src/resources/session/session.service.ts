@@ -17,6 +17,12 @@ export class SessionService {
     return this.sessionRepository.findById(id);
   }
 
+  public findByToken(
+    token: SessionDomain['token'],
+  ): Promise<NullAble<SessionDomain>> {
+    return this.sessionRepository.findByToken(token);
+  }
+
   public create(
     createSessionDto: CreateSessionDto,
   ): Promise<NullAble<SessionDomain>> {
@@ -30,14 +36,7 @@ export class SessionService {
     id: SessionDomain['id'],
     updateSessonDto: UpdateSessionDto,
   ): Promise<SessionDomain> {
-    const existingSession = await this.sessionRepository.findById(id);
-    if (!existingSession) {
-      throw ErrorApiResponse.notFoundRequest();
-    }
-    return await this.sessionRepository.update(
-      existingSession.id,
-      updateSessonDto.token,
-    );
+    return await this.sessionRepository.update(id, updateSessonDto.token);
   }
 
   public findbyAccountId(

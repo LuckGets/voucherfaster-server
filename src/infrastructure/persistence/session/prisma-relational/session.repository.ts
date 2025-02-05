@@ -33,6 +33,7 @@ export class SessionRelationalPrismaORMRepository implements SessionRepository {
     return session ? SessionMapper.toDomain(session) : null;
   }
   async findById(id: SessionDomain['id']): Promise<NullAble<SessionDomain>> {
+    console.log('session Id:', id);
     const session = await this.prismaService.session.findUnique({
       where: {
         id: String(id),
@@ -40,20 +41,25 @@ export class SessionRelationalPrismaORMRepository implements SessionRepository {
     });
     return session ? SessionMapper.toDomain(session) : null;
   }
+
+  async findByToken(
+    token: SessionDomain['token'],
+  ): Promise<NullAble<SessionDomain>> {
+    const session = await this.prismaService.session.findFirst({
+      where: { token },
+    });
+
+    return session ? SessionMapper.toDomain(session) : null;
+  }
+
   async update(
     id: SessionDomain['id'],
     token: SessionDomain['token'],
   ): Promise<NullAble<SessionDomain>> {
-    const session = await this.findById(id);
-    if (!session) {
-      throw ErrorApiResponse.notFoundRequest(
-        'This session ID can not be found in this server.',
-      );
-    }
     return SessionMapper.toDomain(
       await this.prismaService.session.update({
         where: {
-          id: session.id as string,
+          id: String(id),
         },
         data: {
           token,
