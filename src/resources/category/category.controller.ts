@@ -37,7 +37,11 @@ import {
   GetCategoryByIdResponse,
   GetManyCategoryResponse,
 } from './dto/category/get-category.dto';
-import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
+import {
+  IPaginationOption,
+  QUERY_FIELD_DOC,
+  QUERY_FIELD_NAME,
+} from 'src/common/types/pagination.type';
 import {
   UpdateVoucherTagDto,
   UpdateVoucherTagResponse,
@@ -85,15 +89,30 @@ export class CategoryController {
     description: 'Cursor for pagination.',
     required: false,
   })
+  @ApiQuery({
+    name: QUERY_FIELD_NAME.DIRECTION,
+    description:
+      'Direction for pagination. Can provide two kind of value: NEXT, PREVIOUS',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: QUERY_FIELD_NAME.PAGE,
+    description: QUERY_FIELD_DOC.PAGE,
+    required: false,
+    type: Number, // Adjust to the correct type if needed
+  })
   @Get()
   async getPaginationCategory(
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: string,
+    @Query(QUERY_FIELD_NAME.PAGE) page: IPaginationOption['page'],
   ): Promise<GetManyCategoryResponse> {
     const categoriesList =
       await this.categoryService.getPaginationVoucherCategory({
         cursor,
+        paginationOption: { page },
       });
-    return GetManyCategoryResponse.success(categoriesList);
+    return GetManyCategoryResponse.success(categoriesList, page ?? 1);
   }
 
   @ApiBearerAuth()
@@ -158,10 +177,23 @@ export class CategoryController {
     name: CategoryPath.CategoryQuery,
   })
   @ApiQuery({
-    name: 'cursor',
-    description: 'Cursor for pagination.',
+    name: QUERY_FIELD_NAME.CURSOR,
+    description: 'Cursor for pagination to the next page of data.',
     required: false,
     type: String, // Adjust to the correct type if needed
+  })
+  @ApiQuery({
+    name: QUERY_FIELD_NAME.DIRECTION,
+    description:
+      'Direction for pagination. Can provide two kind of value: NEXT, PREVIOUS',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
+    name: QUERY_FIELD_NAME.PAGE,
+    description: QUERY_FIELD_DOC.PAGE,
+    required: false,
+    type: Number, // Adjust to the correct type if needed
   })
   @SerializeOptions({
     groups: [RoleEnum.Admin, RoleEnum.User],
@@ -171,16 +203,19 @@ export class CategoryController {
     @Query(CategoryPath.CategoryQuery)
     category: CategoryDomain['name'],
     @Query(QUERY_FIELD_NAME.CURSOR) cursor: VoucherTagDomain['id'],
+    @Query(QUERY_FIELD_NAME.PAGE) page: IPaginationOption['page'],
   ): Promise<GetManyVoucherTagResponse> {
-    console.log('Hello');
     const voucherTagList = await this.voucherTagService.getPaginationVoucherTag(
       {
+        paginationOption: {
+          page,
+        },
         category,
         cursor,
       },
     );
 
-    return GetManyVoucherTagResponse.success(voucherTagList);
+    return GetManyVoucherTagResponse.success(voucherTagList, page ?? 1);
   }
 
   // GET CATEGORY BY ID

@@ -7,6 +7,7 @@ import { UUIDService } from '@utils/services/uuid.service';
 import { NullAble } from '@utils/types/common.type';
 import { UpdateCategoryDto } from './dto/category/update-category.dto';
 import { isUUID } from 'class-validator';
+import { IPaginationOption } from 'src/common/types/pagination.type';
 
 @Injectable()
 export class CategoryService {
@@ -48,10 +49,15 @@ export class CategoryService {
    */
   public getPaginationVoucherCategory({
     cursor,
+    paginationOption,
   }: {
     cursor: CategoryDomain['id'];
+    paginationOption: IPaginationOption;
   }): Promise<NullAble<CategoryDomain[]>> {
-    return this.categoryRespository.findManyWithPagination({ cursor });
+    return this.categoryRespository.findManyWithPagination({
+      cursor,
+      paginationOption,
+    });
   }
 
   public update(payload: UpdateCategoryDto): Promise<CategoryDomain> {
