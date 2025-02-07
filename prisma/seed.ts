@@ -28,6 +28,7 @@ import {
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
+import { CryptoService } from '@utils/services/crypto.service';
 
 const prisma = new PrismaClient();
 
@@ -69,13 +70,17 @@ const seed = async (): Promise<void> => {
       return;
     }
     const password = bcrypt.hashSync('Qwerty', 10);
+    const ownerPassword = CryptoService.encrypt(
+      'redeem',
+      process.env.PASSWORD_FOR_REDEEM_SECRET,
+    );
     // const ownerPasswordForRedeem = CryptoService.encrypt(password, process.env.PASSWORD_FOR_REDEEM_SECRET);
 
     /**
      * Function to seed data to database
      */
     accounts.forEach((item) => (item.password = password));
-    ownerInfo.forEach((item) => (item.passwordForRedeem = password));
+    ownerInfo.forEach((item) => (item.passwordForRedeem = ownerPassword));
     console.log('INTO SEEDING PROCESS... PLEASE WAIT.');
 
     await Promise.all([

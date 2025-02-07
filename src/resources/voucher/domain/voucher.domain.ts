@@ -45,7 +45,7 @@ export class VoucherDomain {
     type: () => Object,
     example: [{ imgPath: 'https://picsum.photos/100/200', mainImg: true }],
   })
-  img?: Partial<VoucherImgDomain>[];
+  images?: Partial<VoucherImgDomain>[];
   @ApiProperty({ type: () => Object, nullable: true })
   discount?: VoucherDiscountDomain;
   @ApiProperty({ type: () => String })
@@ -65,7 +65,7 @@ export class VoucherDomain {
     termAndCondition,
     sellStartedAt,
     sellExpiredAt,
-    img,
+    images,
     discount,
     tag,
     category,
@@ -81,7 +81,7 @@ export class VoucherDomain {
     termAndCondition: string;
     sellStartedAt: Date;
     sellExpiredAt: Date;
-    img: Partial<VoucherImgDomain>[];
+    images: Partial<VoucherImgDomain>[];
     discount: VoucherDiscountDomain;
     category: CategoryDomain['name'];
     tag: VoucherTagDomain['name'];
@@ -97,7 +97,7 @@ export class VoucherDomain {
     this.termAndCondition = termAndCondition;
     this.sellStartedAt = sellStartedAt;
     this.sellExpiredAt = sellExpiredAt;
-    this.img = [...img];
+    this.images = [...images];
     this.discount = ObjectHelper.isObjectEmpty(discount)
       ? null
       : { ...discount };
@@ -115,7 +115,7 @@ export class VoucherDomain {
       'category',
       'tag',
       'price',
-      'img',
+      'images',
       'stockAmount',
       'termAndCondition',
       'usableExpiredAt',
@@ -133,7 +133,7 @@ export class VoucherDomain {
       'category',
       'tag',
       'price',
-      'img',
+      'images',
       'stockAmount',
       'usableExpiredAt',
       'sellExpiredAt',

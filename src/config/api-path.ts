@@ -72,7 +72,7 @@ export const PackageVoucherPath = {
   Base: `/${PACKAGE_CONST.NAME}`,
   GetPackageById: `:${PACKAGE_CONST.PARAM_ID}`,
   UpdatePackage: `:${PACKAGE_CONST.PARAM_ID}`,
-  PackageParamId: `:${PACKAGE_CONST.PARAM_ID}`,
+  PackageParamId: `${PACKAGE_CONST.PARAM_ID}`,
   DeletePackage: `:${PACKAGE_CONST.PARAM_ID}`,
   ImageIdParam: 'imageId',
   CreatePackageImage: '/images',

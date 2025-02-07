@@ -82,7 +82,7 @@ export class VoucherMapper {
       tag: tagName,
       category: categoryName,
       discount: voucherDiscount,
-      img: VoucherImg,
+      images: VoucherImg,
     });
 
     // Check for required fields based on the options provided
