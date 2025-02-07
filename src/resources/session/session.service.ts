@@ -44,7 +44,9 @@ export class SessionService {
   ): Promise<NullAble<SessionDomain>> {
     return this.sessionRepository.findByAccountId(accountId);
   }
-  public deleteById(sessionId: SessionDomain['id']): Promise<void> {
+  public async deleteById(sessionId: SessionDomain['id']): Promise<void> {
+    const isSessionExist = await this.sessionRepository.findById(sessionId);
+    if (!isSessionExist) return;
     return this.sessionRepository.deleteById(sessionId);
   }
 }
