@@ -22,7 +22,8 @@ import { UUIDService } from '@utils/services/uuid.service';
 
 @Injectable()
 export class OwnerService {
-  private encryptKey: string;
+  private emailEncryptKey: string;
+  private redeemPasswordEncryptKey: string;
   private hashSaltRound: number;
   constructor(
     private ownerRepository: OwnerRepository,
@@ -31,9 +32,14 @@ export class OwnerService {
     private uuidService: UUIDService,
     private mediaService: MediaService,
   ) {
-    this.encryptKey = this.configService.getOrThrow('mail.encryptKey', {
+    this.emailEncryptKey = this.configService.getOrThrow('mail.encryptKey', {
       infer: true,
     });
+
+    this.redeemPasswordEncryptKey = this.configService.getOrThrow(
+      'owner.passwordForRedeemSecret',
+      { infer: true },
+    );
 
     this.hashSaltRound = this.configService.getOrThrow('auth.bcryptSaltRound', {
       infer: true,
@@ -53,9 +59,9 @@ export class OwnerService {
         `Could not sending email as there is no any provided password.`,
       );
     }
-    const password = await CryptoService.decrypt(
+    const password = await this.cryptoService.decrypt(
       ownerEmailInfo.passwordForEmail,
-      this.encryptKey,
+      this.emailEncryptKey,
     );
     return { ...ownerEmailInfo, passwordForEmail: password };
   }
@@ -63,7 +69,13 @@ export class OwnerService {
   public async getPasswordForRedeem(): Promise<
     OwnerDomain['passwordForRedeem']
   > {
-    return this.ownerRepository.findOwnerPasswordForRedeem();
+    const passwordForRedeem =
+      await this.ownerRepository.findOwnerPasswordForRedeem();
+
+    return this.cryptoService.decrypt(
+      passwordForRedeem,
+      this.redeemPasswordEncryptKey,
+    );
   }
 
   public updateInformation(
@@ -144,9 +156,9 @@ export class OwnerService {
         'Old password is not correct.',
       );
 
-    const hashedNewPassword = await this.cryptoService.hash(
+    const hashedNewPassword = this.cryptoService.encrypt(
       newPassword,
-      this.hashSaltRound,
+      this.redeemPasswordEncryptKey,
     );
     return this.ownerRepository.updateOwnerPasswordForRedeem(hashedNewPassword);
   }

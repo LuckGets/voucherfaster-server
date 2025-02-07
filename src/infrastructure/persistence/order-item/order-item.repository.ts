@@ -1,4 +1,3 @@
-import { UpdateOrderItemDto } from '@resources/redeem/dto/update.dto';
 import {
   OrderItemDomain,
   OrderItemRedeemStatusEnum,
@@ -7,11 +6,17 @@ import {
 import { NullAble } from '@utils/types/common.type';
 import { ISortOption } from 'src/common/types/pagination.type';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
+import {
+  UpdateOrderItemDto,
+  UpdateOrderItemQrcode,
+} from '@resources/order-item/dto/update-order-item';
 
 export abstract class OrderItemRepository {
   abstract findById(
     id: OrderItemDomain['id'],
   ): Promise<NullAble<OrderItemDomain>>;
+
+  abstract findByCode(code: OrderItemDomain['code']): Promise<OrderItemDomain>;
 
   abstract findMany({
     cursor,
@@ -33,7 +38,7 @@ export abstract class OrderItemRepository {
 
   abstract update(data: UpdateOrderItemDto): Promise<OrderItemDomain>;
 
-  abstract transactionForUpdateMany(
-    data: UpdateOrderItemDto[],
+  abstract transactionForUpdateManyQrCode(
+    data: UpdateOrderItemQrcode[],
   ): Promise<OrderItemDomain[]>;
 }

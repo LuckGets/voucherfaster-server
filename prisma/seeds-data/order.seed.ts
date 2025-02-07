@@ -2,7 +2,11 @@ import { Prisma } from '@prisma/client';
 import { v7 as uuidv7 } from 'uuid';
 import { accounts } from './account.seed';
 import { voucherDiscounts, vouchers } from './voucher.seed';
-import { packageVoucherId } from './package.seed';
+import {
+  packageQuotaVouchers,
+  packageRewardVouchers,
+  packageVoucherId,
+} from './package.seed';
 import { OrderItemDomain } from '../../src/resources/order-item/domain/order-item.domain';
 
 export const orderIDArr = [
@@ -87,7 +91,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCA',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[0],
-    countNumber: 1,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-12-25T17:00:00.000Z',
   },
@@ -96,7 +99,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCB',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[1],
-    countNumber: 1,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -105,7 +107,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCC',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[1],
-    countNumber: 2,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -114,7 +115,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCD',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[2],
-    countNumber: 1,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -123,7 +123,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCE',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[3],
-    countNumber: 1,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -132,7 +131,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCF',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[3],
-    countNumber: 2,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -141,7 +139,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCG',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[3],
-    countNumber: 3,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -150,7 +147,6 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCH',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[4],
-    countNumber: 1,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
@@ -159,49 +155,60 @@ export const orderItems: Prisma.OrderItemCreateManyInput[] = [
     code: 'AB2BCI',
     qrcodeImagePath: OrderItemDomain.defaultQrCodeImagePath(),
     orderId: orderIDArr[4],
-    countNumber: 2,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
   },
 ];
 
-export const orderItemsPackage: Prisma.OrderItemPackageCreateManyInput[] = [
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[1],
-    packageId: packageVoucherId[0],
-    rewardVoucher: false,
-    voucherId: vouchers[0].id,
-  },
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[2],
-    packageId: packageVoucherId[0],
-    rewardVoucher: true,
-    voucherId: vouchers[0].id,
-  },
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[4],
-    packageId: packageVoucherId[1],
-    rewardVoucher: false,
-    voucherId: vouchers[5].id,
-  },
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[5],
-    packageId: packageVoucherId[1],
-    rewardVoucher: false,
-    voucherId: vouchers[5].id,
-  },
-  {
-    id: uuidv7(),
-    orderItemId: orderItemIDArr[6],
-    packageId: packageVoucherId[1],
-    rewardVoucher: true,
-    voucherId: vouchers[5].id,
-  },
-];
+export const orderItemsPackageQuotas: Prisma.OrderItemPackageQuotaCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[1],
+      packageId: packageVoucherId[0],
+      packageQuotaVoucherId: packageQuotaVouchers[0].id,
+    },
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[4],
+      packageId: packageVoucherId[1],
+      packageQuotaVoucherId: packageQuotaVouchers[1].id,
+    },
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[5],
+      packageId: packageVoucherId[1],
+      packageQuotaVoucherId: packageQuotaVouchers[1].id,
+    },
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[7],
+      packageId: packageVoucherId[0],
+      packageQuotaVoucherId: packageQuotaVouchers[0].id,
+    },
+  ];
+
+export const orderItemPackageRewards: Prisma.OrderItemPackageRewardCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[2],
+      packageId: packageVoucherId[0],
+      packageRewardVoucherId: packageRewardVouchers[0].id,
+    },
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[6],
+      packageId: packageVoucherId[0],
+      packageRewardVoucherId: packageRewardVouchers[1].id,
+    },
+    {
+      id: uuidv7(),
+      orderItemId: orderItemIDArr[8],
+      packageId: packageVoucherId[0],
+      packageRewardVoucherId: packageRewardVouchers[1].id,
+    },
+  ];
 
 export const orderItemsVouher: Prisma.OrderItemVoucherCreateManyInput[] = [
   {

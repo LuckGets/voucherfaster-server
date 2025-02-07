@@ -37,8 +37,6 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     description: 'โปรโมชั่นซื้อ 1 แถม 1',
     tagId: tags[1].id,
     termAndCondition: termAndConditionSeedInfo,
-    quotaVoucherId: vouchers[0].id,
-    quotaAmount: 1,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
     sellStartedAt: '2024-12-31T17:00:00.000Z',
@@ -53,8 +51,6 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     termAndCondition: termAndConditionSeedInfo,
     stockAmount: 100,
     tagId: tags[3].id,
-    quotaVoucherId: vouchers[5].id,
-    quotaAmount: 2,
     price: 1200,
     usableAt: '2024-12-31T17:00:00.000Z',
     usableExpiredAt: '2025-01-31T17:00:00.000Z',
@@ -62,6 +58,22 @@ export const packages: Prisma.PackageVoucherCreateManyInput[] = [
     sellExpiredAt: '2025-03-31T17:00:00.000Z',
   },
 ];
+
+export const packageQuotaVouchers: Prisma.PackageQuotaVoucherCreateManyInput[] =
+  [
+    {
+      id: uuidv7(),
+      packageId: packages[0].id,
+      amount: 1,
+      quotaVoucherId: vouchers[0].id,
+    },
+    {
+      id: uuidv7(),
+      packageId: packages[1].id,
+      amount: 2,
+      quotaVoucherId: vouchers[5].id,
+    },
+  ];
 
 export const packageRewardVouchers: Prisma.PackageRewardVoucherCreateManyInput[] =
   [

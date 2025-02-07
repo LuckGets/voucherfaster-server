@@ -4,6 +4,7 @@ import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { HTTPMethod } from 'src/common/http.type';
+import { IPaginationOption } from 'src/common/types/pagination.type';
 import { AuthPath, CategoryPath } from 'src/config/api-path';
 
 export class GetManyCategoryResponse extends CoreApiResponse {
@@ -61,7 +62,17 @@ export class GetManyCategoryResponse extends CoreApiResponse {
     ],
   })
   public data: CategoryDomain[];
+  @ApiProperty({
+    type: String,
+    example: `0194b6e4-49d2-7141-8f77-7e06138207fc`,
+  })
   public cursor: string;
+
+  @ApiProperty({
+    type: Number,
+    example: `1`,
+  })
+  public page: IPaginationOption['page'];
 
   constructor(
     code: GetManyCategoryResponse['HTTPStatusCode'],
@@ -69,20 +80,21 @@ export class GetManyCategoryResponse extends CoreApiResponse {
     link: GetManyCategoryResponse['links'],
     data: GetManyCategoryResponse['data'],
     cursor: GetManyCategoryResponse['cursor'],
+    page: GetManyCategoryResponse['page'],
   ) {
     super(code, message, link);
     this.data = data;
     this.cursor = cursor;
+    this.page = page;
   }
 
   public static success(
     data: CategoryDomain[],
-    message?: string,
+    page: GetManyCategoryResponse['page'],
     link?: HATEOSLink,
     statusCode?: number,
   ): GetManyCategoryResponse {
-    const responseMessage =
-      message ?? `${HTTPMethod.Get} ${CategoryPath.Base} successfully.`;
+    const responseMessage = `${HTTPMethod.Get} ${CategoryPath.Base} successfully.`;
     const responseCode = statusCode ?? HttpStatus.OK;
     const nxtPageCursor = data.length > 0 ? data[data.length - 1].id : null;
     return new GetManyCategoryResponse(
@@ -91,6 +103,7 @@ export class GetManyCategoryResponse extends CoreApiResponse {
       link,
       data,
       nxtPageCursor,
+      page,
     );
   }
 }

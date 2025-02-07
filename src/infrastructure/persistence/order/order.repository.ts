@@ -1,28 +1,39 @@
 import { AccountDomain } from '@resources/account/domain/account.domain';
 import { OrderDomain } from '@resources/order/domain/order.domain';
-import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
+import {
+  PackageQuotaVoucherDomain,
+  PackageRewardVoucherDomain,
+  PackageVoucherDomain,
+} from '@resources/package/domain/package-voucher.domain';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { NullAble } from '@utils/types/common.type';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
+import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
 
 export type CreateOrderItemVoucherInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
   voucherId: VoucherDomain['id'];
-  discount?: Pick<PackageDiscountDomain, 'id' | 'discountedPrice'>;
+  discountId?: VoucherDiscountDomain['id'];
 };
 
-export type CreateOrderItemPackageInfo = {
+export type CreateOrderItemPackageQuotaInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
-  voucherId: VoucherDomain['id'];
   packageId: PackageVoucherDomain['id'];
-  reward: boolean;
-  discount?: Pick<PackageDiscountDomain, 'id' | 'discountedPrice'>;
+  packageQuotaVoucherId: PackageQuotaVoucherDomain['id'];
+  discountId?: PackageDiscountDomain['id'];
 };
 
+export type CreateOrderItemPackageRewardInfo = {
+  id: string;
+  orderItemId: OrderItemDomain['id'];
+  packageId: PackageVoucherDomain['id'];
+  packageRewardVoucherId: PackageRewardVoucherDomain['id'];
+  discountId?: PackageDiscountDomain['id'];
+};
 export type UpdateStockAmountInfo = {
   vouchers: UpdateStockAmountEachInfo[];
   packages: UpdateStockAmountEachInfo[];
@@ -35,22 +46,23 @@ export type UpdateStockAmountEachInfo = {
 
 export type CreateOrderItemInfo = {
   id: OrderItemDomain['id'];
-  orderId: OrderDomain['id'];
   code: OrderItemDomain['code'];
   qrcodeImagePath: string;
-  countNumber: number;
   usableAt: PackageVoucherDomain['usableAt'];
   usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
 };
 
 export type CreateOrderAndTransactionInput = {
-  payload: { id: OrderDomain['id']; totalPrice: number };
+  payload: { totalPrice: number };
   accountId: AccountDomain['id'];
   updateStockAmountInfo: UpdateStockAmountInfo;
   transaction: Pick<TransactionDomain, 'status' | 'id'>;
   allOrderItemsInfo: CreateOrderItemInfo[];
   orderItemsVoucherInfo: CreateOrderItemVoucherInfo[];
-  orderItemsPackageInfo: CreateOrderItemPackageInfo[];
+  orderItemsPackageInfo: {
+    quotas: CreateOrderItemPackageQuotaInfo[];
+    rewards: CreateOrderItemPackageRewardInfo[];
+  };
 };
 
 export abstract class OrderRepository {
@@ -58,7 +70,10 @@ export abstract class OrderRepository {
     payload: CreateOrderAndTransactionInput,
   ): Promise<OrderDomain>;
 
-  abstract findById(id: string): Promise<NullAble<OrderDomain>>;
+  abstract findById(
+    id: string,
+    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
+  ): Promise<NullAble<OrderDomain>>;
 
   abstract findMany({
     cursor,

@@ -109,10 +109,9 @@ model Voucher {
   updatedAt            DateTime               @updatedAt() @map("updated_at") @db.Timestamptz(3)
   VoucherImg           VoucherImg[]
   VoucherDiscount      VoucherDiscount[]
-  PackageVoucher       PackageVoucher[]
   PackageRewardVoucher PackageRewardVoucher[]
   OrderItemVoucher     OrderItemVoucher[]
-  OrderItemPackage     OrderItemPackage[]
+  PackageQuotaVoucher  PackageQuotaVoucher[]
 
   @@map("voucher")
 }
@@ -144,44 +143,59 @@ model VoucherDiscount {
 }
 
 model PackageDiscount {
-  id               String             @id @default(uuid(7)) @db.Uuid
-  discountedPrice  Decimal            @map("discounted_price") @db.Decimal(8, 2)
-  packageId        String             @map("voucher_id") @db.Uuid
-  package          PackageVoucher     @relation(fields: [packageId], references: [id])
-  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime           @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
-  status           DiscountStatus     @default(ACTIVE)
-  OrderItemPackage OrderItemPackage[]
+  id                     String                   @id @default(uuid(7)) @db.Uuid
+  discountedPrice        Decimal                  @map("discounted_price") @db.Decimal(8, 2)
+  packageId              String                   @map("voucher_id") @db.Uuid
+  package                PackageVoucher           @relation(fields: [packageId], references: [id])
+  createdAt              DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                 @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime?                @map("deleted_at") @db.Timestamptz(3)
+  status                 DiscountStatus           @default(ACTIVE)
+  OrderItemPackageQuota  OrderItemPackageQuota[]
+  OrderItemPackageReward OrderItemPackageReward[]
 
   @@map("package_discount")
 }
 
 model PackageVoucher {
-  id                   String                 @id @default(uuid(7)) @db.Uuid
-  quotaVoucherId       String                 @map("quota_voucher_id") @db.Uuid
-  title                String                 @db.VarChar(191)
-  description          String                 @db.Text
-  voucher              Voucher                @relation(fields: [quotaVoucherId], references: [id])
-  stockAmount          Int                    @map("stock_amount") @db.Integer()
-  termAndCondition     String                 @map("term_and_condition") @db.Text
-  tagId                String                 @map("tag_id") @db.Uuid
-  voucherTag           VoucherTag             @relation(fields: [tagId], references: [id])
-  price                Decimal                @map("price") @db.Decimal(8, 2)
-  quotaAmount          Int                    @map("quota_amount") @db.SmallInt
-  sellStartedAt        DateTime               @map("sell_started_at") @db.Timestamptz(3)
-  sellExpiredAt        DateTime               @map("sell_expired_at") @db.Timestamptz(3)
-  usableAt             DateTime               @map("usable_at") @db.Timestamptz(3)
-  usableExpiredAt      DateTime               @map("usable_expired_at") @db.Timestamptz(3)
-  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime               @updatedAt() @map("updated_at") @db.Timestamptz(3)
-  status               VoucherStatus          @default(ACTIVE)
-  PackageRewardVoucher PackageRewardVoucher[]
-  OrderItemPackage     OrderItemPackage[]
-  PackageImg           PackageImg[]
-  PackageDiscount      PackageDiscount[]
+  id                     String                   @id @default(uuid(7)) @db.Uuid
+  title                  String                   @db.VarChar(191)
+  description            String                   @db.Text
+  stockAmount            Int                      @map("stock_amount") @db.Integer()
+  termAndCondition       String                   @map("term_and_condition") @db.Text
+  tagId                  String                   @map("tag_id") @db.Uuid
+  voucherTag             VoucherTag               @relation(fields: [tagId], references: [id])
+  price                  Decimal                  @map("price") @db.Decimal(8, 2)
+  sellStartedAt          DateTime                 @map("sell_started_at") @db.Timestamptz(3)
+  sellExpiredAt          DateTime                 @map("sell_expired_at") @db.Timestamptz(3)
+  usableAt               DateTime                 @map("usable_at") @db.Timestamptz(3)
+  usableExpiredAt        DateTime                 @map("usable_expired_at") @db.Timestamptz(3)
+  createdAt              DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                 @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  status                 VoucherStatus            @default(ACTIVE)
+  PackageRewardVoucher   PackageRewardVoucher[]
+  PackageImg             PackageImg[]
+  PackageDiscount        PackageDiscount[]
+  PackageQuotaVoucher    PackageQuotaVoucher[]
+  OrderItemPackageQuota  OrderItemPackageQuota[]
+  OrderItemPackageReward OrderItemPackageReward[]
 
   @@map("package_voucher")
+}
+
+model PackageQuotaVoucher {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  quotaVoucherId String         @map("quota_voucher_id") @db.Uuid
+  amount         Int            @db.Integer()
+  voucher        Voucher        @relation(fields: [quotaVoucherId], references: [id])
+  packageId      String         @map("package_id") @db.Uuid
+  package        PackageVoucher @relation(fields: [packageId], references: [id])
+
+  updatedAt             DateTime                @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?               @map("deleted_at") @db.Timestamptz(3)
+  OrderItemPackageQuota OrderItemPackageQuota[]
+
+  @@map("package_quota_voucher")
 }
 
 model PackageImg {
@@ -206,6 +220,10 @@ model PackageRewardVoucher {
   // Nullable image column
   img             String?        @db.VarChar(255)
 
+  updatedAt              DateTime                 @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime?                @map("deleted_at") @db.Timestamptz(3)
+  OrderItemPackageReward OrderItemPackageReward[]
+
   @@map("package_reward_voucher")
 }
 
@@ -227,7 +245,6 @@ model OrderItem {
   id              String   @id @default(uuid(7)) @db.Uuid
   orderId         String   @map("order_id") @db.Uuid
   order           Order    @relation(fields: [orderId], references: [id])
-  countNumber     Int      @db.Integer
   qrcodeImagePath String   @map("qrcode_image_path")
   code            String   @unique @db.VarChar(40)
   updatedAt       DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
@@ -235,9 +252,10 @@ model OrderItem {
   usableAt        DateTime @map("usable_at") @db.Timestamptz(3)
   usableExpiredAt DateTime @map("usable_expired_at") @db.Timestamptz(3)
 
-  OrderItemVoucher OrderItemVoucher?
-  OrderItemPackage OrderItemPackage?
-  RedeemOrderItem  RedeemedOrderItem[]
+  OrderItemVoucher       OrderItemVoucher?
+  RedeemOrderItem        RedeemedOrderItem[]
+  OrderItemPackageQuota  OrderItemPackageQuota?
+  OrderItemPackageReward OrderItemPackageReward?
 
   @@map("order_item")
 }
@@ -258,24 +276,42 @@ model OrderItemVoucher {
   @@map("order_item_voucher")
 }
 
-model OrderItemPackage {
-  id            String         @id @default(uuid(7)) @db.Uuid
-  orderItemId   String         @unique @map("order_item_id") @db.Uuid
-  orderItem     OrderItem      @relation(fields: [orderItemId], references: [id])
-  package       PackageVoucher @relation(fields: [packageId], references: [id])
-  packageId     String         @map("package_id") @db.Uuid
-  rewardVoucher Boolean        @map("reward_voucher")
+model OrderItemPackageQuota {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  orderItemId String         @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem      @relation(fields: [orderItemId], references: [id])
+  package     PackageVoucher @relation(fields: [packageId], references: [id])
+  packageId   String         @map("package_id") @db.Uuid
+
+  packageQuotaVoucherId String              @map("package_quota_voucher_id") @db.Uuid
+  packageQuotaVoucher   PackageQuotaVoucher @relation(fields: [packageQuotaVoucherId], references: [id])
 
   // Discount colum
   packageDiscountId String?          @map("package_discount_id") @db.Uuid
   PackageDiscount   PackageDiscount? @relation(fields: [packageDiscountId], references: [id])
 
-  voucherId String  @map("voucher_id") @db.Uuid
-  voucher   Voucher @relation(fields: [voucherId], references: [id])
+  updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
+
+  @@map("order_item_package_quota")
+}
+
+model OrderItemPackageReward {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  orderItemId String         @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem      @relation(fields: [orderItemId], references: [id])
+  package     PackageVoucher @relation(fields: [packageId], references: [id])
+  packageId   String         @map("package_id") @db.Uuid
+
+  packageRewardVoucherId String               @map("package_reward_voucher_id") @db.Uuid
+  packageRewardVoucher   PackageRewardVoucher @relation(fields: [packageRewardVoucherId], references: [id])
+
+  // Discount colum
+  packageDiscountId String?          @map("package_discount_id") @db.Uuid
+  PackageDiscount   PackageDiscount? @relation(fields: [packageDiscountId], references: [id])
 
   updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
 
-  @@map("order_item_package")
+  @@map("order_item_package_reward")
 }
 
 model RedeemedOrderItem {

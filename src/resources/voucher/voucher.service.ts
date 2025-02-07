@@ -410,7 +410,7 @@ export class VoucherService {
         `Voucher ID: ${data.voucherImgId} could not be found on this server.`,
       );
 
-    const voucherImg = voucher.img.find(
+    const voucherImg = voucher.images.find(
       (item) => item.id === data.voucherImgId,
     );
     if (!voucherImg)
@@ -488,7 +488,7 @@ export class VoucherService {
         `Voucher ID: ${voucherId} could not be found on this server.`,
       );
 
-    const voucherImg = voucher.img.find((item) => item.id === imgId);
+    const voucherImg = voucher.images.find((item) => item.id === imgId);
 
     if (!voucherImg)
       throw ErrorApiResponse.notFoundRequest(

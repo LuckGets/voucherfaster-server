@@ -6,6 +6,7 @@ import {
   VoucherTag,
   Category,
   PackageDiscount,
+  PackageQuotaVoucher,
 } from '@prisma/client';
 import {
   PackageDiscountDomain,
@@ -25,10 +26,11 @@ type NestedVoucherTagAndCategory = Voucher & {
   };
 };
 
-type AllPackageVoucherEntityInformation = PackageVoucher & {
+export type AllPackageVoucherEntityInformation = PackageVoucher & {
   voucherTag?: VoucherTag & {
     category?: Pick<Category, 'id' | 'name'>;
   };
+  PackageQuotaVoucher?: Partial<PackageQuotaVoucher>[];
   PackageRewardVoucher?: (Partial<PackageRewardVoucher> & {
     voucher?: NestedVoucherTagAndCategory;
   })[];
@@ -48,6 +50,7 @@ export class PackageVoucherMapper {
       PackageImg,
       PackageRewardVoucher,
       PackageDiscount,
+      PackageQuotaVoucher,
       ...packageInfo
     } = packageVoucherEntity;
 
@@ -66,9 +69,10 @@ export class PackageVoucherMapper {
         throw new Error(
           `Package voucher should have only one currently active discount but package ID: ${packageVoucherEntity.id} has more than one discount.`,
         );
-      const { discountedPrice, status } = PackageDiscount[0];
+      const { discountedPrice, status, id } = PackageDiscount[0];
       const discountStatus = PackageDiscountStatusEnum[status];
       packageDiscount = new PackageDiscountDomain({
+        id,
         discountedPrice: discountedPrice.toNumber(),
         status: discountStatus,
       });
@@ -98,8 +102,16 @@ export class PackageVoucherMapper {
 
     if (!options.allInfo) delete packageInfo.termAndCondition;
 
+    const quotaVouchers: PackageVoucherDomain['quotaVouchers'] =
+      PackageQuotaVoucher.map((item) => ({
+        id: item.id,
+        voucherId: item.quotaVoucherId,
+        amount: item.amount,
+      }));
+
     const packageVoucherDomain = new PackageVoucherDomain({
       ...packageInfo,
+      quotaVouchers,
       price: packageInfo.price.toNumber(),
       status: PackageStatusEnum[packageInfo.status],
       tag: tagName,

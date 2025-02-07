@@ -4,6 +4,8 @@ import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsDateGreaterOrEqual } from '@utils/validators/IsDateGreaterThan';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayContains,
+  ArrayNotEmpty,
   IsArray,
   IsDate,
   IsNotEmpty,
@@ -20,11 +22,23 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
 import { plainArrayTransformer } from '@utils/transformer/plainArrayTransformer';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { IsFutureDate } from '@utils/validators/IsFutureDate';
 
 export const PACKAGE_FILE_FIELD = {
   MAIN_IMG: 'mainImg',
   PACKAGE_IMG: 'packageImg',
 } as const;
+
+export class CreateQuotaVoucherDto {
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
+  @IsUUID(7)
+  voucherId: VoucherDomain['id'];
+  @ApiProperty({ type: Number })
+  @IsNotEmpty()
+  @IsPositive()
+  amount: number;
+}
 
 export class CreateRewardVoucherDto {
   @ApiProperty({ type: String })
@@ -38,13 +52,16 @@ export class CreateRewardVoucherDto {
 export class CreatePackageVoucherDto {
   @IsUUID(7)
   tagId: VoucherTagDomain['id'];
-  @IsUUID(7)
-  @ApiProperty({ type: () => String, description: 'ID of the quota voucher' })
-  quotaVoucherId: VoucherDomain['id'];
-  @ApiProperty({ type: Number })
-  @IsPositive()
-  @Transform(({ value }) => Number(value))
-  quotaAmount: number;
+  @ApiProperty({
+    type: () => [CreateQuotaVoucherDto],
+    description: 'ID of the quota voucher',
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @Transform(({ value }) => plainArrayTransformer(value, CreateQuotaVoucherDto))
+  @ValidateNested({ each: true })
+  @Type(() => CreateQuotaVoucherDto)
+  quotaVouchers: CreateQuotaVoucherDto[];
   @ApiProperty({ type: Number })
   @IsPositive()
   @Transform(({ value }) => Number(value))
@@ -60,8 +77,9 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) =>
     plainArrayTransformer(value, CreateRewardVoucherDto),
   )
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
-  @Type(() => Object)
+  @Type(() => CreateRewardVoucherDto)
   rewardVouchers: CreateRewardVoucherDto[];
   @ApiProperty({ type: String })
   @IsString()
@@ -82,6 +100,7 @@ export class CreatePackageVoucherDto {
   @Transform(({ value }) => new Date(value))
   usableAt: Date;
   @ApiProperty({ type: Date })
+  @IsFutureDate()
   @IsDateGreaterOrEqual('usableAt')
   @Transform(({ value }) => new Date(value))
   usableExpiredAt: Date;
@@ -221,8 +240,8 @@ export class CreatePackageVoucherResponse extends CoreApiResponse {
       stockAmount: 100,
       title: 'จัดเต้าหุ้สอง แถม เบอร์เกอร์กับปลาทอด',
       termAndCondition: 'แซ่บลำแซ่บลำ',
-      usableAt: '2024-12-31T17:00:00.000Z',
-      usableExpiredAt: '2025-01-31T17:00:00.000Z',
+      usableAt: '2025-01-31T17:00:00.000Z',
+      usableExpiredAt: '2025-12-31T17:00:00.000Z',
       createdAt: '2025-02-02T07:01:56.158Z',
       updatedAt: '2025-02-02T07:01:56.158Z',
       rewardVouchers: [

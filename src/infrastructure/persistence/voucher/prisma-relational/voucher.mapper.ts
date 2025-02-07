@@ -66,6 +66,7 @@ export class VoucherMapper {
       const [activeVoucherDiscount] = VoucherDiscount;
       if (!activeVoucherDiscount.deletedAt)
         voucherDiscount = new VoucherDiscountDomain({
+          id: activeVoucherDiscount?.id,
           discountedPrice: activeVoucherDiscount?.discountedPrice.toNumber(),
           status: VoucherDiscountStatusEnum[activeVoucherDiscount?.status],
         });
@@ -81,7 +82,7 @@ export class VoucherMapper {
       tag: tagName,
       category: categoryName,
       discount: voucherDiscount,
-      img: VoucherImg,
+      images: VoucherImg,
     });
 
     // Check for required fields based on the options provided

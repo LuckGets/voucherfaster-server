@@ -14,7 +14,7 @@ export class IsFutureDateValidator implements ValidatorConstraintInterface {
     if (!(value instanceof Date)) {
       return false; // Ensure the value is a Date instance
     }
-    return value >= new Date(); // Check if the date is in the future
+    return value >= new Date(); // Check if the date is in the future or equal current date time.
   }
 
   defaultMessage(args: ValidationArguments): string {

@@ -61,23 +61,19 @@ export const CategoryPath = {
   CategoryQuery: 'category',
 } as const;
 
-// const VoucherDiscountPathName = 'discount';
-
-// export const VoucherDiscountPath = {
-//   Name: `${VoucherDiscountPathName}`,
-//   Base: `/${VoucherDiscountPathName}`,
-//   DeleteDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
-//   CreateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}`,
-//   UpdateDiscount: `:${VoucherPath.VoucherIdParm}/${VoucherDiscountPathName}/:promotionId`,
-// } as const;
+export const PACKAGE_CONST = {
+  NAME: 'packages',
+  PARAM_ID: 'packageId',
+  QUOTA_PARAM_ID: 'quotaId',
+  REWARD_PARAM_ID: 'rewardId',
+} as const;
 
 export const PackageVoucherPath = {
-  Name: 'packages',
-  Base: '/packages',
-  GetPackageById: ':packageId',
-  UpdatePackage: ':packageId',
-  PackageParamId: 'packageId',
-  DeletePackage: ':packageId',
+  Base: `/${PACKAGE_CONST.NAME}`,
+  GetPackageById: `:${PACKAGE_CONST.PARAM_ID}`,
+  UpdatePackage: `:${PACKAGE_CONST.PARAM_ID}`,
+  PackageParamId: `${PACKAGE_CONST.PARAM_ID}`,
+  DeletePackage: `:${PACKAGE_CONST.PARAM_ID}`,
   ImageIdParam: 'imageId',
   CreatePackageImage: '/images',
   UpdatePackageImage: '/images/:imageId',
@@ -87,6 +83,12 @@ export const PackageVoucherPath = {
   GetPackageSellDateQuery: 'sd',
   GetPackageStatusQuery: 's',
   GetPackageDiscountQuery: 'd',
+  AddNewQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quotas`,
+  UpdateQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quotas`,
+  DeleteQuotaVoucher: `:${PACKAGE_CONST.PARAM_ID}/quotas/:${PACKAGE_CONST.QUOTA_PARAM_ID}`,
+  AddNewRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards`,
+  UpdateRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards`,
+  DeleteRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards/:${PACKAGE_CONST.REWARD_PARAM_ID}`,
 } as const;
 
 export const UsableDaysPath = {
@@ -104,16 +106,22 @@ export const OrderPath = {
   ProcessPayment: ':orderId/payment',
 } as const;
 
+export const ORDER_ITEM_CONST = {
+  NAME: 'order-items',
+  PARAM_ID: 'itemId',
+  SEARCH: 'search',
+};
+
 export const OrderItemPath = {
-  Name: 'order-items',
+  Name: `${ORDER_ITEM_CONST.NAME}`,
   Base: '/order-items',
-  GetById: '/:itemId',
-  GetBySearchContent: '/search/:search',
-  OrderItemIdParm: 'itemId',
-  SortQuery: 'sort',
-  CategoryQuery: 'category',
-  StatusQuery: 'status',
-  TypeQuery: 'type',
+  GetById: `/:${ORDER_ITEM_CONST.PARAM_ID}`,
+  GetBySearchContent: `/search/:${ORDER_ITEM_CONST.SEARCH}`,
+  UpdateOrderItem: `/:${ORDER_ITEM_CONST.PARAM_ID}`,
+  SortQuery: 's',
+  CategoryQuery: 'c',
+  StatusQuery: 's',
+  TypeQuery: 't',
 };
 
 export const RedeemItemPath = {

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
-  CreateOrderAndTransactionInput,
   CreateOrderItemInfo,
-  CreateOrderItemPackageInfo,
+  CreateOrderItemPackageQuotaInfo,
+  CreateOrderItemPackageRewardInfo,
   CreateOrderItemVoucherInfo,
   OrderRepository,
   UpdateStockAmountEachInfo,
@@ -14,7 +14,11 @@ import { AccountDomain } from '@resources/account/domain/account.domain';
 import { VoucherService } from '@resources/voucher/voucher.service';
 import { PackageVoucherService } from '@resources/package/package.service';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
-import { PackageVoucherDomain } from '@resources/package/domain/package-voucher.domain';
+import {
+  PackageQuotaVoucherDomain,
+  PackageRewardVoucherDomain,
+  PackageVoucherDomain,
+} from '@resources/package/domain/package-voucher.domain';
 import { ErrorApiResponse } from 'src/common/core-api-response';
 import { UUIDService } from '@utils/services/uuid.service';
 import { OrderItemDomain } from '../order-item/domain/order-item.domain';
@@ -46,7 +50,10 @@ type OrderItemVoucherContainer = {
 
 type OrderItemPackageContainer = {
   type: 'package';
-  items: CreateOrderItemPackageInfo[];
+  items: {
+    quotas: CreateOrderItemPackageQuotaInfo[];
+    rewards: CreateOrderItemPackageRewardInfo[];
+  };
 };
 
 type OrderItemsProductList =
@@ -92,7 +99,7 @@ export class OrderService {
     );
 
     return this.orderRepository.createOrderAndTransaction({
-      payload: { id: String(this.uuidService.make()), totalPrice },
+      payload: { totalPrice },
       allOrderItemsInfo: createOrderItemsWithAssignedCode,
       accountId,
       updateStockAmountInfo,
@@ -121,8 +128,6 @@ export class OrderService {
     totalPrice: number;
     updateStockAmountInfo: UpdateStockAmountInfo;
   }> {
-    const creatingOrderId = String(this.uuidService.make());
-
     const allOrderItemsInfo: CreateOrderItemInfo[] = [];
 
     const updateStockAmountInfo: UpdateStockAmountInfo = {
@@ -138,7 +143,10 @@ export class OrderService {
     };
     const orderItemsPackageList: OrderItemPackageContainer = {
       type: 'package',
-      items: [],
+      items: {
+        quotas: [],
+        rewards: [],
+      },
     };
 
     const allItemsInfoPromisesArr = this.prepareItemInfoAndMutateDataArr({
@@ -146,7 +154,6 @@ export class OrderService {
       allOrderItemsId,
       allOrderItemsInfo,
       updateStockAmountInfo,
-      orderId: creatingOrderId,
       orderItemsVoucherList,
       orderItemsPackageList,
     });
@@ -202,6 +209,11 @@ export class OrderService {
       );
     }
 
+    if (new Date(item.sellStartedAt) > new Date())
+      throw ErrorApiResponse.conflictRequest(
+        `The voucher ID: ${item.id} was not ready for sell yet.`,
+      );
+
     if (new Date(item.sellExpiredAt) < new Date())
       throw ErrorApiResponse.conflictRequest(
         `The voucher ID: ${item.id} was out of saled since ${item.sellExpiredAt.toLocaleString()}.`,
@@ -232,7 +244,6 @@ export class OrderService {
     updateStockAmountInfo,
     orderItemsVoucherList,
     orderItemsPackageList,
-    orderId,
   }: {
     items: CreateOrderItem[];
     allOrderItemsInfo: CreateOrderItemInfo[];
@@ -240,7 +251,6 @@ export class OrderService {
     orderItemsVoucherList: OrderItemVoucherContainer;
     orderItemsPackageList: OrderItemPackageContainer;
     updateStockAmountInfo: UpdateStockAmountInfo;
-    orderId: OrderDomain['id'];
   }): Promise<number>[] {
     return items.map(async (item) => {
       let itemPrice = 0;
@@ -263,7 +273,6 @@ export class OrderService {
             itemAmount: item.amount,
             allOrderItemsId,
             appliedDiscountStatus: VoucherDiscountStatusEnum.ACTIVE,
-            orderId,
           });
           break;
         }
@@ -284,7 +293,6 @@ export class OrderService {
             itemAmount: item.amount,
             allOrderItemsId,
             appliedDiscountStatus: PackageDiscountStatusEnum.ACTIVE,
-            orderId,
           });
           break;
         }
@@ -298,6 +306,8 @@ export class OrderService {
     });
   }
 
+  // PREPARE ITEM INFO AND DATA ARRAY PROCESS
+  // -------------------------------------------------------------------- //
   private findEachItemDataAndMutateTotalSumAndData({
     itemAmount,
     currentSum,
@@ -307,7 +317,6 @@ export class OrderService {
     allOrderItemsId,
     orderItemsProductList,
     appliedDiscountStatus,
-    orderId,
   }: {
     itemAmount: number;
     currentSum: number;
@@ -319,27 +328,19 @@ export class OrderService {
     appliedDiscountStatus:
       | VoucherDiscountStatusEnum
       | PackageDiscountStatusEnum;
-    orderId: OrderDomain['id'];
   }): number {
     // Calculate price part
 
-    const { discount, usableAt, usableExpiredAt, price } = itemInfo;
-    let totalPriceOfItems: number;
-    const isDiscountApplied =
-      this.productDomainHelper.checkDiscountAvailability(
+    const { usableAt, usableExpiredAt, discount } = itemInfo;
+
+    const { isDiscountApplied, totalPrice } =
+      this.calculateTotalPriceAndDiscount(
         itemInfo,
+        itemAmount,
         appliedDiscountStatus,
       );
-    if (isDiscountApplied) {
-      totalPriceOfItems = CalculatorService.multiply(
-        discount.discountedPrice,
-        itemAmount,
-      );
-    } else {
-      totalPriceOfItems = CalculatorService.multiply(price, itemAmount);
-    }
 
-    currentSum = CalculatorService.add(currentSum, totalPriceOfItems);
+    currentSum = CalculatorService.add(currentSum, totalPrice);
     // FINISH Calculate price part
 
     if (
@@ -348,148 +349,47 @@ export class OrderService {
     ) {
       // Ensure itemList is an object (not an array)
 
-      // console.log(itemInfo.rewardVouchers);
-      for (const item of itemInfo.rewardVouchers) {
-        const { amount, voucherId } = item;
-
-        const totalItemAmount = CalculatorService.multiply(itemAmount, amount);
-
-        const orderItemReward: CreateOrderItemInfo = {
-          id: null,
-          orderId,
-          countNumber: null,
-          qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
-          code: null,
-          usableAt,
-          usableExpiredAt,
-        };
-
-        const orderItemDetail: CreateOrderItemPackageInfo = {
-          id: String(this.uuidService.make()),
-          orderItemId: null,
-          packageId: itemInfo.id,
-          voucherId,
-          reward: true,
-        };
-
-        if (isDiscountApplied) {
-          orderItemDetail.discount = {
-            id: discount.id,
-            discountedPrice: discount.discountedPrice,
-          };
-        }
-
-        const orderItemsPackageRewardArr: CreateOrderItemPackageInfo[] =
-          Array(totalItemAmount).fill(orderItemDetail);
-        // OrderItem array
-        const rewardsVoucherArr: CreateOrderItemInfo[] = Array(totalItemAmount)
-          .fill(orderItemReward)
-          .map((item, index) => {
-            const orderItemId = String(this.uuidService.make());
-            item.id = orderItemId;
-            item.countNumber = index + 1;
-            orderItemsPackageRewardArr[index].orderItemId = orderItemId;
-            allOrderItemsId.push(item.id);
-            return item;
-          });
-
-        itemList.push(...rewardsVoucherArr);
-        orderItemsProductList.items.push(...orderItemsPackageRewardArr);
-      }
-
-      const totalItemAmount = CalculatorService.multiply(
+      // process quota vouchers
+      this.processVoucherForPackageList({
+        vouchers: itemInfo.quotaVouchers,
+        orderItemsProductList,
+        allOrderItemsId,
+        discount,
+        isDiscountApplied,
         itemAmount,
-        itemInfo.quotaAmount,
-      );
-
-      const quotaVoucherDetail: CreateOrderItemPackageInfo = {
-        id: String(this.uuidService.make()),
-        orderItemId: null,
+        itemList,
         packageId: itemInfo.id,
-        voucherId: itemInfo.quotaVoucherId,
-        reward: false,
-      };
-
-      if (isDiscountApplied) {
-        quotaVoucherDetail.discount = {
-          id: discount.id,
-          discountedPrice: discount.discountedPrice,
-        };
-      }
-
-      const orderItemsPackageQuotaArr: CreateOrderItemPackageInfo[] =
-        Array(totalItemAmount).fill(quotaVoucherDetail);
-
-      const quotaVoucher: CreateOrderItemInfo = {
-        id: null,
-        code: null,
-        countNumber: null,
         usableAt,
         usableExpiredAt,
-        orderId,
-        qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
-      };
-      const quotaVoucherArr: CreateOrderItemInfo[] = Array(totalItemAmount)
-        .fill(quotaVoucher)
-        .map((item, index): CreateOrderItemInfo => {
-          const orderItemId = String(this.uuidService.make());
-          item.id = orderItemId;
-          item.countNumber = index + 1;
-          orderItemsPackageQuotaArr[index].orderItemId = orderItemId;
-          allOrderItemsId.push(item.id);
-          return item;
-        });
-      itemList.push(...quotaVoucherArr);
-      orderItemsProductList.items.push(...orderItemsPackageQuotaArr);
-    } else {
-      if (!Array.isArray(itemList))
-        throw new Error('Expected an array, but got an object.');
+      });
 
-      if (orderItemsProductList.type !== 'voucher')
-        throw new Error(
-          'Expected an order items voucher array, but got an other-type instead.',
-        );
-
-      const orderItemVoucherInfo: CreateOrderItemVoucherInfo = {
-        id: String(this.uuidService.make()),
-        orderItemId: null,
-        voucherId: itemInfo.id,
-      };
-
-      if (isDiscountApplied) {
-        orderItemVoucherInfo.discount = {
-          id: discount.id,
-          discountedPrice: discount.discountedPrice,
-        };
-      }
-
-      const orderItemVoucherArr: CreateOrderItemVoucherInfo[] =
-        Array(itemAmount).fill(orderItemVoucherInfo);
-
-      const orderItemInfo: CreateOrderItemInfo = {
-        id: null,
-        code: null,
-        countNumber: null,
+      this.processVoucherForPackageList({
+        vouchers: itemInfo.rewardVouchers,
+        allOrderItemsId,
+        discount,
+        isDiscountApplied,
+        itemAmount,
+        itemList,
+        orderItemsProductList,
+        packageId: itemInfo.id,
         usableAt,
         usableExpiredAt,
-        orderId,
-        qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
-      };
-
-      itemList.push(
-        ...Array(itemAmount)
-          .fill(orderItemInfo)
-          .map((item, index) => {
-            const orderItemId = String(this.uuidService.make());
-            item.id = orderItemId;
-            item.countNumber = index + 1;
-            orderItemVoucherArr[index].orderItemId = orderItemId;
-            allOrderItemsId.push(item.id);
-            return item;
-          }),
-      );
-
-      orderItemsProductList.items.push(...orderItemVoucherArr);
+      });
+    } else if (
+      itemInfo instanceof VoucherDomain &&
+      orderItemsProductList.type === 'voucher'
+    ) {
+      this.processVoucherItem({
+        itemInfo,
+        discount,
+        isDiscountApplied,
+        itemAmount,
+        allOrderItemsId,
+        itemList,
+        orderItemsProductList,
+        usableAt,
+        usableExpiredAt,
+      });
     }
 
     // Finding if any items is duplicate
@@ -514,6 +414,211 @@ export class OrderService {
 
     return currentSum;
   }
+
+  /**
+   * Calculates the total price for the items and determines if a discount is applied.
+   */
+  private calculateTotalPriceAndDiscount(
+    itemInfo: AnyItemDomain,
+    itemAmount: number,
+    appliedDiscountStatus:
+      | VoucherDiscountStatusEnum
+      | PackageDiscountStatusEnum,
+  ): {
+    totalPrice: number;
+    isDiscountApplied: boolean;
+  } {
+    const { discount, price } = itemInfo;
+    const isDiscountApplied =
+      this.productDomainHelper.checkDiscountAvailability(
+        itemInfo,
+        appliedDiscountStatus,
+      );
+
+    if (isDiscountApplied) {
+      if (!discount.id)
+        throw ErrorApiResponse.internalServerError(
+          'Discount ID not found while creating order.',
+        );
+    }
+
+    const totalPrice = CalculatorService.multiply(
+      isDiscountApplied ? discount.discountedPrice : price,
+      itemAmount,
+    );
+
+    return {
+      totalPrice,
+      isDiscountApplied,
+    };
+  }
+
+  /**
+   * Handles the common logic for processing a list of vouchers in a package.
+   */
+  private processVoucherForPackageList({
+    vouchers,
+    itemAmount,
+    packageId,
+    allOrderItemsId,
+    itemList,
+    orderItemsProductList,
+    isDiscountApplied,
+    discount,
+    usableAt,
+    usableExpiredAt,
+  }: {
+    vouchers: PackageQuotaVoucherDomain[] | PackageRewardVoucherDomain[];
+    itemAmount: number;
+    packageId: string;
+    allOrderItemsId: OrderItemDomain['id'][];
+    itemList: CreateOrderItemInfo[];
+    orderItemsProductList: OrderItemPackageContainer;
+    isDiscountApplied: boolean;
+    discount: AnyItemDomain['discount'];
+    usableAt: PackageVoucherDomain['usableAt'];
+    usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
+  }): void {
+    vouchers.forEach((voucher) => {
+      const totalItemAmount = CalculatorService.multiply(
+        itemAmount,
+        voucher.amount,
+      );
+
+      const orderItemTemplate: CreateOrderItemInfo = {
+        id: null,
+        qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
+        code: null,
+        usableAt,
+        usableExpiredAt,
+      };
+      let orderItemDetail;
+      let packageInfoArr;
+
+      if (voucher instanceof PackageRewardVoucherDomain) {
+        orderItemDetail = {
+          id: null,
+          orderItemId: null,
+          packageId,
+          rewardVoucherId: voucher.id,
+        };
+
+        packageInfoArr = Array.from({ length: totalItemAmount }, () => ({
+          ...orderItemDetail,
+          id: String(this.uuidService.make()),
+        }));
+
+        orderItemsProductList.items.rewards.push(...packageInfoArr);
+      } else if (voucher instanceof PackageQuotaVoucherDomain) {
+        orderItemDetail = {
+          id: null,
+          orderItemId: null,
+          packageId,
+          quotaVoucherId: voucher.id,
+        };
+
+        packageInfoArr = Array.from({ length: totalItemAmount }, () => ({
+          ...orderItemDetail,
+          id: String(this.uuidService.make()),
+        }));
+
+        orderItemsProductList.items.quotas.push(...packageInfoArr);
+      }
+
+      if (isDiscountApplied) {
+        orderItemDetail.discountId = discount.id;
+      }
+
+      const orderItems: CreateOrderItemInfo[] = Array.from(
+        { length: totalItemAmount },
+        (_, index) => {
+          const newItem = { ...orderItemTemplate };
+          const orderItemId = String(this.uuidService.make());
+          newItem.id = orderItemId;
+          packageInfoArr[index].orderItemId = orderItemId;
+          allOrderItemsId.push(newItem.id);
+          return newItem;
+        },
+      );
+
+      itemList.push(...orderItems);
+    });
+  }
+
+  private processVoucherItem({
+    itemList,
+    orderItemsProductList,
+    itemInfo,
+    itemAmount,
+    isDiscountApplied,
+    allOrderItemsId,
+    discount,
+    usableAt,
+    usableExpiredAt,
+  }: {
+    itemList: CreateOrderItemInfo[];
+    orderItemsProductList: OrderItemVoucherContainer;
+    allOrderItemsId: OrderItemDomain['id'][];
+    itemInfo: VoucherDomain;
+    itemAmount: number;
+    isDiscountApplied: boolean;
+    discount: AnyItemDomain['discount'];
+    usableAt: VoucherDomain['usableAt'];
+    usableExpiredAt: VoucherDomain['usableExpiredAt'];
+  }) {
+    if (!Array.isArray(itemList))
+      throw new Error('Expected an array, but got an object.');
+
+    if (orderItemsProductList.type !== 'voucher')
+      throw new Error(
+        'Expected an order items voucher array, but got an other-type instead.',
+      );
+
+    const orderItemVoucherInfo: CreateOrderItemVoucherInfo = {
+      id: null,
+      orderItemId: null,
+      voucherId: itemInfo.id,
+    };
+
+    if (isDiscountApplied) {
+      orderItemVoucherInfo.discountId = discount.id;
+    }
+
+    const orderItemVoucherArr: CreateOrderItemVoucherInfo[] = Array.from(
+      { length: itemAmount },
+      () => {
+        return {
+          ...orderItemVoucherInfo,
+          id: String(this.uuidService.make()),
+        };
+      },
+    );
+
+    const orderItemInfo: CreateOrderItemInfo = {
+      id: null,
+      code: null,
+      usableAt,
+      usableExpiredAt,
+      qrcodeImagePath: OrderItemDomain.waitForUploadQrCodeImagePath(),
+    };
+
+    itemList.push(
+      ...Array.from({ length: itemAmount }, (_, index) => {
+        // Create a fresh copy of orderItemInfo for each element
+        const newItem = { ...orderItemInfo };
+        const orderItemId = String(this.uuidService.make());
+        newItem.id = orderItemId;
+        orderItemVoucherArr[index].orderItemId = orderItemId;
+        allOrderItemsId.push(newItem.id);
+        return newItem;
+      }),
+    );
+
+    orderItemsProductList.items.push(...orderItemVoucherArr);
+  }
+
+  // FINISH PREPARE ITEM INFO AND DATA ARRAY PROCESS
+  // -------------------------------------------------------------------- //
 
   private async generateCodeForOrderItem(
     numsOfItems: number,
@@ -578,13 +683,14 @@ export class OrderService {
 
   public async getOrderById(
     id: OrderDomain['id'],
+    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
   ): Promise<NullAble<OrderDomain>> {
     if (!id || !isUUID(id))
       throw ErrorApiResponse.badRequest(
         'Provided parameter for order id is invaid.',
       );
 
-    const order = await this.orderRepository.findById(id);
+    const order = await this.orderRepository.findById(id, { cursor, take });
     if (!order)
       throw ErrorApiResponse.notFoundRequest(
         `Order ID: ${id} could not be found.`,
@@ -671,7 +777,7 @@ export class OrderService {
         new OrderSuccessEvent(orderAndTransaction.account.email, allOrderItems),
       );
 
-      return this.orderRepository.findById(orderAndTransaction.id);
+      return this.orderRepository.findById(orderAndTransaction.id, {});
     } catch (err) {
       console.error(err);
       throw ErrorApiResponse.conflictRequest(err.message);
@@ -681,7 +787,7 @@ export class OrderService {
   private async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
   ): Promise<OrderDomain> {
-    const order = await this.orderRepository.findById(orderId);
+    const order = await this.orderRepository.findById(orderId, { take: 0 });
 
     if (!order)
       throw ErrorApiResponse.notFoundRequest(

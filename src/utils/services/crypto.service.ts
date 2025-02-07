@@ -37,6 +37,10 @@ export class CryptoService {
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
 
+  public encrypt = CryptoService.encrypt;
+
+  public decrypt = CryptoService.decrypt;
+
   public static async decrypt(data: string, key: string): Promise<string> {
     try {
       const algorithm = 'aes-256-gcm';

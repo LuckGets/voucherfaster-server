@@ -9,9 +9,11 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { MULTER_UPLOAD_CONSTANT } from 'src/config/upload.config';
 import { ProductDomainHelper } from 'src/common/product.helper';
+import { CategoryModule } from '@resources/category/category.module';
 
 @Module({
   imports: [
+    CategoryModule,
     PackageVoucherRelationalPersistenceModule,
     VoucherModule,
     MulterModule.register({

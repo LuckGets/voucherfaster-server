@@ -7,7 +7,12 @@ import {
   UpdateStockAmountInfo,
 } from '../order.repository';
 import { ErrorApiResponse } from 'src/common/core-api-response';
-import { DiscountStatus, Prisma } from '@prisma/client';
+import {
+  DiscountStatus,
+  OrderItem,
+  Prisma,
+  TransactionStatus,
+} from '@prisma/client';
 import { OrderMapper } from './order.mapper';
 import { NullAble } from '@utils/types/common.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
@@ -17,13 +22,23 @@ import {
 } from '@resources/transaction/domain/transaction.domain';
 import { TimeAdderHelper } from '@utils/services/time-adder.helper';
 import { OrderDomain } from '@resources/order/domain/order.domain';
+import { create } from 'domain';
+import { ObjectHelper } from '@utils/services/object.helper';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
+import { OrderItemRelationPrismaORMRepository } from '../../order-item/prisma-relational/order-item.repository';
+import { OrderItemRelationalPrismaORMStatic } from '../../order-item/prisma-relational/static-class/order-item-static.repository';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultOrderItemLimitPaginationForFindMany: number = 1;
 
-  private voucherDiscountIncludeQuery: Prisma.VoucherInclude = {
-    VoucherDiscount: true,
+  private defaultOrderItemLimitPaginationForOneOrder: number = 10;
+
+  private packageDiscountIncludeQuery: Prisma.PackageDiscountSelect = {
+    id: true,
+    discountedPrice: true,
+    status: true,
+    deletedAt: true,
   };
 
   private voucherCategoryIncludeQuery: Prisma.VoucherInclude = {
@@ -47,43 +62,16 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     },
   };
 
-  private orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
-    voucher: {
-      include: {
-        ...this.voucherDiscountIncludeQuery,
-        ...this.voucherImgIncludeQuery,
-        ...this.voucherCategoryIncludeQuery,
-      },
-    },
-  };
+  private copyOrderItemIncludeQuery() {
+    const copiedQuery = {
+      ...OrderItemRelationalPrismaORMStatic.orderItemIncludeQuery,
+    };
+    delete copiedQuery.order;
+    return copiedQuery;
+  }
 
-  private orderItemPackageIncludeQuery: Prisma.OrderItemPackageInclude = {
-    package: {
-      include: {
-        PackageImg: {
-          where: {
-            mainImg: true,
-          },
-          select: {
-            id: true,
-            imgPath: true,
-            mainImg: true,
-          },
-        },
-        PackageDiscount: true,
-        voucher: {
-          include: this.voucherCategoryIncludeQuery,
-        },
-        PackageRewardVoucher: {
-          include: {
-            voucher: {
-              include: this.voucherCategoryIncludeQuery,
-            },
-          },
-        },
-      },
-    },
-  };
+  private orderItemIncludeQuery: Prisma.OrderItemInclude =
+    this.copyOrderItemIncludeQuery();
 
   private accountIncludeQuery: Prisma.AccountDefaultArgs = {
     select: {
@@ -99,36 +87,34 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private findManyIncludeQuery: Prisma.OrderInclude = {
     OrderItem: {
       take: this.defaultOrderItemLimitPaginationForFindMany,
-      include: {
-        OrderItemVoucher: {
-          include: this.orderItemVoucherIncludeQuery,
-        },
-        OrderItemPackage: {
-          include: this.orderItemPackageIncludeQuery,
-        },
-      },
+      include: this.orderItemIncludeQuery,
     },
     account: this.accountIncludeQuery,
   };
 
-  private allDetailIncludeQuery: Prisma.OrderInclude = {
-    OrderItem: {
-      include: {
-        OrderItemVoucher: {
-          include: this.orderItemVoucherIncludeQuery,
-        },
-        OrderItemPackage: {
-          include: this.orderItemPackageIncludeQuery,
+  private allDetailIncludeQuery({
+    take,
+    cursor,
+  }: {
+    take?: number;
+    cursor?: OrderItemDomain['id'];
+  }): Prisma.OrderInclude {
+    const baseQuery: Prisma.OrderInclude = {
+      OrderItem: {
+        cursor: cursor ? { id: cursor } : null,
+        take: take ?? this.defaultOrderItemLimitPaginationForOneOrder,
+        include: this.orderItemIncludeQuery,
+      },
+      Transaction: {
+        include: {
+          transactionSystem: true,
         },
       },
-    },
-    Transaction: {
-      include: {
-        transactionSystem: true,
-      },
-    },
-    account: this.accountIncludeQuery,
-  };
+      account: this.accountIncludeQuery,
+    };
+
+    return baseQuery;
+  }
 
   private nonDeleteWhereQuery: Prisma.OrderWhereInput = {
     deletedAt: {
@@ -181,25 +167,43 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       const orderAndTransaction = await this.prismaService.$transaction(
         async (tx) => {
           // Generate the update stock transaction promise
+
           const updateStockTransactionPromise =
             this.generateUpdateStockAmountTransactionPromise(
               tx,
               updateStockAmountInfo,
             );
 
-          const createOrderItemProductPromise = [
-            orderItemsVoucherInfo.length > 0
-              ? tx.orderItemVoucher.createMany({ data: orderItemsVoucherInfo })
-              : null,
-            orderItemsVoucherInfo.length > 0
-              ? tx.orderItemPackage.createMany({
-                  data: orderItemsPackageInfo.map((item) => ({
-                    ...item,
-                    rewardVoucher: item.reward,
-                  })),
-                })
-              : null,
-          ];
+          const createOrderItemProductPromise = [];
+
+          if (orderItemsVoucherInfo.length > 0)
+            createOrderItemProductPromise.push(
+              tx.orderItemVoucher.createMany({
+                data: orderItemsVoucherInfo,
+              }),
+            );
+
+          if (
+            !ObjectHelper.isObjectEmpty(orderItemsPackageInfo) &&
+            orderItemsPackageInfo.quotas.length > 0 &&
+            orderItemsPackageInfo.rewards.length > 0
+          ) {
+            createOrderItemProductPromise.push(
+              this.generateCreateManyOrderItemPackage(
+                orderItemsPackageInfo,
+                tx,
+              ),
+            );
+          }
+
+          if (
+            createOrderItemProductPromise.length === 0 ||
+            createOrderItemProductPromise.every((item) => !item)
+          )
+            throw ErrorApiResponse.conflictRequest(
+              'There is no detail for order item product to be created.',
+            );
+
           const currentDate = new Date(Date.now());
           const transactionExpiredAt = TimeAdderHelper.addTime(
             currentDate,
@@ -215,7 +219,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
                 create: {
                   id: transaction.id,
                   transactionSystemId: transactionSystem.id,
-                  status: TransactionStatusEnum.PENDING,
+                  status: transaction.status,
                   createdAt: currentDate,
                   expiredAt: transactionExpiredAt,
                 },
@@ -228,18 +232,17 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             },
           });
 
+          await Promise.all(updateStockTransactionPromise);
+
           // Wait for all promises to be resolved
-          const [orderAndTransaction] = await Promise.all([
-            createOrderPromise,
-            ...updateStockTransactionPromise,
-          ]);
+          const orderAndTransaction = await createOrderPromise;
           await Promise.all(createOrderItemProductPromise);
 
           return tx.order.findUnique({
             where: {
               id: orderAndTransaction.id,
             },
-            include: this.allDetailIncludeQuery,
+            include: this.allDetailIncludeQuery({}),
           });
         },
       );
@@ -259,6 +262,26 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     }
   }
 
+  private generateCreateManyOrderItemPackage(
+    orderItemPackageInfo: CreateOrderAndTransactionInput['orderItemsPackageInfo'],
+    txUnit: Prisma.TransactionClient,
+  ): Promise<unknown>[] {
+    const { quotas, rewards } = orderItemPackageInfo;
+    if (quotas.length === 0 && rewards.length === 0) {
+      return null;
+    }
+
+    const createManyQuota = txUnit.orderItemPackageQuota.createMany({
+      data: quotas,
+    });
+
+    const createManyReward = txUnit.orderItemPackageReward.createMany({
+      data: rewards,
+    });
+
+    return [createManyQuota, createManyReward];
+  }
+
   private generateUpdateStockAmountTransactionPromise(
     tx: Prisma.TransactionClient,
     updateStockAmountInfo: UpdateStockAmountInfo,
@@ -269,7 +292,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       updateStockAmountInfo.vouchers.length > 0
     ) {
       transactionForUpdateStockAmountPromiseArr.push(
-        this.transactionForUpdateVoucherStockAmount(
+        ...this.transactionForUpdateVoucherStockAmount(
           tx,
           updateStockAmountInfo.vouchers,
           'voucher',
@@ -282,7 +305,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       updateStockAmountInfo.packages.length > 0
     ) {
       transactionForUpdateStockAmountPromiseArr.push(
-        this.transactionForUpdateVoucherStockAmount(
+        ...this.transactionForUpdateVoucherStockAmount(
           tx,
           updateStockAmountInfo.packages,
           'package',
@@ -322,10 +345,13 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
 
   // --------------------- CREATE PART ENDED --------------------------//
 
-  async findById(id: string): Promise<NullAble<OrderDomain>> {
+  async findById(
+    id: string,
+    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
+  ): Promise<NullAble<OrderDomain>> {
     const order = await this.prismaService.order.findUnique({
       where: { id },
-      include: this.allDetailIncludeQuery,
+      include: this.allDetailIncludeQuery({ cursor, take }),
     });
     if (!order) return null;
 
@@ -379,7 +405,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             return tx.transaction.update({
               where: { id: transactionId },
               data: {
-                status: 'FAILED',
+                status: TransactionStatus.FAILED,
                 deletedAt: currentDate,
               },
             });

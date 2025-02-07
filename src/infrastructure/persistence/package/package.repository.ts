@@ -4,7 +4,9 @@ import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import {
   PackageImgCreateInput,
+  PackageQuotaVoucherDomain,
   PackageRewardVoucherCreateInput,
+  PackageRewardVoucherDomain,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
 import { CreatePackageVoucherDto } from '@resources/package/dto/create-package.dto';
@@ -13,6 +15,10 @@ import {
   PackageSellDateQueryEnum,
   PackageStatusQueryEnum,
 } from '@resources/package/dto/get-package.dto';
+import { AddNewPackageQuotaVoucherDto } from '@resources/package/dto/quota/add-quota.dto';
+import { UpdateQuotaVoucherDto } from '@resources/package/dto/quota/update-quota.dto';
+import { AddNewPackageRewardVoucherDto } from '@resources/package/dto/reward/add-reward.dto';
+import { UpdateRewardVoucherDto } from '@resources/package/dto/reward/update-reward.dto';
 import {
   UpdatePackageDiscountDto,
   UpdatePackageVoucherDto,
@@ -103,5 +109,45 @@ export abstract class PackageVoucherRepository {
    */
   abstract deletePackageVoucherById(
     packageId: PackageVoucherDomain['id'],
+  ): Promise<void>;
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE QUOTA PART ----------------------- //
+  // -------------------------------------------------------------------- //
+
+  abstract addNewQuotaVoucher(
+    payload: AddNewPackageQuotaVoucherDto,
+  ): Promise<PackageVoucherDomain>;
+
+  abstract findQuotaById(
+    id: PackageQuotaVoucherDomain['id'],
+  ): Promise<NullAble<PackageQuotaVoucherDomain>>;
+
+  abstract updateQuotaVoucher(
+    payload: UpdateQuotaVoucherDto,
+  ): Promise<PackageVoucherDomain>;
+
+  abstract deleteQuotaVoucher(
+    quotaId: PackageQuotaVoucherDomain['id'],
+  ): Promise<void>;
+
+  // -------------------------------------------------------------------- //
+  // ------------------------- PACKAGE REWARD PART ---------------------- //
+  // -------------------------------------------------------------------- //
+
+  abstract addNewRewardVoucher(
+    payload: AddNewPackageRewardVoucherDto,
+  ): Promise<PackageVoucherDomain>;
+
+  abstract findRewardById(
+    id: PackageRewardVoucherDomain['id'],
+  ): Promise<NullAble<PackageRewardVoucherDomain>>;
+
+  abstract updateRewardVoucher(
+    payload: UpdateRewardVoucherDto,
+  ): Promise<PackageVoucherDomain>;
+
+  abstract deleteRewardVoucher(
+    id: PackageRewardVoucherDomain['id'],
   ): Promise<void>;
 }

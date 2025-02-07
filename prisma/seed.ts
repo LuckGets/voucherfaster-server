@@ -7,17 +7,18 @@ import {
   voucherImg,
   vouchers,
 } from './seeds-data/voucher.seed';
-import { config } from 'dotenv';
-import { execSync, spawnSync } from 'child_process';
+import { execSync } from 'child_process';
 import {
   packageImgs,
+  packageQuotaVouchers,
   packageRewardVouchers,
   packages,
 } from './seeds-data/package.seed';
 import { ownerImg, ownerInfo } from './seeds-data/owner.seed';
 import {
+  orderItemPackageRewards,
   orderItems,
-  orderItemsPackage,
+  orderItemsPackageQuotas,
   orderItemsVouher,
   orders,
 } from './seeds-data/order.seed';
@@ -27,6 +28,7 @@ import {
   transactionsOfOrders,
   transactionSystem,
 } from './seeds-data/transaction.seed';
+import { CryptoService } from '@utils/services/crypto.service';
 
 const prisma = new PrismaClient();
 
@@ -68,13 +70,17 @@ const seed = async (): Promise<void> => {
       return;
     }
     const password = bcrypt.hashSync('Qwerty', 10);
+    const ownerPassword = CryptoService.encrypt(
+      'redeem',
+      process.env.PASSWORD_FOR_REDEEM_SECRET,
+    );
     // const ownerPasswordForRedeem = CryptoService.encrypt(password, process.env.PASSWORD_FOR_REDEEM_SECRET);
 
     /**
      * Function to seed data to database
      */
     accounts.forEach((item) => (item.password = password));
-    ownerInfo.forEach((item) => (item.passwordForRedeem = password));
+    ownerInfo.forEach((item) => (item.passwordForRedeem = ownerPassword));
     console.log('INTO SEEDING PROCESS... PLEASE WAIT.');
 
     await Promise.all([
@@ -104,6 +110,11 @@ const seed = async (): Promise<void> => {
         'voucher-promotion',
       ),
       seedingFunc(
+        prisma.packageQuotaVoucher.createMany,
+        packageQuotaVouchers,
+        'package-quota',
+      ),
+      seedingFunc(
         prisma.packageRewardVoucher.createMany,
         packageRewardVouchers,
         'package-reward-vouchers',
@@ -121,9 +132,14 @@ const seed = async (): Promise<void> => {
         'order-items-voucher',
       ),
       seedingFunc(
-        prisma.orderItemPackage.createMany,
-        orderItemsPackage,
+        prisma.orderItemPackageQuota.createMany,
+        orderItemsPackageQuotas,
         'order-items-package',
+      ),
+      seedingFunc(
+        prisma.orderItemPackageReward.createMany,
+        orderItemPackageRewards,
+        'order-items-rewards',
       ),
       seedingFunc(
         prisma.transactionExpireTime.create,

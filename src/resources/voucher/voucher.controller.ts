@@ -200,6 +200,13 @@ export class VoucherController {
   // GET
   // voucher via search content
   @ApiQuery({
+    name: QUERY_FIELD_NAME.CURSOR,
+    description: 'Cursor ID for pagination.',
+    example: '01948da7-a4e9-710f-a31a-3a1fc1a810a7',
+    required: false,
+    type: String,
+  })
+  @ApiQuery({
     name: VoucherPath.StatusQuery,
     description: `Status of the voucher. If not provided, default will be ${PaginationStatusQueryEnum.ACTIVE}`,
     required: false,

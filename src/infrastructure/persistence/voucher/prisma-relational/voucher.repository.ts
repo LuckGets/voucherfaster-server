@@ -64,6 +64,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       select: {
         id: true,
         imgPath: true,
+        mainImg: true,
       },
     },
     VoucherDiscount: this.currentlyDiscountIncludeQuery,
@@ -99,9 +100,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
 
     if (isUUID(category)) {
       baseQuery.voucherTag = {
-        category: {
-          id: category,
-        },
+        categoryId: category,
       };
     } else {
       baseQuery.voucherTag = {
