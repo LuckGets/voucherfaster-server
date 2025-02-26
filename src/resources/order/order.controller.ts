@@ -26,6 +26,7 @@ import { CreateOrderDto, CreateOrderResponse } from './dto/create-order.dto';
 import { HttpRequestWithUser } from 'src/common/http.type';
 import { OrderDomain } from './domain/order.domain';
 import {
+  GetMyOrdersResponse,
   GetOrderByIdReponse,
   GetPaginationOrderResponse,
 } from './dto/get-order.dto';
@@ -39,7 +40,10 @@ import {
   ProcessPaymentDto,
 } from './dto/transactions/process-payment.dto';
 import { OrderOwnerGuard } from 'src/common/guards/order-owner.guard';
-import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
+import {
+  IPaginationOption,
+  QUERY_FIELD_NAME,
+} from 'src/common/types/pagination.type';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 
 @Controller({ version: '1', path: OrderPath.Base })
@@ -61,6 +65,23 @@ export class OrderController {
     );
 
     return CreateOrderResponse.success(createdOrder, req.user.accountId);
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ type: () => GetMyOrdersResponse })
+  @UseGuards(AccessTokenAuthGuard)
+  @Get(OrderPath.Me)
+  async getMyOrders(
+    @Req() req: HttpRequestWithUser,
+    @Query(QUERY_FIELD_NAME.PAGE) page: IPaginationOption['page'],
+    @Query(QUERY_FIELD_NAME.CURSOR) cursor: OrderDomain['id'],
+  ): Promise<GetMyOrdersResponse> {
+    const ordersList = await this.orderService.getMyOrders(req.user.accountId, {
+      cursor,
+      paginationOptions: { page },
+    });
+
+    return GetMyOrdersResponse.success(ordersList, page ?? 1);
   }
 
   @ApiBearerAuth()

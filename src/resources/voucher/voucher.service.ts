@@ -3,7 +3,6 @@ import {
   VoucherDomain,
   VoucherImgCreateInput,
   VoucherImgDomain,
-  VoucherStatusEnum,
 } from './domain/voucher.domain';
 import {
   UpdateVoucherRepositoryInput,
@@ -15,7 +14,6 @@ import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CreateVoucherDto } from './dto/vouchers/create-voucher.dto';
 import { MediaService } from '@application/media/media.service';
 import { s3BucketDirectory } from '@application/media/s3/media-s3.type';
-import { IPaginationOption } from 'src/common/types/pagination.type';
 import { NullAble } from '@utils/types/common.type';
 import { UpdateVoucherDto } from './dto/vouchers/update-voucher.dto';
 import {
@@ -26,16 +24,16 @@ import { VoucherDiscountCreateInput } from './domain/voucher-discount.domain';
 import { isUUID } from 'class-validator';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductDomainHelper } from 'src/common/product.helper';
-import {
-  PaginationDiscountQueryEnum,
-  PaginationSellDateQueryEnum,
-  PaginationStatusQueryEnum,
-} from './dto/vouchers/get-voucher.dto';
+import { GetManyVoucherQueries } from './dto/vouchers/get-voucher.dto';
 import { ProductTypeEnum } from 'src/common/types/product.type';
 import { VoucherTagService } from '@resources/category/tag/voucher-tag.service';
-import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
-import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
+import { ProductStatusEnum } from '@resources/product/domain/product.domain';
+import {
+  ProductDiscountQueryEnum,
+  ProductSellDateQueryEnum,
+  ProductStatusQueryEnum,
+} from '@resources/product/dto/get-product.dto';
 
 @Injectable()
 export class VoucherService {
@@ -104,7 +102,7 @@ export class VoucherService {
     const voucherData = {
       ...restData,
       id: String(this.uuidService.make()),
-      status: VoucherStatusEnum.ACTIVE,
+      status: ProductStatusEnum.ACTIVE,
     };
 
     // If the voucher creating input
@@ -152,24 +150,15 @@ export class VoucherService {
     cursor,
     paginationOption,
     discount,
-    sortOption,
+    sortOptions,
     status,
     sellDate,
-  }: {
-    tag?: VoucherTagDomain['name'];
-    category?: CategoryDomain['name'];
-    paginationOption?: IPaginationOption;
-    discount?: PaginationDiscountQueryEnum;
-    cursor?: VoucherDomain['id'];
-    sortOption?: unknown;
-    status?: PaginationStatusQueryEnum;
-    sellDate?: string;
-  }): Promise<VoucherDomain[]> {
-    const statusToQuery: PaginationStatusQueryEnum =
+  }: GetManyVoucherQueries): Promise<VoucherDomain[]> {
+    const statusToQuery: GetManyVoucherQueries['status'] =
       this.checkVoucherStatusQuery(status);
-    const sellDateQuery: PaginationSellDateQueryEnum =
+    const sellDateQuery: GetManyVoucherQueries['sellDate'] =
       this.checkSellDateQuery(sellDate);
-    const discountQuery: PaginationDiscountQueryEnum =
+    const discountQuery: GetManyVoucherQueries['discount'] =
       this.checkDiscountQuery(discount);
 
     if (cursor) {
@@ -189,7 +178,7 @@ export class VoucherService {
       category,
       cursor,
       paginationOption,
-      sortOption,
+      sortOptions,
       discount: discountQuery,
       status: statusToQuery,
       sellDate: sellDateQuery,
@@ -225,7 +214,7 @@ export class VoucherService {
       cursor,
     }: {
       sellDate: string;
-      status: PaginationStatusQueryEnum;
+      status: GetManyVoucherQueries['status'];
       cursor: VoucherDomain['id'];
     },
   ): Promise<NullAble<VoucherDomain[]>> {
@@ -243,38 +232,38 @@ export class VoucherService {
   }
 
   private checkVoucherStatusQuery(
-    status: PaginationStatusQueryEnum,
-  ): PaginationStatusQueryEnum {
+    status: GetManyVoucherQueries['status'],
+  ): ProductStatusQueryEnum {
     if (!status) {
-      return PaginationStatusQueryEnum.ACTIVE;
+      return ProductStatusQueryEnum.ACTIVE;
     }
 
     if (
       !EnumCheckerHelper.checkEnumValue(
-        PaginationStatusQueryEnum,
+        ProductStatusQueryEnum,
         status.toUpperCase(),
       )
     ) {
       throw ErrorApiResponse.badRequest(
-        `${status} is not valid enumerable for status. Value provided should be one of the ${EnumCheckerHelper.allEnumValue(VoucherStatusEnum).join(', ')} value`,
+        `${status} is not valid enumerable for status. Value provided should be one of the ${EnumCheckerHelper.allEnumValue(ProductStatusEnum).join(', ')} value`,
       );
     }
-    return PaginationStatusQueryEnum[status.toUpperCase()];
+    return ProductStatusQueryEnum[status.toUpperCase()];
   }
 
-  private checkSellDateQuery(sellQuery: string): PaginationSellDateQueryEnum {
+  private checkSellDateQuery(sellQuery: string): ProductSellDateQueryEnum {
     return EnumCheckerHelper.getEnumValueOrThrow(
-      PaginationSellDateQueryEnum,
+      ProductSellDateQueryEnum,
       sellQuery,
-      PaginationSellDateQueryEnum.NOW,
+      ProductSellDateQueryEnum.NOW,
     );
   }
 
-  private checkDiscountQuery(discount: string): PaginationDiscountQueryEnum {
+  private checkDiscountQuery(discount: string): ProductDiscountQueryEnum {
     return EnumCheckerHelper.getEnumValueOrThrow(
-      PaginationDiscountQueryEnum,
+      ProductDiscountQueryEnum,
       discount,
-      PaginationDiscountQueryEnum.ALL,
+      ProductDiscountQueryEnum.ALL,
     );
   }
 
@@ -289,7 +278,7 @@ export class VoucherService {
     // Find the voucher via id
     const voucher = await this.voucherRepository.findById(
       data.id,
-      PaginationDiscountQueryEnum.ALL,
+      ProductDiscountQueryEnum.ALL,
     );
 
     // If the voucher does not exist, throw an error

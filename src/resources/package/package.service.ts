@@ -15,7 +15,6 @@ import {
   PackageQuotaVoucherDomain,
   PackageRewardVoucherCreateInput,
   PackageRewardVoucherDomain,
-  PackageStatusEnum,
   PackageVoucherDomain,
 } from './domain/package-voucher.domain';
 import { MediaService } from '@application/media/media.service';
@@ -46,6 +45,7 @@ import { UpdateQuotaVoucherDto } from './dto/quota/update-quota.dto';
 import { AddNewPackageRewardVoucherDto } from './dto/reward/add-reward.dto';
 import { UpdateRewardVoucherDto } from './dto/reward/update-reward.dto';
 import e from 'express';
+import { ProductStatusEnum } from '@resources/product/domain/product.domain';
 
 @Injectable()
 export class PackageVoucherService {
@@ -452,7 +452,7 @@ export class PackageVoucherService {
         `Package ID: ${packageId} could not be found.`,
       );
 
-    if (isPackageExist.status === PackageStatusEnum.INACTIVE)
+    if (isPackageExist.status === ProductStatusEnum.INACTIVE)
       throw ErrorApiResponse.conflictRequest(
         `Package ID: ${packageId} is already inactive.`,
       );

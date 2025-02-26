@@ -59,16 +59,16 @@ export const utcToTimeZoneMiddleware: Prisma.Middleware = async (
 export function generatePaginationQueryOption<T>({
   paginationOption,
   cursor,
-  sortOption,
+  sortOptions,
 }: {
   paginationOption?: NullAble<IPaginationOption>;
   cursor?: NullAble<T>;
-  sortOption?: NullAble<ISortOption[]>;
+  sortOptions?: NullAble<ISortOption[]>;
 }): IPaginationQueryArgs<T> {
   let query: IPaginationQueryArgs<T> = {};
-  if (sortOption && sortOption.length > 0) {
+  if (sortOptions && sortOptions.length > 0) {
     // Convert each {field, direction} into { [field]: direction }
-    query.orderBy = sortOption.map(({ field, direction }) => ({
+    query.orderBy = sortOptions.map(({ field, direction }) => ({
       [field]: direction,
     }));
   }

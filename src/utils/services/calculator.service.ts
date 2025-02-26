@@ -61,6 +61,10 @@ export class CalculatorService {
     }, 1);
   }
 
+  public static divide(firstNum: number, secondNum: number): number {
+    return new Decimal(firstNum).dividedBy(secondNum).toNumber();
+  }
+
   public static changedayToMilliseconde(day: number): number {
     return new Decimal(day)
       .times(24)

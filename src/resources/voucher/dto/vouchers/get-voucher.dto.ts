@@ -6,24 +6,11 @@ import { AuthPath, VoucherPath } from 'src/config/api-path';
 import { VoucherDomain } from '../../domain/voucher.domain';
 import { HTTPMethod } from 'src/common/http.type';
 import { NullAble } from '@utils/types/common.type';
+import { ISortOption } from 'src/common/types/pagination.type';
+import { GetProductQueries } from '@resources/product/dto/get-product.dto';
 
-export enum PaginationSellDateQueryEnum {
-  NOW = 'NOW',
-  EXPIRED = 'EXPIRED',
-  ALL = 'ALL',
-}
-
-export enum PaginationDiscountQueryEnum {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  NONE = 'NONE',
-  ALL = 'ALL',
-}
-
-export enum PaginationStatusQueryEnum {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  ALL = 'ALL',
+export class GetManyVoucherQueries extends GetProductQueries {
+  sortOptions?: ISortOption[];
 }
 
 export class GetManyVoucherResponse extends CoreApiResponse {

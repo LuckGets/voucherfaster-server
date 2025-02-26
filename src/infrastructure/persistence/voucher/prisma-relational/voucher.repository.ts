@@ -18,21 +18,19 @@ import { Inject } from '@nestjs/common';
 import { IPaginationOption } from 'src/common/types/pagination.type';
 import { generatePaginationQueryOption } from '@utils/prisma/service';
 import { VoucherMapper } from './voucher.mapper';
-import {
-  VoucherDiscountCreateInput,
-  VoucherDiscountDomain,
-  VoucherDiscountStatusEnum,
-} from '@resources/voucher/domain/voucher-discount.domain';
-import {
-  PaginationDiscountQueryEnum,
-  PaginationSellDateQueryEnum,
-  PaginationStatusQueryEnum,
-} from '@resources/voucher/dto/vouchers/get-voucher.dto';
+import { VoucherDiscountCreateInput } from '@resources/voucher/domain/voucher-discount.domain';
 import { CreateVoucherDto } from '@resources/voucher/dto/vouchers/create-voucher.dto';
 import { isUUID } from 'class-validator';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
+import { GetManyVoucherQueries } from '@resources/voucher/dto/vouchers/get-voucher.dto';
+import {
+  GetManyProductsReponse,
+  ProductDiscountQueryEnum,
+  ProductSellDateQueryEnum,
+  ProductStatusQueryEnum,
+} from '@resources/product/dto/get-product.dto';
 
 export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -117,11 +115,11 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   }
 
   private generateSellDateWhereQuery(
-    sellDate: PaginationSellDateQueryEnum,
+    sellDate: GetManyVoucherQueries['sellDate'],
   ): Prisma.VoucherWhereInput {
     const currentDate = new Date();
     switch (sellDate) {
-      case PaginationSellDateQueryEnum.NOW:
+      case ProductSellDateQueryEnum.NOW:
         return {
           AND: [
             {
@@ -134,7 +132,7 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
             },
           ],
         };
-      case PaginationSellDateQueryEnum.EXPIRED:
+      case ProductSellDateQueryEnum.EXPIRED:
         return {
           sellExpiredAt: {
             lte: currentDate,
@@ -146,32 +144,32 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   }
 
   private generateDiscountWhereQuery(
-    discount: PaginationDiscountQueryEnum,
+    discount: GetManyVoucherQueries['discount'],
   ): Prisma.VoucherWhereInput {
     switch (discount) {
-      case PaginationDiscountQueryEnum.ACTIVE:
+      case ProductDiscountQueryEnum.ACTIVE:
         return {
           VoucherDiscount: {
             some: {
-              status: VoucherStatus.ACTIVE,
+              status: DiscountStatus.ACTIVE,
               deletedAt: {
                 equals: null,
               },
             },
           },
         };
-      case PaginationDiscountQueryEnum.INACTIVE:
+      case ProductDiscountQueryEnum.INACTIVE:
         return {
           VoucherDiscount: {
             some: {
-              status: VoucherStatus.INACTIVE,
+              status: DiscountStatus.INACTIVE,
               deletedAt: {
                 equals: null,
               },
             },
           },
         };
-      case PaginationDiscountQueryEnum.NONE:
+      case ProductDiscountQueryEnum.NONE:
         return {
           VoucherDiscount: {
             none: {},
@@ -183,14 +181,14 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
   }
 
   private generateStatusWhereQuery(
-    status: PaginationStatusQueryEnum,
+    status: GetManyVoucherQueries['status'],
   ): Prisma.VoucherWhereInput {
     switch (status) {
-      case PaginationStatusQueryEnum.ACTIVE:
+      case ProductStatusQueryEnum.ACTIVE:
         return {
           status: VoucherStatus.ACTIVE,
         };
-      case PaginationStatusQueryEnum.INACTIVE:
+      case ProductStatusQueryEnum.INACTIVE:
         return {
           status: VoucherStatus.INACTIVE,
         };
@@ -278,24 +276,15 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
     category,
     paginationOption,
     cursor,
-    sortOption,
+    sortOptions,
     discount,
     status,
     sellDate,
-  }: {
-    tag?: VoucherTagDomain['id'];
-    category?: CategoryDomain['name'] | CategoryDomain['id'];
-    paginationOption?: IPaginationOption;
-    cursor?: VoucherDomain['id'];
-    discount: PaginationDiscountQueryEnum;
-    sortOption?: any;
-    status?: PaginationStatusQueryEnum;
-    sellDate?: PaginationSellDateQueryEnum;
-  }): Promise<VoucherDomain[]> {
+  }: GetManyVoucherQueries): Promise<VoucherDomain[]> {
     const paginatedQueryOptiion = generatePaginationQueryOption({
       cursor,
       paginationOption,
-      sortOption,
+      sortOptions,
     });
     const categoryOrTagWhereOption: Prisma.VoucherWhereInput =
       this.generateCategoryOrTagWhereQuery(category, tag);
@@ -338,8 +327,8 @@ export class VoucherRelationalPrismaORMRepository implements VoucherRepository {
       status,
       cursor,
     }: {
-      sellDate: PaginationSellDateQueryEnum;
-      status: PaginationStatusQueryEnum;
+      sellDate: GetManyVoucherQueries['sellDate'];
+      status: GetManyVoucherQueries['status'];
       cursor: VoucherDomain['id'];
     },
   ): Promise<VoucherDomain[]> {

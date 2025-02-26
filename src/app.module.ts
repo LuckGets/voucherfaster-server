@@ -18,6 +18,7 @@ import { OrderItemModule } from './resources/order-item/order-item.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RedeemModule } from './resources/redeem/redeem.module';
 import { CategoryModule } from './resources/category/category.module';
+import { ProductModule } from './resources/product/product.module';
 
 const env = process.env.NODE_ENV || '';
 
@@ -47,6 +48,7 @@ const env = process.env.NODE_ENV || '';
     OrderItemModule,
     RedeemModule,
     CategoryModule,
+    ProductModule,
   ],
 })
 export class AppModule {}

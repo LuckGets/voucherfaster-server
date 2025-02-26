@@ -3,28 +3,12 @@ import { Expose, Transform } from 'class-transformer';
 import { IsPositive, IsString, IsUUID } from 'class-validator';
 import { PackageVoucherDomain } from './package-voucher.domain';
 import { RoleEnum } from '@resources/account/types/account.type';
+import {
+  ProductDiscountDomain,
+  ProductDiscountStatusEnum,
+} from '@resources/product/domain/product.domain';
 
-export enum PackageDiscountStatusEnum {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-}
-
-export class PackageDiscountDomain {
-  @ApiProperty({ type: String })
-  id: string;
-  @ApiProperty({ type: Number })
-  discountedPrice: number;
-  @ApiProperty({ type: Date })
-  createdAt?: Date;
-  @ApiProperty({ type: Date })
-  updatedAt?: Date;
-  @ApiProperty({ type: () => PackageDiscountStatusEnum })
-  status: PackageDiscountStatusEnum;
-
-  @Expose({ groups: [RoleEnum.Admin] })
-  @ApiProperty({ type: Date })
-  deletedAt?: Date;
-
+export class PackageDiscountDomain extends ProductDiscountDomain {
   constructor({
     id,
     discountedPrice,
@@ -36,13 +20,15 @@ export class PackageDiscountDomain {
     discountedPrice: number;
     createdAt?: Date;
     updatedAt?: Date;
-    status: PackageDiscountStatusEnum;
+    status: PackageDiscountDomain['status'];
   }) {
-    this.id = id;
-    this.discountedPrice = discountedPrice;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.status = status;
+    super({
+      id,
+      discountedPrice,
+      createdAt,
+      updatedAt,
+      status: status ?? null,
+    });
   }
 }
 

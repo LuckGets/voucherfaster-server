@@ -37,17 +37,17 @@ export class VoucherTagRelationalPrismaORMRepository
     category,
     cursor,
     paginationOption,
-    sortOption,
+    sortOptions,
   }: {
     category?: CategoryDomain['name'] | CategoryDomain['id'];
     paginationOption?: IPaginationOption;
     cursor?: VoucherTagDomain['id'];
-    sortOption?: any;
+    sortOptions?: any;
   }): Promise<NullAble<VoucherTagDomain[]>> {
     const paginatedQueryOptiion = generatePaginationQueryOption({
       cursor,
       paginationOption,
-      sortOption,
+      sortOptions,
     });
     let categoryWhereQuery: Prisma.VoucherTagWhereInput = {};
 

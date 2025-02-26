@@ -11,6 +11,7 @@ import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain'
 import { TransactionDomain } from '@resources/transaction/domain/transaction.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
+import { IPaginationOption } from 'src/common/types/pagination.type';
 
 export type CreateOrderItemVoucherInfo = {
   id: string;
@@ -69,6 +70,14 @@ export abstract class OrderRepository {
   abstract createOrderAndTransaction(
     payload: CreateOrderAndTransactionInput,
   ): Promise<OrderDomain>;
+
+  abstract findByAccountId(
+    accountId: OrderDomain['account']['id'],
+    {
+      cursor,
+      paginationOptions,
+    }: { cursor: OrderDomain['id']; paginationOptions: IPaginationOption },
+  ): Promise<NullAble<OrderDomain[]>>;
 
   abstract findById(
     id: string,
