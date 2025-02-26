@@ -1,10 +1,10 @@
-import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/usable-day.domain';
-import { UpdateUsableDaysAfterPurchasedDayDto } from '@resources/usable-days/dto/update-usable-day.dto';
+// import { UsableDaysAfterPurchasedDomain } from '@resources/usable-days/domain/usable-day.domain';
+// import { UpdateUsableDaysAfterPurchasedDayDto } from '@resources/usable-days/dto/update-usable-day.dto';
 
-export abstract class UsableDaysAfterPurchasedRepository {
-  abstract findManyAvailable(): Promise<UsableDaysAfterPurchasedDomain[]>;
+// export abstract class UsableDaysAfterPurchasedRepository {
+//   abstract findManyAvailable(): Promise<UsableDaysAfterPurchasedDomain[]>;
 
-  abstract update(
-    payload: UpdateUsableDaysAfterPurchasedDayDto,
-  ): Promise<UsableDaysAfterPurchasedDomain>;
-}
+//   abstract update(
+//     payload: UpdateUsableDaysAfterPurchasedDayDto,
+//   ): Promise<UsableDaysAfterPurchasedDomain>;
+// }

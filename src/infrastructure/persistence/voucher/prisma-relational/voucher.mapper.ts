@@ -6,13 +6,11 @@ import {
   VoucherTag,
 } from '@prisma/client';
 import {
-  VoucherDiscountDomain,
-  VoucherDiscountStatusEnum,
-} from '@resources/voucher/domain/voucher-discount.domain';
-import {
-  VoucherDomain,
-  VoucherStatusEnum,
-} from '@resources/voucher/domain/voucher.domain';
+  ProductDiscountStatusEnum,
+  ProductStatusEnum,
+} from '@resources/product/domain/product.domain';
+import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
+import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ProductTypeEnum } from 'src/common/types/product.type';
 
@@ -53,7 +51,7 @@ export class VoucherMapper {
     const categoryName = voucherTag?.category?.name;
 
     // Convert status to VoucherStatusEnum
-    const voucherStatus = VoucherStatusEnum[status];
+    const voucherStatus = ProductStatusEnum[status];
 
     let voucherDiscount = null;
     // Create a VoucherDiscountDomain object
@@ -68,7 +66,7 @@ export class VoucherMapper {
         voucherDiscount = new VoucherDiscountDomain({
           id: activeVoucherDiscount?.id,
           discountedPrice: activeVoucherDiscount?.discountedPrice.toNumber(),
-          status: VoucherDiscountStatusEnum[activeVoucherDiscount?.status],
+          status: ProductDiscountStatusEnum[activeVoucherDiscount?.status],
         });
     }
 

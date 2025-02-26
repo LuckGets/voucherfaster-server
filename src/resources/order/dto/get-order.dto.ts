@@ -5,6 +5,7 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath, OrderPath } from 'src/config/api-path';
 import { OrderDomain } from '../domain/order.domain';
 import { HTTPMethod } from 'src/common/http.type';
+import { IPaginationOption } from 'src/common/types/pagination.type';
 
 export class GetOrderByIdReponse extends CoreApiResponse {
   @ApiProperty({
@@ -200,5 +201,112 @@ export class GetPaginationOrderResponse extends CoreApiResponse {
     }
     response.cursor = null;
     return response;
+  }
+}
+
+export class GetMyOrdersResponse extends CoreApiResponse {
+  @ApiProperty({
+    type: Number,
+    example: HttpStatus.OK,
+  })
+  public HTTPStatusCode: number;
+  @ApiProperty({
+    type: Number,
+    example: 'GET:: /orders successful.',
+  })
+  public message: string;
+  @ApiProperty({
+    type: Object,
+    example: `{"logout": ${AuthPath.Logout}}`,
+  })
+  public links: HATEOSLink;
+  @ApiProperty({
+    type: Object,
+    example: [
+      {
+        id: '01948342-277a-77ae-bd3a-194f5752b687',
+        account: {
+          id: '01949c35-fc80-757c-acaf-647fa68b5b7f',
+          email: 'verify1@mail.com',
+          fullname: 'Mr. Verify No.1',
+          phone: '0812345555',
+          verifiedAt: '1/25/2025, 1:46:11 PM',
+          role: 'USER',
+        },
+        totalPrice: 300,
+        createdAt: '1/25/2025, 1:46:19 PM',
+        updatedAt: '1/25/2025, 1:46:19 PM',
+        usableDay: '2025-01-24T17:00:00.000Z',
+        orderItems: [
+          {
+            id: '01948342-277f-7397-b211-5aa6faa5ff8a',
+            qrcodeImagePath:
+              'd22pq9rbvhh9yl.cloudfront.net/qrcode-img/order-item-ID:019488cd-a13d-764f-be0d-0f1db340e5f9',
+            code: 'AB2BCA',
+            redeemedAt: null,
+            updatedAt: '1/25/2025, 1:46:19 PM',
+            detail: {
+              voucherId: '01949c35-fc4b-720c-a069-d381f57bfc5f',
+              title: 'Burger with fries',
+              price: 300,
+              usableExpiredAt: '12/26/2025, 12:00:00 AM',
+              img: 'https://d22pq9rbvhh9yl.cloudfront.net/voucher-img/1735921280934_burger-with-melted-cheese.webp',
+              category: 'All-international',
+              promotion: null,
+              package: null,
+            },
+          },
+        ],
+      },
+    ],
+  })
+  public data: OrderDomain[];
+  @ApiProperty({
+    type: String,
+    example: '01948342-277a-77ae-bd3a-194f5752b687',
+  })
+  public cursor: OrderDomain['id'];
+
+  @ApiProperty({
+    type: Number,
+    example: 1,
+  })
+  public page: IPaginationOption['page'];
+
+  constructor(
+    code: GetMyOrdersResponse['HTTPStatusCode'],
+    message: GetMyOrdersResponse['message'],
+    links: GetMyOrdersResponse['links'],
+    data: GetMyOrdersResponse['data'],
+    cursor: GetMyOrdersResponse['cursor'],
+    page: GetMyOrdersResponse['page'],
+  ) {
+    super(code, message, links);
+    this.data = data;
+    this.cursor = cursor;
+    this.page = page;
+  }
+
+  public static success(
+    data: OrderDomain[],
+    page: GetMyOrdersResponse['page'],
+    queryOption?: string,
+    links?: HATEOSLink,
+    statusCode?: number,
+  ): GetMyOrdersResponse {
+    const responseMessage = `${HTTPMethod.Get}:: ${OrderPath.Base}${queryOption ?? ''} successful.`;
+    const responseCode = statusCode ?? HttpStatus.OK;
+    const responseLink = links;
+    // generateVoucherReponseHATEOASLink(data.id);
+    const cursor = data.length > 0 ? data[data.length - 1].id : null;
+
+    return new GetMyOrdersResponse(
+      responseCode,
+      responseMessage,
+      responseLink,
+      data,
+      cursor,
+      page,
+    );
   }
 }

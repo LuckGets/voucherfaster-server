@@ -27,6 +27,10 @@ import { ObjectHelper } from '@utils/services/object.helper';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { OrderItemRelationPrismaORMRepository } from '../../order-item/prisma-relational/order-item.repository';
 import { OrderItemRelationalPrismaORMStatic } from '../../order-item/prisma-relational/static-class/order-item-static.repository';
+import {
+  defaultPaginationOption,
+  IPaginationOption,
+} from 'src/common/types/pagination.type';
 
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
@@ -95,14 +99,27 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   private allDetailIncludeQuery({
     take,
     cursor,
+    page,
   }: {
-    take?: number;
+    take?: IPaginationOption['limit'];
     cursor?: OrderItemDomain['id'];
+    page?: IPaginationOption['page'];
   }): Prisma.OrderInclude {
+    const paginationOption: Prisma.Order$OrderItemArgs = {};
+
+    const limit = take ?? this.defaultOrderItemLimitPaginationForFindMany;
+    const currentPage = page ?? defaultPaginationOption.page;
+
+    if (cursor) {
+      paginationOption.cursor = { id: cursor };
+      paginationOption.take = limit;
+    } else {
+      paginationOption.take = limit;
+      paginationOption.skip = (currentPage - 1) * limit;
+    }
     const baseQuery: Prisma.OrderInclude = {
       OrderItem: {
-        cursor: cursor ? { id: cursor } : null,
-        take: take ?? this.defaultOrderItemLimitPaginationForOneOrder,
+        ...paginationOption,
         include: this.orderItemIncludeQuery,
       },
       Transaction: {
@@ -344,6 +361,34 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
   }
 
   // --------------------- CREATE PART ENDED --------------------------//
+
+  async findByAccountId(
+    accountId: OrderDomain['account']['id'],
+    {
+      cursor,
+      paginationOptions,
+    }: {
+      cursor?: OrderDomain['id'];
+      paginationOptions: IPaginationOption;
+    },
+  ): Promise<NullAble<OrderDomain[]>> {
+    const paginateQuery = generatePaginationQueryOption<OrderDomain['id']>({
+      paginationOption: paginationOptions,
+    });
+    const orders = await this.prismaService.order.findMany({
+      ...paginateQuery,
+      where: {
+        accountId,
+        deletedAt: {
+          equals: null,
+        },
+      },
+      include: this.allDetailIncludeQuery({
+        cursor,
+      }),
+    });
+    return orders.map(OrderMapper.toDomain);
+  }
 
   async findById(
     id: string,

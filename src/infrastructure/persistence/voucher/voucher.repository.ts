@@ -1,7 +1,6 @@
 import {
   VoucherDiscountCreateInput,
   VoucherDiscountDomain,
-  VoucherDiscountStatusEnum,
 } from '@resources/voucher/domain/voucher-discount.domain';
 import {
   VoucherDomain,
@@ -9,11 +8,6 @@ import {
   VoucherImgDomain,
   VoucherImgUpdateInput,
 } from '@resources/voucher/domain/voucher.domain';
-import {
-  PaginationDiscountQueryEnum,
-  PaginationSellDateQueryEnum,
-  PaginationStatusQueryEnum,
-} from '@resources/voucher/dto/vouchers/get-voucher.dto';
 import {
   UpdateVoucherDiscountDto,
   UpdateVoucherDto,
@@ -23,6 +17,7 @@ import { IPaginationOption } from 'src/common/types/pagination.type';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { CreateVoucherDto } from '@resources/voucher/dto/vouchers/create-voucher.dto';
+import { GetManyVoucherQueries } from '@resources/voucher/dto/vouchers/get-voucher.dto';
 
 export type UpdateVoucherRepositoryInput = Omit<
   UpdateVoucherDto,
@@ -74,7 +69,7 @@ export abstract class VoucherRepository {
    */
   abstract findById(
     id: VoucherDomain['id'],
-    discountStatus?: PaginationDiscountQueryEnum,
+    discountStatus?: GetManyVoucherQueries['discount'],
   ): Promise<NullAble<VoucherDomain>>;
 
   /**
@@ -105,8 +100,8 @@ export abstract class VoucherRepository {
       status,
       cursor,
     }: {
-      sellDate: PaginationSellDateQueryEnum;
-      status: PaginationStatusQueryEnum;
+      sellDate: GetManyVoucherQueries['sellDate'];
+      status: GetManyVoucherQueries['status'];
       cursor: VoucherDomain['id'];
     },
   ): Promise<VoucherDomain[]>;
@@ -115,25 +110,7 @@ export abstract class VoucherRepository {
    *
    * @param tag VoucherTagDomain
    */
-  abstract findMany({
-    tag,
-    category,
-    cursor,
-    paginationOption,
-    sortOption,
-    status,
-    sellDate,
-    discount,
-  }: {
-    tag?: VoucherTagDomain['name'];
-    category?: CategoryDomain['name'];
-    paginationOption?: IPaginationOption;
-    cursor?: VoucherDomain['id'];
-    discount?: PaginationDiscountQueryEnum;
-    sortOption?: unknown;
-    status?: PaginationStatusQueryEnum;
-    sellDate?: PaginationSellDateQueryEnum;
-  }): Promise<VoucherDomain[]>;
+  abstract findMany(queries: GetManyVoucherQueries): Promise<VoucherDomain[]>;
 
   abstract update(data: UpdateVoucherRepositoryInput): Promise<VoucherDomain>;
 }

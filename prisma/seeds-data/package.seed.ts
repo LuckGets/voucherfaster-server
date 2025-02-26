@@ -96,13 +96,13 @@ export const packageImgs: Prisma.PackageImgCreateManyInput[] = [
     id: uuidv7(),
     mainImg: true,
     imgPath:
-      'd22pq9rbvhh9yl.cloudfront.net/package-img/1736355046659_voucher-template-with-offer_23-2148479796.avif',
+      'https://d22pq9rbvhh9yl.cloudfront.net/package-img/1736355046659_voucher-template-with-offer_23-2148479796.avif',
     packageId: packages[0].id,
   },
   {
     id: uuidv7(),
     mainImg: true,
-    imgPath: 'd22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg',
+    imgPath: 'https://d22pq9rbvhh9yl.cloudfront.net/package-img/เป็ด.jpg',
     packageId: packages[1].id,
   },
 ];

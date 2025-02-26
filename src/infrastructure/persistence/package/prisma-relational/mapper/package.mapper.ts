@@ -8,15 +8,15 @@ import {
   PackageDiscount,
   PackageQuotaVoucher,
 } from '@prisma/client';
-import {
-  PackageDiscountDomain,
-  PackageDiscountStatusEnum,
-} from '@resources/package/domain/package-discount.domain';
+import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
 import {
   PackageRewardVoucherDomain,
-  PackageStatusEnum,
   PackageVoucherDomain,
 } from '@resources/package/domain/package-voucher.domain';
+import {
+  ProductDiscountStatusEnum,
+  ProductStatusEnum,
+} from '@resources/product/domain/product.domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { ProductTypeEnum } from 'src/common/types/product.type';
 
@@ -70,11 +70,10 @@ export class PackageVoucherMapper {
           `Package voucher should have only one currently active discount but package ID: ${packageVoucherEntity.id} has more than one discount.`,
         );
       const { discountedPrice, status, id } = PackageDiscount[0];
-      const discountStatus = PackageDiscountStatusEnum[status];
       packageDiscount = new PackageDiscountDomain({
         id,
         discountedPrice: discountedPrice.toNumber(),
-        status: discountStatus,
+        status: ProductDiscountStatusEnum[status],
       });
     }
 
@@ -113,7 +112,7 @@ export class PackageVoucherMapper {
       ...packageInfo,
       quotaVouchers,
       price: packageInfo.price.toNumber(),
-      status: PackageStatusEnum[packageInfo.status],
+      status: ProductStatusEnum[packageInfo.status],
       tag: tagName,
       category: categoryName,
       images: packageImg,

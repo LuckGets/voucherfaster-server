@@ -6,8 +6,8 @@ import { ProductTypeEnum } from './types/product.type';
 import { Injectable } from '@nestjs/common';
 import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import { PackageDiscountDomain } from '@resources/package/domain/package-discount.domain';
+import { ProductDomain } from '@resources/product/domain/product.domain';
 
-export type ProductDomain = VoucherDomain | PackageVoucherDomain;
 export interface IDateDataToCheck {
   usableAt?: Date;
   usableExpiredAt?: Date;

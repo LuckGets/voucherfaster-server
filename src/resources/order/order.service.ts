@@ -37,9 +37,10 @@ import { TransactionService } from '@resources/transaction/transaction.service';
 import { ORDER_EVENT_CONSTANT, OrderSuccessEvent } from './events/order.events';
 import { EnumCheckerHelper } from '@utils/services/enum-checker.helper';
 import { ProductTypeEnum } from 'src/common/types/product.type';
-import { VoucherDiscountStatusEnum } from '@resources/voucher/domain/voucher-discount.domain';
-import { PackageDiscountStatusEnum } from '@resources/package/domain/package-discount.domain';
 import { ProductDomainHelper } from 'src/common/product.helper';
+import { ProductDiscountStatusEnum } from '@resources/product/domain/product.domain';
+import { OrderIdsAndTransactions } from 'src/infrastructure/persistence/transaction/transaction.repository';
+import { IPaginationOption } from 'src/common/types/pagination.type';
 
 type AnyItemDomain = VoucherDomain | PackageVoucherDomain;
 
@@ -272,7 +273,7 @@ export class OrderService {
             itemInfo: voucher,
             itemAmount: item.amount,
             allOrderItemsId,
-            appliedDiscountStatus: VoucherDiscountStatusEnum.ACTIVE,
+            appliedDiscountStatus: ProductDiscountStatusEnum.ACTIVE,
           });
           break;
         }
@@ -292,7 +293,7 @@ export class OrderService {
             itemInfo: packageVoucher,
             itemAmount: item.amount,
             allOrderItemsId,
-            appliedDiscountStatus: PackageDiscountStatusEnum.ACTIVE,
+            appliedDiscountStatus: ProductDiscountStatusEnum.ACTIVE,
           });
           break;
         }
@@ -325,9 +326,7 @@ export class OrderService {
     allOrderItemsId: OrderItemDomain['id'][];
     orderItemsProductList: OrderItemsProductList;
     itemInfo: AnyItemDomain;
-    appliedDiscountStatus:
-      | VoucherDiscountStatusEnum
-      | PackageDiscountStatusEnum;
+    appliedDiscountStatus: ProductDiscountStatusEnum;
   }): number {
     // Calculate price part
 
@@ -421,9 +420,7 @@ export class OrderService {
   private calculateTotalPriceAndDiscount(
     itemInfo: AnyItemDomain,
     itemAmount: number,
-    appliedDiscountStatus:
-      | VoucherDiscountStatusEnum
-      | PackageDiscountStatusEnum,
+    appliedDiscountStatus: ProductDiscountStatusEnum,
   ): {
     totalPrice: number;
     isDiscountApplied: boolean;
@@ -680,6 +677,19 @@ export class OrderService {
 
   // ---------------------- FIND ORDER PART -----------------------------------//
   // --------------------------------------------------------------------------//
+
+  public async getMyOrders(
+    accountId: OrderDomain['account']['id'],
+    {
+      cursor,
+      paginationOptions,
+    }: { cursor: OrderDomain['id']; paginationOptions: IPaginationOption },
+  ): Promise<NullAble<OrderDomain[]>> {
+    return this.orderRepository.findByAccountId(accountId, {
+      cursor,
+      paginationOptions,
+    });
+  }
 
   public async getOrderById(
     id: OrderDomain['id'],

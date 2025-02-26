@@ -102,7 +102,7 @@ model Voucher {
   tagId                String                 @map("tag_id") @db.Uuid
   voucherTag           VoucherTag             @relation(fields: [tagId], references: [id])
   usableAt             DateTime               @map("usable_at") @db.Timestamptz(3)
-  usableExpiredAt      DateTime               @map("usage_expired_at") @db.Timestamptz(3)
+  usableExpiredAt      DateTime               @map("usable_expired_at") @db.Timestamptz(3)
   sellStartedAt        DateTime               @map("sell_started_at") @db.Timestamptz(3)
   sellExpiredAt        DateTime               @map("sell_expired_at") @db.Timestamptz(3)
   createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -145,7 +145,7 @@ model VoucherDiscount {
 model PackageDiscount {
   id                     String                   @id @default(uuid(7)) @db.Uuid
   discountedPrice        Decimal                  @map("discounted_price") @db.Decimal(8, 2)
-  packageId              String                   @map("voucher_id") @db.Uuid
+  packageId              String                   @map("package_id") @db.Uuid
   package                PackageVoucher           @relation(fields: [packageId], references: [id])
   createdAt              DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt              DateTime                 @updatedAt() @map("updated_at") @db.Timestamptz(3)

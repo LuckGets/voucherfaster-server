@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';
 import { AuthPath } from 'src/config/api-path';
-import { VoucherDomain, VoucherStatusEnum } from '../../domain/voucher.domain';
+import { VoucherDomain } from '../../domain/voucher.domain';
 import {
   IsDate,
   IsOptional,
@@ -16,18 +16,19 @@ import { Transform, Type } from 'class-transformer';
 import { IsEnumValue } from '@utils/validators/IsEnum';
 import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
+import { VoucherDiscountDomain } from '@resources/voucher/domain/voucher-discount.domain';
 import {
-  VoucherDiscountDomain,
-  VoucherDiscountStatusEnum,
-} from '@resources/voucher/domain/voucher-discount.domain';
+  ProductDiscountStatusEnum,
+  ProductStatusEnum,
+} from '@resources/product/domain/product.domain';
 
 @AtLeastOneProperty(UpdateVoucherDiscountDto.updatAbleFields())
 export class UpdateVoucherDiscountDto {
   newId?: VoucherDiscountDomain['id'];
   currentDiscountId: VoucherDiscountDomain['id'];
   @IsOptional()
-  @IsEnumValue(VoucherDiscountStatusEnum)
-  status?: VoucherDiscountStatusEnum;
+  @IsEnumValue(ProductDiscountStatusEnum)
+  status?: VoucherDiscountDomain['status'];
   @ApiProperty({ type: Number, required: false })
   @IsPositive()
   @Transform(({ value }) => Number(value))
@@ -90,10 +91,10 @@ export class UpdateVoucherDto {
   @IsOptional()
   @IsString()
   termAndCond?: VoucherDomain['termAndCondition'];
-  @ApiProperty({ type: String, enum: VoucherStatusEnum, required: false })
-  @IsEnumValue(VoucherStatusEnum)
+  @ApiProperty({ type: String, enum: ProductStatusEnum, required: false })
+  @IsEnumValue(ProductStatusEnum)
   @IsOptional()
-  status?: VoucherStatusEnum;
+  status?: VoucherDomain['status'];
   @ApiProperty({ type: () => UpdateVoucherDiscountDto, required: false })
   @ValidateNested({ each: true })
   @Type(() => UpdateVoucherDiscountDto)

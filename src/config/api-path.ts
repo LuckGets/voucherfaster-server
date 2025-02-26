@@ -91,14 +91,25 @@ export const PackageVoucherPath = {
   DeleteRewardVoucher: `:${PACKAGE_CONST.PARAM_ID}/rewards/:${PACKAGE_CONST.REWARD_PARAM_ID}`,
 } as const;
 
-export const UsableDaysPath = {
-  Name: 'usabledays',
-  Base: '/usabledays',
+export const PRODUCT_CONST = {
+  BASE: '/products',
+};
+
+export const ProductPath = {
+  Base: `${PRODUCT_CONST.BASE}`,
+  GetManyProduct: `${PRODUCT_CONST.BASE}`,
+  CategoryQuery: 'c',
+  TagQuery: 't',
+  StatusQuery: 's',
+  DiscountQuery: 'd',
+  SellDateQuery: 'sd',
+  SortQuery: 'sort',
 };
 
 export const OrderPath = {
   Name: 'orders',
   Base: '/orders',
+  Me: '/me',
   OrderIdParam: 'orderId',
   GetOrderById: `:orderId`,
   GetOrdersQueryCursor: 'cursor',

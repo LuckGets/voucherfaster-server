@@ -3,8 +3,6 @@ import { IsFutureDate } from '@utils/validators/IsFutureDate';
 import { Transform, Type } from 'class-transformer';
 import {
   IsDate,
-  IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsPositive,
   IsString,
@@ -13,10 +11,7 @@ import {
 } from 'class-validator';
 import { VoucherDomain } from '@resources/voucher/domain/voucher.domain';
 import { IsArrayOfUUID } from '@utils/validators/IsArrayOfUUID';
-import {
-  PackageStatusEnum,
-  PackageVoucherDomain,
-} from '../domain/package-voucher.domain';
+import { PackageVoucherDomain } from '../domain/package-voucher.domain';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HttpStatus } from '@nestjs/common';
 import { AuthPath } from 'src/config/api-path';
@@ -24,10 +19,11 @@ import { HATEOSLink } from 'src/common/hateos.type';
 import { plainArrayTransformer } from '@utils/transformer/plainArrayTransformer';
 import { AtLeastOneProperty } from '@utils/validators/AtleastOneProp';
 import { IsEnumValue } from '@utils/validators/IsEnum';
+import { PackageDiscountDomain } from '../domain/package-discount.domain';
 import {
-  PackageDiscountDomain,
-  PackageDiscountStatusEnum,
-} from '../domain/package-discount.domain';
+  ProductDiscountStatusEnum,
+  ProductStatusEnum,
+} from '@resources/product/domain/product.domain';
 
 export class AddVoucherToPackageDto {
   @ApiProperty({
@@ -90,12 +86,12 @@ export class UpdatePackageDiscountDto {
 
   @ApiProperty({
     type: String,
-    enum: PackageDiscountStatusEnum,
+    enum: ProductDiscountStatusEnum,
     required: false,
   })
   @IsOptional()
-  @IsEnumValue(PackageDiscountStatusEnum)
-  status?: PackageDiscountStatusEnum;
+  @IsEnumValue(ProductDiscountStatusEnum)
+  status?: ProductDiscountStatusEnum;
 
   public static updatAbleField(): Array<keyof UpdatePackageDiscountDto> {
     return ['discountedPrice', 'status'];
@@ -140,9 +136,9 @@ export class UpdatePackageVoucherDto {
   @Transform(({ value }) => new Date(value))
   @IsOptional()
   sellExpiredAt?: Date;
-  @IsEnumValue(PackageStatusEnum)
+  @IsEnumValue(ProductStatusEnum)
   @IsOptional()
-  status?: PackageStatusEnum;
+  status?: PackageVoucherDomain['status'];
   @ApiProperty({ type: () => UpdatePackageDiscountDto })
   @ValidateNested({ each: true })
   @Type(() => UpdatePackageDiscountDto)

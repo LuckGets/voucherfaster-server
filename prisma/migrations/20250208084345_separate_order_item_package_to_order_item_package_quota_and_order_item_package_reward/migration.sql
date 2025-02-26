@@ -1,7 +1,11 @@
 /*
   Warnings:
 
+  - You are about to drop the column `voucher_id` on the `package_discount` table. All the data in the column will be lost.
+  - You are about to drop the column `usage_expired_at` on the `voucher` table. All the data in the column will be lost.
   - You are about to drop the `order_item_package` table. If the table is not empty, all the data it contains will be lost.
+  - Added the required column `package_id` to the `package_discount` table without a default value. This is not possible if the table is not empty.
+  - Added the required column `usable_expired_at` to the `voucher` table without a default value. This is not possible if the table is not empty.
 
 */
 -- DropForeignKey
@@ -15,6 +19,17 @@ ALTER TABLE "order_item_package" DROP CONSTRAINT "order_item_package_package_id_
 
 -- DropForeignKey
 ALTER TABLE "order_item_package" DROP CONSTRAINT "order_item_package_voucher_id_fkey";
+
+-- DropForeignKey
+ALTER TABLE "package_discount" DROP CONSTRAINT "package_discount_voucher_id_fkey";
+
+-- AlterTable
+ALTER TABLE "package_discount" DROP COLUMN "voucher_id",
+ADD COLUMN     "package_id" UUID NOT NULL;
+
+-- AlterTable
+ALTER TABLE "voucher" DROP COLUMN "usage_expired_at",
+ADD COLUMN     "usable_expired_at" TIMESTAMPTZ(3) NOT NULL;
 
 -- DropTable
 DROP TABLE "order_item_package";
@@ -48,6 +63,9 @@ CREATE UNIQUE INDEX "order_item_package_quota_order_item_id_key" ON "order_item_
 
 -- CreateIndex
 CREATE UNIQUE INDEX "order_item_package_reward_order_item_id_key" ON "order_item_package_reward"("order_item_id");
+
+-- AddForeignKey
+ALTER TABLE "package_discount" ADD CONSTRAINT "package_discount_package_id_fkey" FOREIGN KEY ("package_id") REFERENCES "package_voucher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "order_item_package_quota" ADD CONSTRAINT "order_item_package_quota_order_item_id_fkey" FOREIGN KEY ("order_item_id") REFERENCES "order_item"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
