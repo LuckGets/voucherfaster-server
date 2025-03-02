@@ -68,6 +68,14 @@ export class SessionRelationalPrismaORMRepository implements SessionRepository {
     );
   }
   async deleteById(sessionId: SessionDomain['id']): Promise<void> {
+    const isSessionExist = await this.prismaService.session.findUnique({
+      where: {
+        id: String(sessionId),
+      },
+    });
+
+    if (!isSessionExist) return;
+
     await this.prismaService.session.delete({
       where: {
         id: String(sessionId),
