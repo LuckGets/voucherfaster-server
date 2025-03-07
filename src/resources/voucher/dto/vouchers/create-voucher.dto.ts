@@ -127,10 +127,8 @@ export class CreateVoucherDto {
   sellExpiredAt: Date;
   @IsString()
   tagId: VoucherTagDomain['id'];
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
   @IsString()
+  @ApiProperty({ type: String })
   termAndCondition: string;
   @IsOptional()
   @IsPositive()

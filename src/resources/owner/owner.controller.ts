@@ -54,7 +54,6 @@ export class OwnerController {
 
   @ApiBearerAuth()
   @ApiOkResponse({ type: () => GetAllOwnerInformationResponse })
-  @UseGuards(AdminGuard)
   @Get()
   async getOwnerInformation(): Promise<GetAllOwnerInformationResponse> {
     this.logger.log('Get owner information');

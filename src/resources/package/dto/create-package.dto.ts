@@ -115,12 +115,14 @@ export const createPackageVoucherDtoSchemaDocument: ApiBodyOptions = {
     'Create package voucher with its associated datails included image and reward vouchers.',
   schema: {
     required: [
+      'quotaVouchers',
       'quotaVoucherId',
       'quotaAmount',
       'stockAmount',
       'price',
       'rewardVouchers',
       'title',
+      'description',
       'termAndCondition',
       'sellStartedAt',
       'sellExpiredAt',
@@ -134,11 +136,23 @@ export const createPackageVoucherDtoSchemaDocument: ApiBodyOptions = {
         type: 'string',
         example: '0193f3cc-c977-7182-9627-debca7376208',
       },
-      quotaVoucherId: {
+      description: {
         type: 'string',
+        example: 'This is the coupon-voucher for valentines day.',
       },
-      quotaAmount: {
-        type: 'number',
+      quotaVouchers: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            voucherId: {
+              type: 'string',
+            },
+            amount: {
+              type: 'number',
+            },
+          },
+        },
       },
       stockAmount: {
         type: 'number',
