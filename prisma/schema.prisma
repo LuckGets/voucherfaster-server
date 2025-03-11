@@ -277,11 +277,9 @@ model OrderItemVoucher {
 }
 
 model OrderItemPackageQuota {
-  id          String         @id @default(uuid(7)) @db.Uuid
-  orderItemId String         @unique @map("order_item_id") @db.Uuid
-  orderItem   OrderItem      @relation(fields: [orderItemId], references: [id])
-  package     PackageVoucher @relation(fields: [packageId], references: [id])
-  packageId   String         @map("package_id") @db.Uuid
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orderItemId String    @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
 
   packageQuotaVoucherId String              @map("package_quota_voucher_id") @db.Uuid
   packageQuotaVoucher   PackageQuotaVoucher @relation(fields: [packageQuotaVoucherId], references: [id])
@@ -290,17 +288,17 @@ model OrderItemPackageQuota {
   packageDiscountId String?          @map("package_discount_id") @db.Uuid
   PackageDiscount   PackageDiscount? @relation(fields: [packageDiscountId], references: [id])
 
-  updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  PackageVoucher   PackageVoucher? @relation(fields: [packageVoucherId], references: [id])
+  packageVoucherId String?         @db.Uuid
 
   @@map("order_item_package_quota")
 }
 
 model OrderItemPackageReward {
-  id          String         @id @default(uuid(7)) @db.Uuid
-  orderItemId String         @unique @map("order_item_id") @db.Uuid
-  orderItem   OrderItem      @relation(fields: [orderItemId], references: [id])
-  package     PackageVoucher @relation(fields: [packageId], references: [id])
-  packageId   String         @map("package_id") @db.Uuid
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orderItemId String    @unique @map("order_item_id") @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
 
   packageRewardVoucherId String               @map("package_reward_voucher_id") @db.Uuid
   packageRewardVoucher   PackageRewardVoucher @relation(fields: [packageRewardVoucherId], references: [id])
@@ -309,7 +307,9 @@ model OrderItemPackageReward {
   packageDiscountId String?          @map("package_discount_id") @db.Uuid
   PackageDiscount   PackageDiscount? @relation(fields: [packageDiscountId], references: [id])
 
-  updatedAt DateTime @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt() @map("updated_at") @db.Timestamptz(3)
+  PackageVoucher   PackageVoucher? @relation(fields: [packageVoucherId], references: [id])
+  packageVoucherId String?         @db.Uuid
 
   @@map("order_item_package_reward")
 }

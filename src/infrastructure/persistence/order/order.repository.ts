@@ -20,21 +20,21 @@ export type CreateOrderItemVoucherInfo = {
   discountId?: VoucherDiscountDomain['id'];
 };
 
-export type CreateOrderItemPackageQuotaInfo = {
+type CreateOrderItemPackageInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
-  packageId: PackageVoucherDomain['id'];
-  packageQuotaVoucherId: PackageQuotaVoucherDomain['id'];
   discountId?: PackageDiscountDomain['id'];
 };
 
-export type CreateOrderItemPackageRewardInfo = {
-  id: string;
-  orderItemId: OrderItemDomain['id'];
-  packageId: PackageVoucherDomain['id'];
+export interface CreateOrderItemPackageQuotaInfo
+  extends CreateOrderItemPackageInfo {
+  packageQuotaVoucherId: PackageQuotaVoucherDomain['id'];
+}
+
+export interface CreateOrderItemPackageRewardInfo
+  extends CreateOrderItemPackageInfo {
   packageRewardVoucherId: PackageRewardVoucherDomain['id'];
-  discountId?: PackageDiscountDomain['id'];
-};
+}
 export type UpdateStockAmountInfo = {
   vouchers: UpdateStockAmountEachInfo[];
   packages: UpdateStockAmountEachInfo[];
@@ -81,7 +81,13 @@ export abstract class OrderRepository {
 
   abstract findById(
     id: string,
-    { cursor, take }: { cursor?: OrderItemDomain['id']; take?: number },
+    {
+      cursor,
+      take,
+    }: {
+      cursor?: OrderItemDomain['id'];
+      take?: IPaginationOption['limit'] | 'ALL';
+    },
   ): Promise<NullAble<OrderDomain>>;
 
   abstract findMany({

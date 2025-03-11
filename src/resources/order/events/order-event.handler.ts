@@ -16,10 +16,7 @@ import {
 import { MailerService } from '@application/mailer/mailer.service';
 import { OrderItemDomain } from '../../order-item/domain/order-item.domain';
 import { OwnerService } from '@resources/owner/owner.service';
-import {
-  UpdateOrderItemDto,
-  UpdateOrderItemQrcode,
-} from '@resources/order-item/dto/update-order-item';
+import { UpdateOrderItemQrcode } from '@resources/order-item/dto/update-order-item';
 
 @Injectable()
 export class OrderEventHandler {

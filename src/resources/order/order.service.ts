@@ -25,7 +25,7 @@ import { OrderItemDomain } from '../order-item/domain/order-item.domain';
 import { CalculatorService } from '@utils/services/calculator.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { NullAble } from '@utils/types/common.type';
-import { isUUID } from 'class-validator';
+import { isString, isUUID } from 'class-validator';
 import { RandomCodeGeneratorService } from '@utils/services/random-code/random-code.service';
 import { OrderItemService } from '@resources/order-item/order-item.service';
 import {
@@ -60,6 +60,15 @@ type OrderItemPackageContainer = {
 type OrderItemsProductList =
   | OrderItemVoucherContainer
   | OrderItemPackageContainer;
+
+interface OrderItemPackageDetail {
+  id: string | null;
+  orderItemId: string | null;
+  packageQuotaVoucherId?: PackageQuotaVoucherDomain['id'];
+  packageRewardVoucherId?: PackageRewardVoucherDomain['id'];
+  discountId?: string;
+}
+
 @Injectable()
 export class OrderService {
   constructor(
@@ -346,8 +355,6 @@ export class OrderService {
       itemInfo instanceof PackageVoucherDomain &&
       orderItemsProductList.type === 'package'
     ) {
-      // Ensure itemList is an object (not an array)
-
       // process quota vouchers
       this.processVoucherForPackageList({
         vouchers: itemInfo.quotaVouchers,
@@ -357,9 +364,9 @@ export class OrderService {
         isDiscountApplied,
         itemAmount,
         itemList,
-        packageId: itemInfo.id,
         usableAt,
         usableExpiredAt,
+        type: 'quota',
       });
 
       this.processVoucherForPackageList({
@@ -370,9 +377,9 @@ export class OrderService {
         itemAmount,
         itemList,
         orderItemsProductList,
-        packageId: itemInfo.id,
         usableAt,
         usableExpiredAt,
+        type: 'reward',
       });
     } else if (
       itemInfo instanceof VoucherDomain &&
@@ -456,7 +463,6 @@ export class OrderService {
   private processVoucherForPackageList({
     vouchers,
     itemAmount,
-    packageId,
     allOrderItemsId,
     itemList,
     orderItemsProductList,
@@ -464,10 +470,10 @@ export class OrderService {
     discount,
     usableAt,
     usableExpiredAt,
+    type,
   }: {
     vouchers: PackageQuotaVoucherDomain[] | PackageRewardVoucherDomain[];
     itemAmount: number;
-    packageId: string;
     allOrderItemsId: OrderItemDomain['id'][];
     itemList: CreateOrderItemInfo[];
     orderItemsProductList: OrderItemPackageContainer;
@@ -475,6 +481,7 @@ export class OrderService {
     discount: AnyItemDomain['discount'];
     usableAt: PackageVoucherDomain['usableAt'];
     usableExpiredAt: PackageVoucherDomain['usableExpiredAt'];
+    type: 'quota' | 'reward';
   }): void {
     vouchers.forEach((voucher) => {
       const totalItemAmount = CalculatorService.multiply(
@@ -489,42 +496,52 @@ export class OrderService {
         usableAt,
         usableExpiredAt,
       };
-      let orderItemDetail;
-      let packageInfoArr;
-
-      if (voucher instanceof PackageRewardVoucherDomain) {
-        orderItemDetail = {
-          id: null,
-          orderItemId: null,
-          packageId,
-          rewardVoucherId: voucher.id,
-        };
-
-        packageInfoArr = Array.from({ length: totalItemAmount }, () => ({
-          ...orderItemDetail,
-          id: String(this.uuidService.make()),
-        }));
-
-        orderItemsProductList.items.rewards.push(...packageInfoArr);
-      } else if (voucher instanceof PackageQuotaVoucherDomain) {
-        orderItemDetail = {
-          id: null,
-          orderItemId: null,
-          packageId,
-          quotaVoucherId: voucher.id,
-        };
-
-        packageInfoArr = Array.from({ length: totalItemAmount }, () => ({
-          ...orderItemDetail,
-          id: String(this.uuidService.make()),
-        }));
-
-        orderItemsProductList.items.quotas.push(...packageInfoArr);
-      }
+      const orderItemDetail: OrderItemPackageDetail = {
+        id: null,
+        orderItemId: null,
+      };
+      const packageInfoArr: (
+        | CreateOrderItemPackageQuotaInfo
+        | CreateOrderItemPackageRewardInfo
+      )[] = [];
 
       if (isDiscountApplied) {
         orderItemDetail.discountId = discount.id;
       }
+
+      switch (type) {
+        case 'quota':
+          orderItemsProductList.items.quotas.push(
+            ...this.processItemForPackageOrder<CreateOrderItemPackageQuotaInfo>(
+              {
+                orderItemDetail,
+                packageItemId: voucher.id,
+                totalAmount: totalItemAmount,
+                type: 'quota',
+                packageInfoArr,
+              },
+            ),
+          );
+          break;
+        case 'reward':
+          orderItemsProductList.items.rewards.push(
+            ...this.processItemForPackageOrder<CreateOrderItemPackageRewardInfo>(
+              {
+                orderItemDetail,
+                packageItemId: voucher.id,
+                totalAmount: totalItemAmount,
+                type: 'reward',
+                packageInfoArr,
+              },
+            ),
+          );
+          break;
+      }
+
+      if (packageInfoArr.length === 0)
+        throw ErrorApiResponse.internalServerError(
+          'There is a problem while processing order item.',
+        );
 
       const orderItems: CreateOrderItemInfo[] = Array.from(
         { length: totalItemAmount },
@@ -540,6 +557,46 @@ export class OrderService {
 
       itemList.push(...orderItems);
     });
+  }
+
+  private processItemForPackageOrder<
+    T extends
+      | CreateOrderItemPackageQuotaInfo
+      | CreateOrderItemPackageRewardInfo,
+  >({
+    orderItemDetail,
+    packageItemId,
+    totalAmount,
+    type,
+    packageInfoArr,
+  }: {
+    orderItemDetail: OrderItemPackageDetail;
+    packageItemId:
+      | PackageQuotaVoucherDomain['id']
+      | PackageRewardVoucherDomain['id'];
+    totalAmount: number;
+    type: 'quota' | 'reward';
+    packageInfoArr: OrderItemPackageDetail[];
+  }): T[] {
+    const itemDetail: OrderItemPackageDetail = { ...orderItemDetail };
+
+    switch (type) {
+      case 'quota':
+        itemDetail.packageQuotaVoucherId =
+          packageItemId as PackageQuotaVoucherDomain['id'];
+        break;
+      case 'reward':
+        itemDetail.packageRewardVoucherId =
+          packageItemId as PackageRewardVoucherDomain['id'];
+    }
+
+    const orderItemArr = Array.from({ length: totalAmount }, () => ({
+      ...itemDetail,
+      id: String(this.uuidService.make()),
+    })) as T[];
+
+    packageInfoArr.push(...orderItemArr);
+    return orderItemArr;
   }
 
   private processVoucherItem({
@@ -700,6 +757,9 @@ export class OrderService {
         'Provided parameter for order id is invaid.',
       );
 
+    if (cursor && !isUUID(cursor))
+      throw ErrorApiResponse.badRequest('Cursor should be type of string');
+
     const order = await this.orderRepository.findById(id, { cursor, take });
     if (!order)
       throw ErrorApiResponse.notFoundRequest(
@@ -797,7 +857,7 @@ export class OrderService {
   private async checkOrderAndTransaction(
     orderId: OrderDomain['id'],
   ): Promise<OrderDomain> {
-    const order = await this.orderRepository.findById(orderId, { take: 0 });
+    const order = await this.orderRepository.findById(orderId, { take: 'ALL' });
 
     if (!order)
       throw ErrorApiResponse.notFoundRequest(

@@ -23,7 +23,10 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { CreateOrderDto, CreateOrderResponse } from './dto/create-order.dto';
-import { HttpRequestWithUser } from 'src/common/http.type';
+import {
+  HttpRequestWithUser,
+  HttpRequestWithUserAndOrder,
+} from 'src/common/http.type';
 import { OrderDomain } from './domain/order.domain';
 import {
   GetMyOrdersResponse,
@@ -108,15 +111,9 @@ export class OrderController {
   @UseGuards(AccessTokenAuthGuard, OrderOwnerGuard)
   @Get(OrderPath.GetOrderById)
   async getOrderById(
-    @Param(OrderPath.OrderIdParam) orderId: OrderDomain['id'],
-    @Query(QUERY_FIELD_NAME.CURSOR) cursor: OrderItemDomain['id'],
-    @Query(QUERY_FIELD_NAME.LIMIT) take: number,
+    @Req() req: HttpRequestWithUserAndOrder,
   ): Promise<GetOrderByIdReponse> {
-    const order = await this.orderService.getOrderById(orderId, {
-      cursor,
-      take,
-    });
-    return GetOrderByIdReponse.success(order);
+    return GetOrderByIdReponse.success(req.order);
   }
 
   @ApiQuery({ name: OrderPath.GetOrdersQueryCursor, required: false })
@@ -134,6 +131,7 @@ export class OrderController {
   })
   @ApiOkResponse({ type: () => GetPaginationOrderResponse })
   @SerializeOptions({ groups: [RoleEnum.Admin] })
+  @UseGuards(AccessTokenAuthGuard)
   @Get()
   async getPaginationOrders(
     @Query(OrderPath.GetOrdersQueryCursor) cursor: OrderDomain['id'],

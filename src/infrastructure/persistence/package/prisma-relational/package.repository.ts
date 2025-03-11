@@ -387,64 +387,6 @@ export class PackageVoucherRelationalPrismaORMRepository
     return PackageVoucherMapper.toDomain(updatedPackage, { allInfo: true });
   }
 
-  // async upsertManyRewardVoucher(
-  //   tx: Prisma.TransactionClient,
-  //   rewardVoucherDatas: UpdatePackageRewardVoucherDto,
-  //   packageId: PackageVoucherDomain['id'],
-  // ): Promise<unknown> {
-  //   const rewardsArr: Prisma.PackageRewardVoucherCreateManyInput[] = [];
-  //   const removeArr: Prisma.PackageRewardVoucherDeleteArgs[] = [];
-  //   const updateArrPromise: Promise<unknown>[] = [];
-
-  //   // Extract the data.
-  //   const { addRewardVouchers, removedRewardIds, update } = rewardVoucherDatas;
-  //   if (addRewardVouchers && addRewardVouchers.length > 0) {
-  //     rewardVoucherDatas.addRewardVouchers.forEach((item) => {
-  //       rewardsArr.push({
-  //         id: String(this.uuidService.make()),
-  //         packageId,
-  //         rewardVoucherId: item.voucherId,
-  //         amount: item.amount,
-  //       });
-  //     });
-  //   }
-  //   if (removedRewardIds && removedRewardIds.length > 0) {
-  //     removedRewardIds.forEach((item) => {
-  //       console.log(item);
-  //       removeArr.push({
-  //         where: {
-  //           id: item,
-  //         },
-  //       });
-  //     });
-  //   }
-
-  //   if (update && update.length > 0) {
-  //     updateArrPromise.push(
-  //       ...update.map((item) =>
-  //         tx.packageRewardVoucher.update({
-  //           where: { id: item.rewardId },
-  //           data: { amount: item.amount },
-  //         }),
-  //       ),
-  //     );
-  //   }
-
-  //   if (removeArr.length > 0) {
-  //     removeArr.forEach(
-  //       async (item) => await tx.packageRewardVoucher.delete(item),
-  //     );
-  //   }
-  //   if (rewardsArr.length > 0) {
-  //     await tx.packageRewardVoucher.createMany({ data: rewardsArr });
-  //   }
-
-  //   if (updateArrPromise.length > 0) {
-  //     await Promise.all(updateArrPromise);
-  //   }
-  //   return;
-  // }
-
   async deletePackageVoucherById(
     id: PackageVoucherDomain['id'],
   ): Promise<void> {

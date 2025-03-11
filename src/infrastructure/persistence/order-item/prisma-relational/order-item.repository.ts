@@ -60,12 +60,12 @@ export class OrderItemRelationPrismaORMRepository
             acc = {
               ...acc,
               OrderItemPackageQuota: {
-                package: {
+                PackageVoucher: {
                   usableExpiredAt: direction,
                 },
               },
               OrderItemPackageReward: {
-                package: {
+                PackageVoucher: {
                   usableExpiredAt: direction,
                 },
               },
@@ -175,14 +175,14 @@ export class OrderItemRelationPrismaORMRepository
         return {
           ...this.sucessOrderWhereQuery,
           OrderItemPackageQuota: {
-            package: {
+            PackageVoucher: {
               usableExpiredAt: {
                 lte: currentDate,
               },
             },
           },
           OrderItemPackageReward: {
-            package: {
+            PackageVoucher: {
               usableExpiredAt: {
                 lte: currentDate,
               },
@@ -360,7 +360,7 @@ export class OrderItemRelationPrismaORMRepository
     );
 
     return allUpdatedOrderItem.map((item) =>
-      OrderItemMapper.toDomain(item as OrderItemAndDetails, { allInfo: true }),
+      OrderItemMapper.toDomain(item as OrderItemAndDetails, { allInfo: false }),
     );
   }
   async update(data: UpdateOrderItemDto): Promise<OrderItemDomain> {

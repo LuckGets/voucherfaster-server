@@ -165,25 +165,21 @@ export const orderItemsPackageQuotas: Prisma.OrderItemPackageQuotaCreateManyInpu
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[1],
-      packageId: packageVoucherId[0],
       packageQuotaVoucherId: packageQuotaVouchers[0].id,
     },
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[4],
-      packageId: packageVoucherId[1],
       packageQuotaVoucherId: packageQuotaVouchers[1].id,
     },
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[5],
-      packageId: packageVoucherId[1],
       packageQuotaVoucherId: packageQuotaVouchers[1].id,
     },
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[7],
-      packageId: packageVoucherId[0],
       packageQuotaVoucherId: packageQuotaVouchers[0].id,
     },
   ];
@@ -193,19 +189,16 @@ export const orderItemPackageRewards: Prisma.OrderItemPackageRewardCreateManyInp
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[2],
-      packageId: packageVoucherId[0],
       packageRewardVoucherId: packageRewardVouchers[0].id,
     },
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[6],
-      packageId: packageVoucherId[0],
       packageRewardVoucherId: packageRewardVouchers[1].id,
     },
     {
       id: uuidv7(),
       orderItemId: orderItemIDArr[8],
-      packageId: packageVoucherId[0],
       packageRewardVoucherId: packageRewardVouchers[1].id,
     },
   ];

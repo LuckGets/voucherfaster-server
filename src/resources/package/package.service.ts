@@ -152,7 +152,7 @@ export class PackageVoucherService {
         }
       });
       allPackageImgLinks.splice(
-        mainImgAndPackageLength - 1,
+        mainImgAndPackageLength,
         allPackageImgLinks.length - mainImgAndPackageLength,
       );
     }

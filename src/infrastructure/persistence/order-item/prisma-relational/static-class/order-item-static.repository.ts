@@ -82,22 +82,22 @@ export class OrderItemRelationalPrismaORMStatic {
       },
       packageQuotaVoucher: {
         include: {
+          package: {
+            include: {
+              PackageImg: {
+                select: {
+                  id: true,
+                  mainImg: true,
+                  imgPath: true,
+                },
+                where: {
+                  mainImg: true,
+                },
+              },
+            },
+          },
           voucher: {
             include: this.voucherCategoryIncludeQuery,
-          },
-        },
-      },
-      package: {
-        include: {
-          PackageImg: {
-            select: {
-              id: true,
-              mainImg: true,
-              imgPath: true,
-            },
-            where: {
-              mainImg: true,
-            },
           },
         },
       },
@@ -110,6 +110,20 @@ export class OrderItemRelationalPrismaORMStatic {
       },
       packageRewardVoucher: {
         include: {
+          package: {
+            include: {
+              PackageImg: {
+                select: {
+                  id: true,
+                  mainImg: true,
+                  imgPath: true,
+                },
+                where: {
+                  mainImg: true,
+                },
+              },
+            },
+          },
           voucher: {
             include: {
               ...this.voucherImgIncludeQuery,
@@ -117,9 +131,6 @@ export class OrderItemRelationalPrismaORMStatic {
             },
           },
         },
-      },
-      package: {
-        include: this.packageAndImgIncludeQuery,
       },
     };
 

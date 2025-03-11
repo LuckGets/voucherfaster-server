@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import {
   CreateOrderAndTransactionInput,
+  CreateOrderItemPackageQuotaInfo,
+  CreateOrderItemPackageRewardInfo,
   OrderRepository,
   UpdateStockAmountEachInfo,
   UpdateStockAmountInfo,
@@ -22,10 +24,8 @@ import {
 } from '@resources/transaction/domain/transaction.domain';
 import { TimeAdderHelper } from '@utils/services/time-adder.helper';
 import { OrderDomain } from '@resources/order/domain/order.domain';
-import { create } from 'domain';
 import { ObjectHelper } from '@utils/services/object.helper';
 import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
-import { OrderItemRelationPrismaORMRepository } from '../../order-item/prisma-relational/order-item.repository';
 import { OrderItemRelationalPrismaORMStatic } from '../../order-item/prisma-relational/static-class/order-item-static.repository';
 import {
   defaultPaginationOption,
@@ -35,37 +35,6 @@ import {
 export class OrderRelationalPrismaORMRepository implements OrderRepository {
   constructor(@Inject(PrismaService) private prismaService: PrismaService) {}
   private defaultOrderItemLimitPaginationForFindMany: number = 1;
-
-  private defaultOrderItemLimitPaginationForOneOrder: number = 10;
-
-  private packageDiscountIncludeQuery: Prisma.PackageDiscountSelect = {
-    id: true,
-    discountedPrice: true,
-    status: true,
-    deletedAt: true,
-  };
-
-  private voucherCategoryIncludeQuery: Prisma.VoucherInclude = {
-    voucherTag: {
-      include: {
-        category: true,
-      },
-    },
-  };
-
-  private voucherImgIncludeQuery: Prisma.VoucherInclude = {
-    VoucherImg: {
-      where: {
-        mainImg: true,
-      },
-      select: {
-        id: true,
-        imgPath: true,
-        mainImg: true,
-      },
-    },
-  };
-
   private copyOrderItemIncludeQuery() {
     const copiedQuery = {
       ...OrderItemRelationalPrismaORMStatic.orderItemIncludeQuery,
@@ -101,22 +70,33 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     cursor,
     page,
   }: {
-    take?: IPaginationOption['limit'];
+    take?: IPaginationOption['limit'] | 'ALL';
     cursor?: OrderItemDomain['id'];
     page?: IPaginationOption['page'];
   }): Prisma.OrderInclude {
     const paginationOption: Prisma.Order$OrderItemArgs = {};
+    let limit = this.defaultOrderItemLimitPaginationForFindMany;
+    const takeVal = typeof take === 'string' ? take.toUpperCase() : take;
 
-    const limit = take ?? this.defaultOrderItemLimitPaginationForFindMany;
+    if (typeof takeVal === 'string' && takeVal !== 'ALL')
+      throw ErrorApiResponse.internalServerError(
+        'Pagination options for limit in finding order-item is wrong.',
+      );
+
+    if (typeof takeVal === 'number' && takeVal <= 0) {
+      limit = this.defaultOrderItemLimitPaginationForFindMany;
+    }
+
     const currentPage = page ?? defaultPaginationOption.page;
 
     if (cursor) {
       paginationOption.cursor = { id: cursor };
-      paginationOption.take = limit;
     } else {
-      paginationOption.take = limit;
       paginationOption.skip = (currentPage - 1) * limit;
     }
+
+    if (limit && takeVal !== 'ALL') paginationOption.take = limit;
+
     const baseQuery: Prisma.OrderInclude = {
       OrderItem: {
         ...paginationOption,
@@ -206,7 +186,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             orderItemsPackageInfo.rewards.length > 0
           ) {
             createOrderItemProductPromise.push(
-              this.generateCreateManyOrderItemPackage(
+              ...this.generateCreateManyOrderItemPackage(
                 orderItemsPackageInfo,
                 tx,
               ),
@@ -289,15 +269,33 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     }
 
     const createManyQuota = txUnit.orderItemPackageQuota.createMany({
-      data: quotas,
+      data: this.processQuotaAndRewardData<CreateOrderItemPackageQuotaInfo>(
+        quotas,
+      ),
     });
 
     const createManyReward = txUnit.orderItemPackageReward.createMany({
-      data: rewards,
+      data: this.processQuotaAndRewardData<CreateOrderItemPackageRewardInfo>(
+        rewards,
+      ),
     });
 
     return [createManyQuota, createManyReward];
   }
+
+  private processQuotaAndRewardData = <
+    T extends
+      | CreateOrderItemPackageQuotaInfo
+      | CreateOrderItemPackageRewardInfo,
+  >(
+    items: T[],
+  ) => {
+    return items.map((item) => {
+      const { discountId, ...rest } = item;
+
+      if (discountId) return { ...rest, packageDiscountId: discountId };
+    });
+  };
 
   private generateUpdateStockAmountTransactionPromise(
     tx: Prisma.TransactionClient,

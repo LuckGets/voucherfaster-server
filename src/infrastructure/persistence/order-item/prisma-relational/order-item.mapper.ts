@@ -51,15 +51,15 @@ export type OrderItemAndDetails = OrderItem & {
       voucher?: Voucher & {
         voucherTag: NestedVoucherTagAndCategory;
       };
+      package?: PackageDetail;
     };
-    package?: PackageDetail;
     PackageDiscount?: PackageDiscountInfo;
   };
   OrderItemPackageReward?: Partial<OrderItemPackageReward> & {
     packageRewardVoucher?: Partial<PackageRewardVoucher> & {
       voucher?: VoucherDetailAndImg;
+      package?: PackageDetail;
     };
-    package?: PackageDetail;
     PackageDiscount?: PackageDiscountInfo;
   };
   order?: Omit<AllOrderInformation, 'OrderItem'>;
@@ -198,19 +198,23 @@ export class OrderItemPackageMapper {
     }
 
     const {
-      packageId,
       packageQuotaVoucherId,
       packageQuotaVoucher,
       packageDiscountId,
       PackageDiscount,
     } = orderItemPackageQuota;
 
-    const { PackageImg, title } = orderItemPackageQuota.package;
+    const {
+      PackageImg,
+      title,
+      id,
+      price: packagePrice,
+    } = orderItemPackageQuota.packageQuotaVoucher.package;
 
     const { voucher, deletedAt } = packageQuotaVoucher;
     if (ObjectHelper.isObjectEmpty(voucher))
       throw new Error(
-        `Detail about voucher for package ID : ${packageId} is missing.`,
+        `Detail about voucher in package --> ID : ${id} is missing.`,
       );
 
     const quotaVoucher: OrderItemPackageDetail['quotaVoucher'] = {
@@ -223,7 +227,7 @@ export class OrderItemPackageMapper {
 
     // Map the id and package details
     const packageField: OrderItemPackageDetail = new OrderItemPackageDetail({
-      packageId: packageId,
+      packageId: id,
       title,
       quotaVoucher,
     });
@@ -232,21 +236,21 @@ export class OrderItemPackageMapper {
 
     // Map price and usage expiration time
 
-    let packagePrice: number = orderItemPackageQuota.package.price.toNumber();
+    let price: number = packagePrice.toNumber();
 
     if (packageDiscountId) {
       if (ObjectHelper.isObjectEmpty(PackageDiscount)) {
         throw new Error(
-          `There is discount ID for package ID : ${packageId} but there is no detail.`,
+          `There is discount ID for package ID : ${id} but there is no detail.`,
         );
       }
-      packagePrice = PackageDiscount.discountedPrice.toNumber();
+      price = PackageDiscount.discountedPrice.toNumber();
     }
 
     return new OrderItemDetails({
       category: voucher.voucherTag?.category?.name,
       img: packageImg,
-      price: packagePrice,
+      price,
       title: voucher?.title,
       voucherId: voucher.id,
       discountId: packageDiscountId ?? null,
@@ -262,14 +266,17 @@ export class OrderItemPackageMapper {
     }
 
     const {
-      packageId,
       packageRewardVoucherId,
       packageRewardVoucher,
       packageDiscountId,
       PackageDiscount,
     } = orderItemPackageReward;
 
-    const { PackageImg, title } = orderItemPackageReward.package;
+    const {
+      title,
+      id,
+      price: packagePrice,
+    } = orderItemPackageReward.packageRewardVoucher.package;
 
     const { voucher, deletedAt, img } = packageRewardVoucher;
 
@@ -285,7 +292,7 @@ export class OrderItemPackageMapper {
 
     // Map the id and package details
     const packageField: OrderItemPackageDetail = new OrderItemPackageDetail({
-      packageId: packageId,
+      packageId: id,
       title,
       rewardVoucher,
     });
@@ -294,21 +301,21 @@ export class OrderItemPackageMapper {
 
     // Map price and usage expiration time
 
-    let packagePrice: number = orderItemPackageReward.package.price.toNumber();
+    let price: number = packagePrice.toNumber();
 
     if (packageDiscountId) {
       if (ObjectHelper.isObjectEmpty(PackageDiscount)) {
         throw new Error(
-          `There is discount ID for package ID : ${packageId} but there is no detail.`,
+          `There is discount ID for package ID : ${id} but there is no detail.`,
         );
       }
-      packagePrice = PackageDiscount.discountedPrice.toNumber();
+      price = PackageDiscount.discountedPrice.toNumber();
     }
 
     return new OrderItemDetails({
       category: voucher.voucherTag?.category?.name,
       img: packageImg,
-      price: packagePrice,
+      price,
       title: voucher?.title,
       voucherId: voucher.id,
       discountId: packageDiscountId ?? null,
