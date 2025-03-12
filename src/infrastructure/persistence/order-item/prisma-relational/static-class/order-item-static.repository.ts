@@ -68,7 +68,7 @@ export class OrderItemRelationalPrismaORMStatic {
   public static orderItemVoucherIncludeQuery: Prisma.OrderItemVoucherInclude = {
     voucher: {
       include: {
-        // ...this.voucherImgIncludeQuery,
+        ...this.voucherImgIncludeQuery,
         ...this.voucherCategoryIncludeQuery,
       },
     },

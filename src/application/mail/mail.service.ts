@@ -9,15 +9,10 @@ import {
   MAIL_ORDER_ITEM_CONSTANT,
   VERIFY_EMAIL_CONSTANT,
 } from './config/mail.constant';
-import {
-  OrderItemDomain,
-  OrderItemPackageDetail,
-} from '@resources/order-item/domain/order-item.domain';
+import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 import { Transporter } from 'nodemailer';
 import { OwnerDomain } from '@resources/owner/domain/owner.domain';
 import { HandleBarContextHelper } from './templates/mail-context.helper';
-import { NullAble } from '@utils/types/common.type';
-import { ObjectHelper } from '@utils/services/object.helper';
 
 export type MailTransporter = Transporter;
 
@@ -121,7 +116,6 @@ export class MailService {
   ): Promise<void> {
     const { data } = mailData;
     const title = MAIL_ORDER_ITEM_CONSTANT.generateTitle(ownerName, data.code);
-    let rewardVoucher: NullAble<OrderItemPackageDetail['rewardVoucher']>;
 
     const context = HandleBarContextHelper.orderItem({
       ownerName,

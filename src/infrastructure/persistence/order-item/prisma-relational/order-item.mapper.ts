@@ -164,8 +164,6 @@ export class OrderItemVoucherMapper {
 
     let price: number = orderItemVoucher.voucher.price.toNumber();
 
-    console.log('discount obj:', orderItemVoucher.VoucherDiscount);
-
     if (!ObjectHelper.isObjectEmpty(orderItemVoucher.VoucherDiscount)) {
       price = orderItemVoucher.VoucherDiscount.discountedPrice.toNumber();
     }

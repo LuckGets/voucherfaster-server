@@ -17,7 +17,7 @@ export type CreateOrderItemVoucherInfo = {
   id: string;
   orderItemId: OrderItemDomain['id'];
   voucherId: VoucherDomain['id'];
-  discountId?: VoucherDiscountDomain['id'];
+  voucherDiscountId?: VoucherDiscountDomain['id'];
 };
 
 type CreateOrderItemPackageInfo = {

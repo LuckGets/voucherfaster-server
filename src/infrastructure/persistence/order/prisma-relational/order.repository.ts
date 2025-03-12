@@ -75,16 +75,25 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
     page?: IPaginationOption['page'];
   }): Prisma.OrderInclude {
     const paginationOption: Prisma.Order$OrderItemArgs = {};
-    let limit = this.defaultOrderItemLimitPaginationForFindMany;
-    const takeVal = typeof take === 'string' ? take.toUpperCase() : take;
+    const defaultLimit = this.defaultOrderItemLimitPaginationForFindMany;
+    let limit: number = defaultLimit;
+    let isAll = false;
 
-    if (typeof takeVal === 'string' && takeVal !== 'ALL')
-      throw ErrorApiResponse.internalServerError(
-        'Pagination options for limit in finding order-item is wrong.',
-      );
-
-    if (typeof takeVal === 'number' && takeVal <= 0) {
-      limit = this.defaultOrderItemLimitPaginationForFindMany;
+    // Process the 'take' option: accept a number > 0 or the string 'ALL'
+    if (typeof take === 'string') {
+      const takeUpper = take.toUpperCase();
+      if (takeUpper === 'ALL') {
+        isAll = true;
+      } else {
+        throw ErrorApiResponse.internalServerError(
+          'Invalid pagination option for order-item.',
+        );
+      }
+    } else if (typeof take === 'number') {
+      if (take > 0) {
+        limit = take;
+      }
+      // If take is a number but <= 0, we keep the default limit
     }
 
     const currentPage = page ?? defaultPaginationOption.page;
@@ -95,7 +104,12 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       paginationOption.skip = (currentPage - 1) * limit;
     }
 
-    if (limit && takeVal !== 'ALL') paginationOption.take = limit;
+    // Only apply the 'take' (limit) if the special 'ALL' flag is not set
+    if (!isAll) {
+      paginationOption.take = limit;
+    }
+
+    console.log('Pagination options');
 
     const baseQuery: Prisma.OrderInclude = {
       OrderItem: {
@@ -239,7 +253,7 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
             where: {
               id: orderAndTransaction.id,
             },
-            include: this.allDetailIncludeQuery({}),
+            include: this.allDetailIncludeQuery({ take: 'ALL' }),
           });
         },
       );
@@ -294,6 +308,8 @@ export class OrderRelationalPrismaORMRepository implements OrderRepository {
       const { discountId, ...rest } = item;
 
       if (discountId) return { ...rest, packageDiscountId: discountId };
+
+      return rest;
     });
   };
 

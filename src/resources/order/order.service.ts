@@ -635,7 +635,7 @@ export class OrderService {
     };
 
     if (isDiscountApplied) {
-      orderItemVoucherInfo.discountId = discount.id;
+      orderItemVoucherInfo.voucherDiscountId = discount.id;
     }
 
     const orderItemVoucherArr: CreateOrderItemVoucherInfo[] = Array.from(

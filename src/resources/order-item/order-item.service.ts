@@ -112,6 +112,10 @@ export class OrderItemService {
     });
   };
 
+  // --------------------------------------------------------------
+  // ------------------------- UPDATE PART ------------------------
+  // --------------------------------------------------------------
+
   /**
    * Updates an order item.
    * @param data - The data to update the order item.
@@ -153,4 +157,8 @@ export class OrderItemService {
   ): Promise<OrderItemDomain[]> {
     return this.orderItemRepository.transactionForUpdateManyQrCode(data);
   }
+
+  public async resendEmail(
+    itemId: OrderItemDomain['id'],
+  ): Promise<OrderItemDomain> {}
 }

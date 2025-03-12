@@ -128,6 +128,7 @@ export const OrderItemPath = {
   Base: '/order-items',
   GetById: `/:${ORDER_ITEM_CONST.PARAM_ID}`,
   GetBySearchContent: `/search/:${ORDER_ITEM_CONST.SEARCH}`,
+  ResendQRCode: `/:${ORDER_ITEM_CONST.PARAM_ID}/resend`,
   UpdateOrderItem: `/:${ORDER_ITEM_CONST.PARAM_ID}`,
   SortQuery: 's',
   CategoryQuery: 'c',

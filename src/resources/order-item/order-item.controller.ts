@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ORDER_ITEM_CONST, OrderItemPath } from 'src/config/api-path';
 import { OrderItemService } from './order-item.service';
-import { ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 import {
   OrderItemDomain,
@@ -25,6 +25,7 @@ import { ErrorApiResponse } from 'src/common/core-api-response';
 import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { UpdateOrderItemDto } from './dto/update-order-item';
+import { ResendOrderItemResponse } from './dto/resend.dto';
 
 @Controller({ path: OrderItemPath.Base, version: '1' })
 export class OrderItemController {
@@ -122,6 +123,18 @@ export class OrderItemController {
     const orderItem = await this.orderItemService.findById(itemId);
 
     return GetByOrderItemIdResponse.success(orderItem);
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    type: () => ResendOrderItemResponse,
+  })
+  @UseGuards(AdminGuard)
+  @Get(OrderItemPath.ResendQRCode)
+  async resendEmail(
+    @Param(ORDER_ITEM_CONST.PARAM_ID) itemId: OrderItemDomain['id'],
+  ): Promise<ResendOrderItemResponse> {
+    const orderItem = await this.orderItemService.resendEmail(itemId);
   }
 
   @UseGuards(AdminGuard)

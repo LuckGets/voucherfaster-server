@@ -6,7 +6,7 @@ export class ObjectHelper {
 
   public static findEmptyField(obj: object, fields: string[]): string[] {
     return fields.filter((item) => {
-      if (!obj[item]) return item;
+      if (!obj[item] && obj[item] !== 0) return item;
     });
   }
 
