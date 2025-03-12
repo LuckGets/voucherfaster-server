@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Patch,
   Post,
   Query,
@@ -47,7 +46,6 @@ import {
   IPaginationOption,
   QUERY_FIELD_NAME,
 } from 'src/common/types/pagination.type';
-import { OrderItemDomain } from '@resources/order-item/domain/order-item.domain';
 
 @Controller({ version: '1', path: OrderPath.Base })
 export class OrderController {

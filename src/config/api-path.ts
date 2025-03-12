@@ -92,10 +92,12 @@ export const PackageVoucherPath = {
 } as const;
 
 export const PRODUCT_CONST = {
+  NAME: 'products',
   BASE: '/products',
 };
 
 export const ProductPath = {
+  Name: `products`,
   Base: `${PRODUCT_CONST.BASE}`,
   GetManyProduct: `${PRODUCT_CONST.BASE}`,
   CategoryQuery: 'c',

@@ -32,6 +32,7 @@ export class OrderMapper {
   public static toDomain(
     orderAndTransactionEntity: AllOrderInformation,
   ): OrderDomain {
+    console.log('Order in map', orderAndTransactionEntity);
     if (ObjectHelper.isObjectEmpty(orderAndTransactionEntity)) return null;
     // EXTRACT DATA
     const { Transaction, OrderItem, account, ...order } =
@@ -62,18 +63,7 @@ export class OrderMapper {
     const transaction: TransactionDomain =
       TransactionMapper.toDomain(Transaction);
 
-    if (OrderItem && OrderItem.length === 0) {
-      throw ErrorApiResponse.internalServerError(
-        `OrderItem is empty for order ID: ${order.id}`,
-      );
-    }
-    const orderItems = [
-      ...OrderItem.map((item) =>
-        OrderItemMapper.toDomain(item, { allInfo: false }),
-      ),
-    ];
-
-    return new OrderDomain({
+    const orderDomain = new OrderDomain({
       id: order.id,
       totalPrice: order.totalPrice.toNumber(),
       account: accountDetail,
@@ -81,7 +71,19 @@ export class OrderMapper {
       updatedAt: order.updatedAt,
       deletedAt: order.deletedAt ?? null,
       transaction,
-      orderItems,
     });
+    if (OrderItem) {
+      if (OrderItem.length === 0)
+        throw ErrorApiResponse.internalServerError(
+          `OrderItem is empty for order ID: ${order.id}`,
+        );
+      orderDomain.orderItems = [
+        ...OrderItem.map((item) =>
+          OrderItemMapper.toDomain(item, { allInfo: false }),
+        ),
+      ];
+    }
+
+    return orderDomain;
   }
 }

@@ -16,10 +16,19 @@ import {
   UpdateOrderItemDto,
   UpdateOrderItemQrcode,
 } from './dto/update-order-item';
+import { TransactionStatusEnum } from '@resources/transaction/domain/transaction.domain';
+import {
+  MailService,
+  OrderItemDetailForMail,
+} from '@application/mail/mail.service';
+import { IMailData } from '@application/mail/mail-data.interface';
 
 @Injectable()
 export class OrderItemService {
-  constructor(private readonly orderItemRepository: OrderItemRepository) {}
+  constructor(
+    private readonly orderItemRepository: OrderItemRepository,
+    private readonly mailService: MailService,
+  ) {}
 
   public async findExistingCode(
     codeList: OrderItemDomain['code'][],
@@ -160,5 +169,49 @@ export class OrderItemService {
 
   public async resendEmail(
     itemId: OrderItemDomain['id'],
-  ): Promise<OrderItemDomain> {}
+  ): Promise<OrderItemDomain> {
+    if (!itemId || !isUUID(itemId))
+      throw ErrorApiResponse.badRequest(
+        `${itemId} is not valid type for order item id.`,
+      );
+
+    const orderItem = await this.orderItemRepository.findById(itemId);
+    console.log(orderItem);
+
+    if (!orderItem)
+      throw ErrorApiResponse.notFoundRequest(
+        `Order item id: ${itemId} could not be found on this server.`,
+      );
+
+    if (orderItem.order.transaction.status !== TransactionStatusEnum.SUCCESS)
+      throw ErrorApiResponse.conflictRequest(
+        `Order item id: ${itemId} payment status is not success. Please finish the payment process first.`,
+      );
+
+    if (orderItem.redeemedAt)
+      throw ErrorApiResponse.conflictRequest(
+        `Order item id:${itemId} is already redeemed`,
+      );
+
+    if (
+      !orderItem.qrcodeImagePath ||
+      orderItem.qrcodeImagePath === OrderItemDomain.defaultQrCodeImagePath()
+    )
+      throw ErrorApiResponse.conflictRequest(
+        `Order item id: ${itemId} does not finishing generated qrcode process. Please contact the developer or finishing the payment process.`,
+      );
+
+    const {} = orderItem;
+
+    // const mailData: IMailData<OrderItemDetailForMail> = {
+    //   data: {
+    //     ...orderItem,
+    //   },
+    //   to: orderItem.order.account.email,
+    // };
+
+    // await this.mailService.orderItem();
+
+    return orderItem;
+  }
 }

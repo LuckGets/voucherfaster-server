@@ -8,14 +8,10 @@ import {
   ProductSellDateQueryEnum,
   ProductStatusQueryEnum,
 } from './dto/get-product.dto';
-import { ApiBody, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
-import {
-  IPaginationOption,
-  ISortOption,
-  QUERY_FIELD_DOC,
-  QUERY_FIELD_NAME,
-} from 'src/common/types/pagination.type';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { QUERY_FIELD_NAME } from 'src/common/types/pagination.type';
 
+@ApiTags(ProductPath.Name)
 @Controller({ version: '1', path: ProductPath.Base })
 export class ProductController {
   constructor(private productService: ProductService) {}

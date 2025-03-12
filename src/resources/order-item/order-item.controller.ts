@@ -135,6 +135,8 @@ export class OrderItemController {
     @Param(ORDER_ITEM_CONST.PARAM_ID) itemId: OrderItemDomain['id'],
   ): Promise<ResendOrderItemResponse> {
     const orderItem = await this.orderItemService.resendEmail(itemId);
+
+    return ResendOrderItemResponse.success(orderItem);
   }
 
   @UseGuards(AdminGuard)

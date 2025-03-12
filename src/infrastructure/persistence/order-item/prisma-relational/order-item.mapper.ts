@@ -285,8 +285,7 @@ export class OrderItemPackageMapper {
     // Validate if the package data is present
 
     const packageImg =
-      img ??
-      voucher.VoucherImg.filter((item) => item.mainImg === true)[0].imgPath;
+      img ?? voucher.VoucherImg.filter((item) => !!item.mainImg)[0].imgPath;
 
     // Map the id and package details
     const packageField: OrderItemPackageDetail = new OrderItemPackageDetail({
