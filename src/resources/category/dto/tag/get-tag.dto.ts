@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { CategoryDomain } from '@resources/category/domain/category.domain';
 import { VoucherTagDomain } from '@resources/category/domain/tag.domain';
 import { CoreApiResponse } from 'src/common/core-api-response';
 import { HATEOSLink } from 'src/common/hateos.type';

@@ -145,6 +145,8 @@ LEFT JOIN package_quota_voucher AS pq
   ${this.discountQueryBuilder('package', discount)}
   `;
 
+    console.log('Package query', packageQueries);
+
     const productQueries: Prisma.Sql = Prisma.sql`${voucherQueries} UNION ALL ${packageQueries}`;
 
     const paginationQuery = this.paginationQueryBuilder(paginationOption);
@@ -191,18 +193,21 @@ ${productQueries}
     const alias = productType === 'voucher' ? 'v' : 'p';
     const productDiscountAcronym = `${alias}d`;
     let baseQuery = `LEFT JOIN ${productType}_discount AS ${productDiscountAcronym} ON ${alias}.id = ${productDiscountAcronym}.${productType}_id`;
-    let discountedProductQuery = `${baseQuery} AND ${alias}.deleted_at IS NULL`;
+    // In case there will have deleted_at in the future.
+    // let discountedProductQuery = `${baseQuery} AND ${alias}.deleted_at IS NULL`;
+    let discountedProductQuery = `${baseQuery}`;
     switch (discount) {
       case ProductDiscountQueryEnum.ACTIVE:
-        return Prisma.sql`${Prisma.raw(discountedProductQuery)} AND ${Prisma.raw(productDiscountAcronym)}.status = ${ProductDiscountStatusEnum.ACTIVE}`;
+        return Prisma.sql`${Prisma.raw(`${discountedProductQuery} AND ${productDiscountAcronym}.status = `)}${ProductDiscountStatusEnum.ACTIVE}`;
       case ProductDiscountQueryEnum.INACTIVE:
-        return Prisma.sql`${Prisma.raw(discountedProductQuery)} AND ${Prisma.raw(productDiscountAcronym)}.status = ${ProductDiscountStatusEnum.INACTIVE}`;
+        return Prisma.sql`${Prisma.raw(`${discountedProductQuery} AND ${productDiscountAcronym}.status = `)}${ProductDiscountStatusEnum.INACTIVE}`;
       case ProductDiscountQueryEnum.NONE:
-        return Prisma.sql`${Prisma.raw(baseQuery)} AND ${productDiscountAcronym}.id IS NULL`;
+        return Prisma.sql`${`${baseQuery} AND ${productDiscountAcronym}.id IS NULL`}`;
       default:
         return Prisma.sql`${Prisma.raw(baseQuery)}`;
     }
   }
+
   private orderByQueryBuilder(sortOptions: GetProductQueries['sortQuery']) {
     if (!sortOptions) return Prisma.sql`ORDER BY created_at DESC`;
 
